@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE | Software de gestión empresarial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        node: {
+                            dark: '#0D253E',
+                            teal: '#2B93A6',
+                            tealLight: '#38BDF8',
+                            tealDark: '#133947',
+                            bg: '#F8FAFC',
+                            surface: '#FFFFFF',
+                            accent: '#2563EB',
+                        }
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #F8FAFC; }
+        .text-node { color: #0D253E; }
+        .bg-node { background: #F8FAFC; }
+        .shadow-soft { box-shadow: 0 30px 80px rgba(15, 23, 42, 0.08); }
+        .feature-card:hover { transform: translateY(-6px); }
+        .transition-smooth { transition: all 0.25s ease; }
+    </style>
+</head>
+<body class="bg-node text-slate-900 antialiased">
+    <div class="min-h-screen">
+        <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
+            <div class="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-node-teal text-white text-xl font-black">N</div>
+                    <div>
+                        <p class="text-lg font-bold text-slate-900">NODE</p>
+                        <p class="text-sm text-slate-500">Automatización inteligente</p>
+                    </div>
+                </div>
+                <nav class="hidden items-center gap-8 text-sm font-medium text-slate-600 lg:flex">
+                    <a href="#product" class="hover:text-node-teal">Producto</a>
+                    <a href="#benefits" class="hover:text-node-teal">Beneficios</a>
+                    <a href="#pricing" class="hover:text-node-teal">Precios</a>
+                    <a href="#testimonials" class="hover:text-node-teal">Clientes</a>
+                </nav>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <a href="#demo" class="inline-flex items-center justify-center rounded-full bg-node-teal px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-node-teal/15 hover:bg-[#23849b] transition">Solicitar demo</a>
+                    <a href="#" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 transition">Entrar</a>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="relative overflow-hidden bg-node-bg py-20">
+                <div class="absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-node-teal/10 blur-3xl"></div>
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] items-center">
+                        <div class="space-y-8">
+                            <div class="inline-flex items-center gap-3 rounded-full bg-node-teal/10 px-4 py-2 text-sm font-semibold text-node-teal">Software completo para pymes</div>
+                            <h1 class="text-5xl font-extrabold tracking-tight text-slate-950 sm:text-6xl">Gestiona tu empresa con un solo panel de control.</h1>
+                            <p class="max-w-2xl text-lg leading-8 text-slate-600">NODE reúne finanzas, CRM, facturación, proyectos y recursos humanos en una plataforma moderna y fácil de usar.</p>
+                            <div class="flex flex-col gap-4 sm:flex-row">
+                                <a href="#demo" class="inline-flex items-center justify-center rounded-full bg-node-teal px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-node-teal/15 hover:bg-[#23849b] transition">Comenzar gratis</a>
+                                <a href="#product" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Ver funciones</a>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
+                                    <p class="text-3xl font-bold text-slate-900">+120</p>
+                                    <p class="mt-2 text-sm text-slate-500">Clientes activos</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
+                                    <p class="text-3xl font-bold text-slate-900">95%</p>
+                                    <p class="mt-2 text-sm text-slate-500">Ahorro de tiempo</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
+                                    <p class="text-3xl font-bold text-slate-900">24/7</p>
+                                    <p class="mt-2 text-sm text-slate-500">Soporte dedicado</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
+                                    <p class="text-3xl font-bold text-slate-900">100%</p>
+                                    <p class="mt-2 text-sm text-slate-500">Remoto y seguro</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <div class="relative overflow-hidden rounded-[2rem] bg-white p-8 shadow-soft">
+                                <div class="absolute -right-16 top-8 h-44 w-44 rounded-full bg-node-teal/10 blur-3xl"></div>
+                                <div class="relative z-10 space-y-6">
+                                    <div class="inline-flex items-center gap-3 rounded-full bg-node-teal/10 px-4 py-2 text-sm font-semibold text-node-teal">Panel de cliente</div>
+                                    <div class="grid gap-4 sm:grid-cols-2">
+                                        <div class="rounded-3xl border border-slate-200 p-5">
+                                            <p class="text-sm text-slate-500">Facturación</p>
+                                            <p class="mt-3 text-2xl font-bold text-slate-900">210</p>
+                                            <p class="mt-2 text-sm text-slate-500">Documentos generados</p>
+                                        </div>
+                                        <div class="rounded-3xl border border-slate-200 p-5">
+                                            <p class="text-sm text-slate-500">Ventas</p>
+                                            <p class="mt-3 text-2xl font-bold text-slate-900">8,4k</p>
+                                            <p class="mt-2 text-sm text-slate-500">Leads gestionados</p>
+                                        </div>
+                                    </div>
+                                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                        <p class="text-sm font-semibold text-slate-900">Automatización</p>
+                                        <p class="mt-3 text-sm text-slate-600">Recordatorios, cobros y flujos de aprobaciones sincronizados con tu equipo.</p>
+                                    </div>
+                                    <div class="rounded-3xl border border-slate-200 p-5 bg-node-teal/5">
+                                        <p class="text-sm uppercase tracking-[0.25em] text-node-teal">Previsualización</p>
+                                        <div class="mt-4 h-60 rounded-3xl bg-[radial-gradient(circle_at_top,_rgba(43,147,166,0.12),_transparent_40%)] p-5">
+                                            <div class="h-full rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                                                <div class="flex items-center justify-between mb-4">
+                                                    <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"><i class="fas fa-check text-xs text-node-teal"></i> Facturas</span>
+                                                    <span class="text-xs text-slate-500">Actualizado</span>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <div class="h-4 w-3/5 rounded-full bg-slate-200"></div>
+                                                    <div class="h-4 w-2/3 rounded-full bg-slate-200"></div>
+                                                    <div class="h-4 w-1/2 rounded-full bg-slate-200"></div>
+                                                    <div class="grid gap-3 grid-cols-3 pt-4">
+                                                        <span class="h-3 rounded-full bg-slate-200"></span>
+                                                        <span class="h-3 rounded-full bg-slate-200"></span>
+                                                        <span class="h-3 rounded-full bg-slate-200"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="product" class="bg-white py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="mx-auto max-w-2xl text-center">
+                        <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Funcionalidades</p>
+                        <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Todo lo que necesitas para digitalizar tu gestión</h2>
+                        <p class="mt-6 text-lg leading-8 text-slate-600">NODE integra módulos de facturación, CRM, contabilidad, inventario y equipo para trabajar desde una misma plataforma.</p>
+                    </div>
+                    <div class="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Facturación inteligente</h3>
+                            <p class="mt-3 text-slate-600">Crea facturas, presupuestos y pedidos con plantillas adaptadas a tu marca.</p>
+                        </article>
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-hand-holding-dollar"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Contabilidad automática</h3>
+                            <p class="mt-3 text-slate-600">Registra gastos, controla IVA y genera informes contables al instante.</p>
+                        </article>
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-users"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">CRM y ventas</h3>
+                            <p class="mt-3 text-slate-600">Sigue oportunidades, clientes y tareas en un embudo sencillo y poderoso.</p>
+                        </article>
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-project-diagram"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Proyectos y tareas</h3>
+                            <p class="mt-3 text-slate-600">Planifica entregas, asigna responsables y controla avances en tiempo real.</p>
+                        </article>
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-people-carry-box"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Inventario y compras</h3>
+                            <p class="mt-3 text-slate-600">Mantén productos, stock y proveedores sincronizados con tus ventas.</p>
+                        </article>
+                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
+                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-calendar-check"></i></div>
+                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Equipo y recursos</h3>
+                            <p class="mt-3 text-slate-600">Organiza turnos, permisos y horas facturables con control centralizado.</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="benefits" class="bg-node-bg py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
+                        <div class="space-y-6">
+                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Ventajas</p>
+                            <h2 class="text-4xl font-extrabold text-slate-950">Simplifica tu operación y toma decisiones con datos reales.</h2>
+                            <p class="text-lg leading-8 text-slate-600">NODE te permite automatizar tareas repetitivas, reducir errores humanos y tener una visión clara de todo el negocio en un solo lugar.</p>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div class="rounded-3xl bg-white p-6 shadow-soft">
+                                    <p class="text-sm font-semibold text-node-teal">Automatiza cobros</p>
+                                    <p class="mt-3 text-slate-600">Envía facturas periódicas, recuerda pagos y reduce impagos automáticamente.</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-6 shadow-soft">
+                                    <p class="text-sm font-semibold text-node-teal">Control total</p>
+                                    <p class="mt-3 text-slate-600">Accede a informes financieros, dashboard de ventas y KPI clave al instante.</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-6 shadow-soft">
+                                    <p class="text-sm font-semibold text-node-teal">Trabajo en equipo</p>
+                                    <p class="mt-3 text-slate-600">Colabora en proyectos, asigna tareas y comparte notas en un solo ecosistema.</p>
+                                </div>
+                                <div class="rounded-3xl bg-white p-6 shadow-soft">
+                                    <p class="text-sm font-semibold text-node-teal">Escala sin esfuerzo</p>
+                                    <p class="mt-3 text-slate-600">Desde autónomos hasta equipos de 50+ personas, NODE crece contigo.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="relative rounded-[2rem] bg-gradient-to-br from-node-teal/15 via-white to-slate-50 p-8 shadow-soft">
+                            <div class="absolute inset-0 rounded-[2rem] border border-white/50"></div>
+                            <div class="relative z-10 grid gap-6">
+                                <div class="rounded-[2rem] bg-white p-6 shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-semibold text-slate-900">Resumen mensual</span>
+                                        <span class="text-xs text-slate-500">Actualizado</span>
+                                    </div>
+                                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                                        <div class="rounded-3xl bg-slate-50 p-4">
+                                            <p class="text-sm text-slate-500">Ingresos</p>
+                                            <p class="mt-2 text-2xl font-bold text-slate-900">€24.8K</p>
+                                        </div>
+                                        <div class="rounded-3xl bg-slate-50 p-4">
+                                            <p class="text-sm text-slate-500">Nuevos clientes</p>
+                                            <p class="mt-2 text-2xl font-bold text-slate-900">98</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rounded-[2rem] bg-node-teal text-white p-6">
+                                    <p class="text-sm uppercase tracking-[0.35em] text-slate-200">Flujo de trabajo</p>
+                                    <h3 class="mt-4 text-2xl font-bold">Tus ventas al día en menos de 2 minutos</h3>
+                                    <p class="mt-3 text-slate-200">Controla ofertas, facturas y pagos desde una misma vista sin cambiar de herramienta.</p>
+                                </div>
+                                <div class="rounded-[2rem] bg-white p-6 shadow-sm">
+                                    <div class="flex items-center justify-between text-slate-500 text-sm">
+                                        <span>Proyectos activos</span>
+                                        <span>12</span>
+                                    </div>
+                                    <div class="mt-4 h-2 rounded-full bg-slate-100">
+                                        <div class="h-2 w-2/3 rounded-full bg-node-teal"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="pricing" class="bg-white py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8 text-center">
+                    <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Precios</p>
+                    <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Planes claros para todos los equipos</h2>
+                    <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">Elige el plan que mejor se adapta a tu empresa y comienza a gestionar con menos esfuerzo.</p>
+                    <div class="mt-16 grid gap-6 lg:grid-cols-3">
+                        <article class="rounded-[2rem] border border-slate-200 bg-node-bg p-8 shadow-soft">
+                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">Startup</p>
+                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€29<span class="text-lg font-medium">/mes</span></p>
+                            <p class="mt-4 text-slate-600">Gestión básica para autónomos y pequeños equipos.</p>
+                            <ul class="mt-8 space-y-4 text-slate-600">
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Facturación</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> CRM básico</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Soporte email</li>
+                            </ul>
+                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-node-teal px-5 py-3 text-sm font-semibold text-white hover:bg-[#23849b] transition">Seleccionar</a>
+                        </article>
+                        <article class="rounded-[2rem] border border-node-teal bg-node-teal/5 p-8 shadow-soft">
+                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Growth</p>
+                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€59<span class="text-lg font-medium">/mes</span></p>
+                            <p class="mt-4 text-slate-600">La opción ideal para empresas que quieren crecer rápido.</p>
+                            <ul class="mt-8 space-y-4 text-slate-600">
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Todo el paquete Startup</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Gestión de inventario</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Informes avanzados</li>
+                            </ul>
+                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition">Más vendido</a>
+                        </article>
+                        <article class="rounded-[2rem] border border-slate-200 bg-node-bg p-8 shadow-soft">
+                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">Premium</p>
+                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€99<span class="text-lg font-medium">/mes</span></p>
+                            <p class="mt-4 text-slate-600">Soporte dedicado y personalización para organizaciones grandes.</p>
+                            <ul class="mt-8 space-y-4 text-slate-600">
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Todo el paquete Growth</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Integraciones API</li>
+                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Soporte prioritario</li>
+                            </ul>
+                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-white border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition">Contactar</a>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="testimonials" class="bg-node-bg py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="text-center">
+                        <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Testimonios</p>
+                        <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Empresas que ya confían en NODE</h2>
+                    </div>
+                    <div class="mt-16 grid gap-6 lg:grid-cols-3">
+                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
+                            <p class="text-slate-600">"NODE nos permitió centralizar la facturación y el CRM en una sola app. Ahora nuestro equipo gana tiempo y evita errores de comunicación."</p>
+                            <div class="mt-6 flex items-center gap-4">
+                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-user-tie"></i></div>
+                                <div>
+                                    <p class="font-semibold text-slate-900">Laura Gómez</p>
+                                    <p class="text-sm text-slate-500">CFO en Nova Consulting</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
+                            <p class="text-slate-600">"La integración entre ventas y contabilidad es impresionante. Tenemos todo bajo control y podemos escalar sin aumentar costes."</p>
+                            <div class="mt-6 flex items-center gap-4">
+                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-briefcase"></i></div>
+                                <div>
+                                    <p class="font-semibold text-slate-900">Raúl Pedraza</p>
+                                    <p class="text-sm text-slate-500">CEO en SmartCommerce</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
+                            <p class="text-slate-600">"El panel de informes es muy claro y nuestros procesos internos son más rápidos. La adopción ha sido inmediata."</p>
+                            <div class="mt-6 flex items-center gap-4">
+                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-chart-line"></i></div>
+                                <div>
+                                    <p class="font-semibold text-slate-900">Marta Ruiz</p>
+                                    <p class="text-sm text-slate-500">Directora operativa en BitMarket</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="demo" class="bg-white py-24">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="rounded-[2rem] bg-node-teal text-white p-12 shadow-soft">
+                        <div class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+                            <div>
+                                <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-200">¿Listo para empezar?</p>
+                                <h2 class="mt-4 text-4xl font-extrabold">Solicita una demo personalizada y descubre cómo NODE puede impulsar tu gestión.</h2>
+                                <p class="mt-6 max-w-xl text-lg leading-8 text-slate-200">Nuestro equipo te acompañará en la configuración inicial, migración de datos y puesta en marcha.</p>
+                                <a href="#" class="mt-8 inline-flex items-center justify-center rounded-full bg-white px-6 py-4 text-sm font-semibold text-node-teal shadow-lg shadow-white/10 hover:bg-slate-100 transition">Pedir demo gratuita</a>
+                            </div>
+                            <div class="grid gap-4 rounded-[2rem] bg-white p-8 text-slate-900 shadow-sm">
+                                <div class="inline-flex items-center gap-3 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700"><i class="fas fa-check text-node-teal"></i> Soporte en español</div>
+                                <div class="rounded-3xl bg-node-teal/5 p-5">
+                                    <p class="text-lg font-semibold">Onboarding rápido</p>
+                                    <p class="mt-2 text-slate-600">Configura tu cuenta en menos de 24 horas.</p>
+                                </div>
+                                <div class="rounded-3xl bg-node-teal/5 p-5">
+                                    <p class="text-lg font-semibold">Datos seguros</p>
+                                    <p class="mt-2 text-slate-600">Cifrado y control de permisos por usuario.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-slate-950 text-slate-300">
+            <div class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+                <div class="grid gap-10 lg:grid-cols-3">
+                    <div>
+                        <p class="text-2xl font-bold text-white">NODE</p>
+                        <p class="mt-4 max-w-md text-sm leading-7 text-slate-400">Software de gestión empresarial para equipos que buscan un crecimiento ordenado y más automatización.</p>
+                    </div>
+                    <div class="grid gap-4 text-sm text-slate-400">
+                        <p class="font-semibold text-white">Enlaces</p>
+                        <a href="#product" class="hover:text-white">Producto</a>
+                        <a href="#benefits" class="hover:text-white">Beneficios</a>
+                        <a href="#pricing" class="hover:text-white">Precios</a>
+                        <a href="#demo" class="hover:text-white">Demo</a>
+                    </div>
+                    <div class="grid gap-4 text-sm text-slate-400">
+                        <p class="font-semibold text-white">Contacto</p>
+                        <p>hola@node.com</p>
+                        <p>+34 912 345 678</p>
+                    </div>
+                </div>
+                <div class="mt-12 border-t border-slate-800 pt-8 text-sm text-slate-500">© 2026 NODE. Todos los derechos reservados.</div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>
