@@ -1,0 +1,85 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE | Registro e Inicio de sesión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #E8F2FA 100%); }
+        .bg-node { background: #0D253E; }
+        .text-node { color: #0D253E; }
+        .btn-primary { background-color: #2563EB; }
+        .btn-primary:hover { background-color: #1D4ED8; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-6xl rounded-[2rem] bg-white shadow-[0_35px_80px_rgba(15,23,42,0.12)] overflow-hidden md:grid md:grid-cols-[1.1fr_0.9fr]">
+        <div class="relative bg-gradient-to-br from-[#0D253E] via-[#255A7D] to-[#2B93A6] px-10 py-12 text-white">
+            <div class="absolute inset-0 opacity-10 bg-[url('https://assets.codepen.io/292064/custom-clouds.svg')] bg-no-repeat bg-right-bottom"></div>
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                    <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-white/10 text-2xl font-bold">N</div>
+                    <h1 class="mt-10 text-4xl font-extrabold">Bienvenido a NODE</h1>
+                    <p class="mt-6 max-w-md text-sm leading-6 text-slate-200">Automatización inteligente para negocios. Regístrate para probar la plataforma, o inicia sesión si ya tienes una cuenta.</p>
+                </div>
+                <div class="mt-10 space-y-5">
+                    <div class="rounded-[2rem] bg-white/10 p-6">
+                        <p class="text-sm uppercase tracking-[0.3em] text-slate-200">Beneficios</p>
+                        <ul class="mt-6 space-y-4 text-sm text-slate-100">
+                            <li class="flex items-start gap-3"><i class="fas fa-check mt-1 text-sm text-emerald-300"></i> 14 días de prueba gratuita</li>
+                            <li class="flex items-start gap-3"><i class="fas fa-check mt-1 text-sm text-emerald-300"></i> Integración con Google y correo</li>
+                            <li class="flex items-start gap-3"><i class="fas fa-check mt-1 text-sm text-emerald-300"></i> Gestión de ventas, facturas y proyectos</li>
+                        </ul>
+                    </div>
+                    <a href="welcome_page.html" class="inline-flex items-center gap-2 text-sm font-medium text-slate-100 hover:text-white">
+                        <i class="fas fa-arrow-left"></i> Volver a la página principal
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="px-8 py-10 sm:px-12">
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node">Crear cuenta</p>
+                    <h2 class="mt-3 text-3xl font-extrabold text-slate-950">Regístrate o inicia sesión</h2>
+                </div>
+                <span class="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm text-slate-600">Es gratis</span>
+            </div>
+
+            <form class="space-y-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700">Correo electrónico</label>
+                    <input id="email" type="email" placeholder="tuemail@negocio.com" class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-node-teal focus:ring-2 focus:ring-node-teal/20" />
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700">Contraseña</label>
+                    <input id="password" type="password" placeholder="••••••••" class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-node-teal focus:ring-2 focus:ring-node-teal/20" />
+                </div>
+                <a href="menu.html" class="block text-center w-full rounded-3xl btn-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 transition">Iniciar sesión</a>
+                <div class="relative text-center text-sm text-slate-500">
+                    <span class="bg-slate-50 px-3">o</span>
+                    <div class="absolute inset-x-0 top-1/2 h-px bg-slate-200"></div>
+                </div>
+                <button type="button" class="w-full rounded-3xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                    <i class="fab fa-google mr-2"></i> Continuar con Google
+                </button>
+                <p class="text-center text-sm text-slate-500">¿No tienes cuenta? <a href="#" class="font-semibold text-node hover:text-node-teal">Regístrate ahora</a></p>
+            </form>
+
+            <div class="mt-8 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+                    <p class="font-semibold text-slate-900">Prueba gratuita</p>
+                    <p class="mt-2">Accede a NODE por 14 días sin coste y descubre el panel de control completo.</p>
+                </div>
+                <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
+                    <p class="font-semibold text-slate-900">Soporte 24/7</p>
+                    <p class="mt-2">Nuestro equipo te acompaña desde el primer día para activar tu negocio.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

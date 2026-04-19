@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE | Panel principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #F4F7FB; }
+        .text-node { color: #0D253E; }
+        .bg-node { background: #0D253E; }
+        .btn-node { background: #2563EB; }
+        .btn-node:hover { background: #1D4ED8; }
+        .shadow-soft { box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08); }
+        .border-soft { border-color: rgba(148, 163, 184, 0.18); }
+    </style>
+</head>
+<body class="min-h-screen text-slate-900">
+    <div class="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <header class="mb-6 rounded-[2rem] bg-white p-6 shadow-soft border border-soft backdrop-blur-xl">
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-node text-white text-2xl font-extrabold">N</div>
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.35em] text-node">NODE</p>
+                        <h1 class="text-3xl font-extrabold text-slate-950">Panel principal</h1>
+                    </div>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-[auto_auto] lg:grid-cols-[auto_auto_auto] items-center">
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-600">Empresa: Demo S.L.</div>
+                    <div class="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-600">Usuario: admin@negocio.com</div>
+                    <a href="welcome_page.html" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">Cerrar sesi�n</a>
+                </div>
+            </div>
+        </header>
+
+        <section class="grid gap-6 xl:grid-cols-[1.4fr_0.95fr]">
+            <div class="space-y-6">
+                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-soft">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.35em] text-node">Resumen</p>
+                            <h2 class="mt-3 text-3xl font-extrabold text-slate-950">Organiza tu negocio con claridad</h2>
+                            <p class="mt-3 max-w-2xl text-base leading-7 text-slate-600">Accede a tus m�dulos principales, consulta el estado de tu agenda y usa el asistente para lanzar acciones r�pidas en toda la plataforma.</p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-3">
+                            <div class="rounded-[1.75rem] bg-node text-white px-5 py-4 text-center shadow-lg shadow-node/10">
+                                <p class="text-xs uppercase tracking-[0.35em] text-slate-200">M�dulos</p>
+                                <p class="mt-3 text-3xl font-semibold">6</p>
+                            </div>
+                            <div class="rounded-[1.75rem] bg-slate-50 px-5 py-4 text-center">
+                                <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Citas hoy</p>
+                                <p class="mt-3 text-3xl font-semibold text-slate-950">8</p>
+                            </div>
+                            <div class="rounded-[1.75rem] bg-slate-50 px-5 py-4 text-center">
+                                <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Acciones pendientes</p>
+                                <p class="mt-3 text-3xl font-semibold text-slate-950">4</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-soft">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.35em] text-node">M�dulos</p>
+                            <h3 class="mt-3 text-xl font-bold text-slate-950">Tu suite de operaciones</h3>
+                        </div>
+                        <a href="#chat" class="inline-flex items-center gap-2 rounded-full bg-node px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-node/15 transition hover:bg-[#1d4ed8]">
+                            <i class="fas fa-comment-dots"></i> Abrir chat
+                        </a>
+                    </div>
+                    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-node text-white text-xl"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">Facturaci�n</h4>
+                            <p class="mt-3 text-slate-600">Gestiona facturas, cobros y seguimiento de pagos desde un solo espacio.</p>
+                            <a href="#" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#0d7490] text-white text-xl"><i class="fas fa-users"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">CRM</h4>
+                            <p class="mt-3 text-slate-600">Organiza clientes, citas y seguimiento comercial en una vista clara.</p>
+                            <a href="crm_calendar.html" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#f59e0b] text-white text-xl"><i class="fas fa-tasks"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">Proyectos</h4>
+                            <p class="mt-3 text-slate-600">Planifica tareas, plazos y equipos con visibilidad inmediata.</p>
+                            <a href="#" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#047857] text-white text-xl"><i class="fas fa-boxes-stacked"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">Inventario</h4>
+                            <p class="mt-3 text-slate-600">Controla stock, compras y entregas con sincronizaci�n visual.</p>
+                            <a href="#" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#7c3aed] text-white text-xl"><i class="fas fa-people-carry-box"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">Recursos humanos</h4>
+                            <p class="mt-3 text-slate-600">Gestiona n�minas, ausencias y equipos desde un solo hub.</p>
+                            <a href="#" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                        <article class="group rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:shadow-xl">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#0f766e] text-white text-xl"><i class="fas fa-chart-line"></i></div>
+                            <h4 class="mt-6 text-xl font-semibold text-slate-950">Reportes</h4>
+                            <p class="mt-3 text-slate-600">Mide ingresos, crecimiento y m�tricas clave en segundos.</p>
+                            <a href="#" class="mt-5 inline-flex text-sm font-semibold text-node transition group-hover:text-[#1d4ed8]">Abrir m�dulo</a>
+                        </article>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="space-y-6">
+                <div id="chat" class="rounded-[2rem] bg-white p-6 shadow-soft border border-soft">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.35em] text-node">Asistente</p>
+                            <h3 class="mt-2 text-xl font-bold text-slate-950">Chat operativo</h3>
+                        </div>
+                        <span class="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">Automatiza</span>
+                    </div>
+                    <div class="mt-6 flex h-[460px] flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
+                        <div id="chat-messages" class="flex-1 space-y-4 overflow-y-auto p-5"></div>
+                        <form id="chat-form" class="border-t border-slate-200 bg-white p-4">
+                            <label class="sr-only" for="chat-input">Escribe tu mensaje</label>
+                            <div class="flex gap-3">
+                                <input id="chat-input" type="text" placeholder="Ej: Crear cita para Cliente X mañana a las 10:00" class="w-full rounded-full border border-slate-200 bg-slate-100 px-4 py-3 text-sm outline-none focus:border-node focus:ring-2 focus:ring-node/20" />
+                                <button type="submit" class="inline-flex items-center justify-center rounded-full bg-node px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]">Enviar</button>
+                            </div>
+                        </form>
+                    </div>
+                    <p class="mt-4 text-sm text-slate-500">Habla con el asistente para crear citas, ver clientes o generar acciones r�pidas.</p>
+                </div>
+
+                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-soft">
+                    <p class="text-sm uppercase tracking-[0.35em] text-node">Atajos r�pidos</p>
+                    <div class="mt-6 grid gap-3">
+                        <button class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-100" onclick="addQuick('Crear cita para Cliente A mañana a las 10:00 para revisión')">Crear cita mañana</button>
+                        <button class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-100" onclick="addQuick('Crear cita para Cliente B el 25/04/2026 a las 14:00 para presentación')">Programar reunión</button>
+                        <button class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900 transition hover:bg-slate-100" onclick="addQuick('Mostrar citas de hoy')">Ver citas de hoy</button>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        function addMessage(text, sender) {
+            const wrapper = document.createElement('div');
+            wrapper.className = sender === 'user' ? 'flex justify-end' : 'flex justify-start';
+            wrapper.innerHTML = `
+                <div class="max-w-[85%] rounded-3xl px-4 py-3 text-sm ${sender === 'user' ? 'bg-node text-white' : 'bg-white text-slate-900 border border-slate-200'} shadow-sm">
+                    ${text}
+                </div>`;
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addQuick(text) {
+            chatInput.value = text;
+            chatInput.focus();
+        }
+
+        chatForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text) return;
+            addMessage(text, 'user');
+            chatInput.value = '';
+
+            setTimeout(() => {
+                let response = '✅ Acción preparada. Revisa el módulo correspondiente para continuar.';
+                const lower = text.toLowerCase();
+                if (lower.includes('cita') || lower.includes('agenda')) {
+                    // Parsear cita del mensaje
+                    const clientMatch = text.match(/(?:cita|cliente)\s+(.+?)(?:\s+(?:el|para|en|a las?|mañana|ayer|hoy))/i);
+                    const dateMatch = text.match(/(?:el|para|en)\s+(\d{1,2}\/\d{1,2}\/\d{4}|\d{1,2} de \w+|\d{4}-\d{2}-\d{2}|mañana|hoy|ayer)/i);
+                    const timeMatch = text.match(/(?:a las?)\s+(\d{1,2}:\d{2})/i);
+                    const descMatch = text.match(/(?:para|de)\s+(.+)/i);
+
+                    if (clientMatch && dateMatch) {
+                        const client = clientMatch[1].trim();
+                        let date = dateMatch[1];
+                        const time = timeMatch ? timeMatch[1] : '09:00';
+                        const description = descMatch ? descMatch[1] : 'Cita creada desde chatbot';
+
+                        // Convertir fechas relativas
+                        if (date === 'mañana') {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            date = tomorrow.toISOString().split('T')[0];
+                        } else if (date === 'hoy') {
+                            date = new Date().toISOString().split('T')[0];
+                        } else if (date === 'ayer') {
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            date = yesterday.toISOString().split('T')[0];
+                        } else if (date.includes('/')) {
+                            const parts = date.split('/');
+                            date = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        } else if (date.includes(' de ')) {
+                            // Simple conversion for "23 de abril" - assuming current year
+                            const monthMap = { enero: '01', febrero: '02', marzo: '03', abril: '04', mayo: '05', junio: '06', julio: '07', agosto: '08', septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12' };
+                            const parts = date.split(' de ');
+                            const month = monthMap[parts[1].toLowerCase()];
+                            if (month) {
+                                date = `${new Date().getFullYear()}-${month}-${parts[0].padStart(2, '0')}`;
+                            }
+                        }
+
+                        // Guardar en localStorage
+                        let appointments = JSON.parse(localStorage.getItem('crm-appointments')) || [];
+                        const id = Date.now().toString();
+                        appointments.push({ id, client, date, time, description });
+                        localStorage.setItem('crm-appointments', JSON.stringify(appointments));
+
+                        response = `📅 Cita creada para ${client} el ${date} a las ${time}. Revisa el módulo CRM para más detalles.`;
+                    } else {
+                        response = 'Para crear una cita, di algo como: "Crear cita para Cliente X el 23/04/2026 a las 10:00 para reunión".';
+                    }
+                } else if (lower.includes('cliente')) {
+                    response = '👥 He revisado datos del cliente y preparado la ficha en CRM.';
+                } else if (lower.includes('factura')) {
+                    response = '🧾 He comenzado la creación de la factura. Revisa Facturación.';
+                } else if (lower.includes('reporte')) {
+                    response = '📊 Generando reporte. Mira Reportes para el resumen.';
+                }
+                addMessage(response, 'bot');
+            }, 700);
+        });
+
+        addMessage('Hola, soy tu asistente NODE. Puedo crear citas automáticamente, solo di algo como "Crear cita para Cliente X mañana a las 10:00".', 'bot');
+    </script>
+</body>
+</html>
