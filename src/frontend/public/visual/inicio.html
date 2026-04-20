@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE | Inicio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #F4F7FB; }
+        .sidebar-item:hover { background: #EFF6FF; }
+        .sidebar-item.active { background: #2563EB; color: white; }
+        .sidebar-item.active .icon { color: white; }
+        .shadow-soft { box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <aside class="w-80 border-r border-slate-200 bg-white shadow-sm">
+            <div class="p-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-3xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">N</div>
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">NODE</p>
+                        <h1 class="text-xl font-bold text-slate-950">Demo Abierta</h1>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-slate-600">Panel de inicio con acceso rápido a tus módulos.</p>
+            </div>
+            <nav class="mt-8 px-4 space-y-2">
+                <a href="inicio.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-900 bg-blue-600 text-white shadow-sm">
+                    <span class="icon text-lg"><i class="fas fa-home"></i></span>
+                    <span>Inicio</span>
+                </a>
+                <a href="chatbot.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <span class="icon text-lg text-slate-400"><i class="fas fa-robot"></i></span>
+                    <span>Asistente</span>
+                </a>
+                <a href="agenda.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <span class="icon text-lg text-slate-400"><i class="fas fa-calendar-alt"></i></span>
+                    <span>Agenda</span>
+                </a>
+            </nav>
+            <div class="mt-10 px-6">
+                <div class="rounded-[1.75rem] bg-slate-50 p-5">
+                    <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Consejo</p>
+                    <p class="mt-3 text-sm text-slate-600">Usa el asistente para crear citas y acciones rápidas con un solo clic.</p>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 p-8">
+            <div class="flex flex-col gap-6">
+                <div class="rounded-[2rem] bg-white p-8 shadow-soft border border-slate-200">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Resumen General</p>
+                            <h2 class="mt-3 text-3xl font-extrabold text-slate-950">Estado de tu negocio</h2>
+                        </div>
+                        <a href="chatbot.html" class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                            <i class="fas fa-robot"></i> Abrir asistente
+                        </a>
+                    </div>
+                    <div class="mt-8 grid gap-4 sm:grid-cols-3">
+                        <article class="rounded-[1.75rem] bg-slate-50 p-6">
+                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Ingresos Totales</p>
+                            <p class="mt-4 text-4xl font-extrabold text-slate-950">200 €</p>
+                            <p class="mt-2 text-sm text-slate-600">Todas las facturas</p>
+                        </article>
+                        <article class="rounded-[1.75rem] bg-slate-50 p-6">
+                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Total Citas</p>
+                            <p class="mt-4 text-4xl font-extrabold text-slate-950">2</p>
+                            <p class="mt-2 text-sm text-slate-600">Agendadas</p>
+                        </article>
+                        <article class="rounded-[1.75rem] bg-slate-50 p-6">
+                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Total Clientes</p>
+                            <p class="mt-4 text-4xl font-extrabold text-slate-950">0</p>
+                            <p class="mt-2 text-sm text-slate-600">En tu base de datos</p>
+                        </article>
+                    </div>
+                </div>
+                <div class="rounded-[2rem] bg-white p-8 shadow-soft border border-slate-200">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Actividad reciente</p>
+                            <h3 class="mt-2 text-xl font-bold text-slate-950">Tus acciones recientes</h3>
+                        </div>
+                        <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">
+                            <i class="fas fa-check-circle"></i> Todo actualizado
+                        </div>
+                    </div>
+                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-[1.75rem] bg-slate-50 p-6">
+                            <p class="text-sm text-slate-500">Nueva cita</p>
+                            <p class="mt-3 text-lg font-semibold text-slate-950">Revisión con Cliente A</p>
+                        </div>
+                        <div class="rounded-[1.75rem] bg-slate-50 p-6">
+                            <p class="text-sm text-slate-500">Recordatorio</p>
+                            <p class="mt-3 text-lg font-semibold text-slate-950">Revisar facturas del mes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="navigation.js"></script>
+    <script src="logic/inicio.js"></script>
+</body>
+</html>
