@@ -3,51 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
     <title>NODE | Inicio</title>
     <!-- Oculta el cuerpo hasta confirmar autenticación (navigation.js lo elimina) -->
     <style id="auth-loading">body{visibility:hidden!important}</style>
+=======
+    <title>NODE TECH | Sistema CRM</title>
+>>>>>>> Stashed changes
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        node: {
+                            dark: '#0D253E',
+                            teal: '#2B93A6',
+                        }
+                    },
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #F4F7FB; }
-        .sidebar-item:hover { background: #EFF6FF; }
-        .sidebar-item.active { background: #2563EB; color: white; }
-        .sidebar-item.active .icon { color: white; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #F8FAFC; 
+            color: #0D253E;
+        }
+        .text-node { color: #0D253E; }
+        .bg-node-dark { background: #0D253E; }
+        .bg-node-teal { background: #2B93A6; }
+        .border-subtle { border-color: #E2E8F0; }
         .shadow-soft { box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08); }
+        .nav-item { transition: all 0.2s ease; cursor: pointer; }
+        .nav-item:hover { background: #E8F2FA !important; color: #0D253E !important; }
+        .nav-item.active { background: #2B93A6 !important; color: white !important; }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(43, 147, 166, 0.12); }
+        .view-content { display: none; }
+        .view-content.active { display: block; }
     </style>
 </head>
 <body class="min-h-screen">
-    <div class="flex min-h-screen">
-        <aside class="w-80 border-r border-slate-200 bg-white shadow-sm">
-            <div class="p-6">
-                <div class="flex items-center gap-3">
-                    <div class="h-12 w-12 rounded-3xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">N</div>
+    <!-- Sidebar Fijo -->
+    <aside class="fixed left-0 top-0 h-screen w-80 border-r border-subtle bg-white shadow-sm flex flex-col z-40">
+        <!-- Logo Section -->
+        <div class="p-6 border-b border-subtle">
+            <div class="text-center mb-4">
+                <svg class="w-16 h-16 mx-auto mb-3" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="24" y="24" width="16" height="16" fill="#2B93A6" rx="2"/>
+                    <line x1="32" y1="8" x2="32" y2="24" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="32" y1="40" x2="32" y2="56" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="8" y1="32" x2="24" y2="32" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="40" y1="32" x2="56" y2="32" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="13.1" y1="13.1" x2="22" y2="22" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="42" y1="42" x2="50.9" y2="50.9" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="50.9" y1="13.1" x2="42" y2="22" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="22" y1="42" x2="13.1" y2="50.9" stroke="#2B93A6" stroke-width="2"/>
+                    <circle cx="32" cy="8" r="3" fill="#2B93A6"/>
+                    <circle cx="32" cy="56" r="3" fill="#2B93A6"/>
+                    <circle cx="8" cy="32" r="3" fill="#2B93A6"/>
+                    <circle cx="56" cy="32" r="3" fill="#2B93A6"/>
+                    <circle cx="13.1" cy="13.1" r="3" fill="#2B93A6"/>
+                    <circle cx="50.9" cy="50.9" r="3" fill="#2B93A6"/>
+                    <circle cx="50.9" cy="13.1" r="3" fill="#2B93A6"/>
+                    <circle cx="13.1" cy="50.9" r="3" fill="#2B93A6"/>
+                </svg>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-black text-node">NODE TECH</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal mt-2">Automatización inteligente</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal">para negocios</p>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="mt-6 space-y-2 px-4 flex-1 overflow-y-auto">
+            <div class="nav-item active flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-white bg-node-teal shadow-sm" data-view="dashboard">
+                <i class="fas fa-home w-5"></i>
+                <span>Inicio</span>
+            </div>
+            <div class="nav-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700" data-view="asistente">
+                <i class="fas fa-robot w-5 text-slate-400"></i>
+                <span>Asistente</span>
+            </div>
+            <div class="nav-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700" data-view="agenda">
+                <i class="fas fa-calendar-alt w-5 text-slate-400"></i>
+                <span>Agenda</span>
+            </div>
+            <div class="nav-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700" data-view="finanzas">
+                <i class="fas fa-chart-line w-5 text-slate-400"></i>
+                <span>Finanzas</span>
+            </div>
+            <div class="nav-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700" data-view="empleados">
+                <i class="fas fa-users w-5 text-slate-400"></i>
+                <span>Empleados</span>
+            </div>
+            <div class="nav-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700" data-view="clientes">
+                <i class="fas fa-address-book w-5 text-slate-400"></i>
+                <span>Clientes</span>
+            </div>
+        </nav>
+
+        <!-- Footer Info -->
+        <div class="p-6 border-t border-subtle">
+            <div class="rounded-[1.5rem] bg-gradient-to-br from-node-teal/10 to-node-teal/5 p-4 border border-node-teal/20">
+                <p class="text-xs font-bold uppercase tracking-[0.2em] text-node-teal">Usuario</p>
+                <p class="text-sm font-semibold text-node mt-2">Diego García</p>
+                <p class="text-xs text-slate-600 mt-1">Propietario</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-80 min-h-screen overflow-y-auto bg-gray-50 p-8">
+        <div id="content-area"></div>
+    </main>
+
+    <!-- Modal: Crear/Editar Cita -->
+    <div id="modal-cita" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="modal-title" class="text-xl font-bold text-node">Nueva Cita</h2>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="form-cita" class="space-y-4">
+                <input type="hidden" id="cita-id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Cliente</label>
+                    <input type="text" id="cita-cliente" placeholder="Nombre del cliente" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Servicio</label>
+                    <select id="cita-servicio" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                        <option value="">Selecciona un servicio</option>
+                        <option value="Corte">Corte</option>
+                        <option value="Coloracion">Coloracion</option>
+                        <option value="Peinado">Peinado</option>
+                        <option value="Tratamiento Capilar">Tratamiento Capilar</option>
+                        <option value="Reunion">Reunión</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
                     <div>
+<<<<<<< Updated upstream
                         <p class="text-xs uppercase tracking-[0.35em] text-slate-500">NODE</p>
                         <h1 class="text-xl font-bold text-slate-950">Panel principal</h1>
+=======
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
+                        <input type="date" id="cita-fecha" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Hora</label>
+                        <input type="time" id="cita-hora" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+>>>>>>> Stashed changes
                     </div>
                 </div>
-                <p class="mt-4 text-sm text-slate-600">Panel de inicio con acceso rápido a tus módulos.</p>
-            </div>
-            <nav class="mt-8 px-4 space-y-2">
-                <a href="inicio.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-900 bg-blue-600 text-white shadow-sm">
-                    <span class="icon text-lg"><i class="fas fa-home"></i></span>
-                    <span>Inicio</span>
-                </a>
-                <a href="chatbot.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
-                    <span class="icon text-lg text-slate-400"><i class="fas fa-robot"></i></span>
-                    <span>Asistente</span>
-                </a>
-                <a href="agenda.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
-                    <span class="icon text-lg text-slate-400"><i class="fas fa-calendar-alt"></i></span>
-                    <span>Agenda</span>
-                </a>
-            </nav>
-            <div class="mt-10 px-6">
-                <div class="rounded-[1.75rem] bg-slate-50 p-5">
-                    <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Consejo</p>
-                    <p class="mt-3 text-sm text-slate-600">Usa el asistente para crear citas y acciones rápidas con un solo clic.</p>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Precio (EUR)</label>
+                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" step="0.01">
                 </div>
+<<<<<<< Updated upstream
             </div>
         </aside>
         <main class="flex-1 p-8">
@@ -97,32 +226,24 @@
                             <p class="mt-2 text-sm text-slate-600">En tu base de datos</p>
                         </article>
                     </div>
+=======
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 bg-node-teal text-white font-bold py-2 rounded-lg hover:bg-[#23849b] transition">Guardar</button>
+                    <button type="button" id="btn-cancelar-modal" class="flex-1 border border-subtle text-slate-600 font-bold py-2 rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+>>>>>>> Stashed changes
                 </div>
-                <div class="rounded-[2rem] bg-white p-8 shadow-soft border border-slate-200">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Actividad reciente</p>
-                            <h3 class="mt-2 text-xl font-bold text-slate-950">Tus acciones recientes</h3>
-                        </div>
-                        <div class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">
-                            <i class="fas fa-check-circle"></i> Todo actualizado
-                        </div>
-                    </div>
-                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                        <div class="rounded-[1.75rem] bg-slate-50 p-6">
-                            <p class="text-sm text-slate-500">Nueva cita</p>
-                            <p class="mt-3 text-lg font-semibold text-slate-950">Revisión con Cliente A</p>
-                        </div>
-                        <div class="rounded-[1.75rem] bg-slate-50 p-6">
-                            <p class="text-sm text-slate-500">Recordatorio</p>
-                            <p class="mt-3 text-lg font-semibold text-slate-950">Revisar facturas del mes</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+            </form>
+        </div>
     </div>
+<<<<<<< Updated upstream
     <script type="module" src="../logic/navigation.js"></script>
     <script defer src="../logic/inicio.js"></script>
+=======
+
+    <script src="../logic/agenda.js"></script>
+    <script src="../logic/chatbot.js"></script>
+    <script src="../logic/navigation.js"></script>
+>>>>>>> Stashed changes
 </body>
 </html>

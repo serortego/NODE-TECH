@@ -3,23 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
     <title>NODE CRM | Calendario de citas</title>
     <!-- Oculta el cuerpo hasta confirmar autenticación (navigation.js lo elimina) -->
     <style id="auth-loading">body{visibility:hidden!important}</style>
+=======
+    <title>NODE TECH | Agenda</title>
+>>>>>>> Stashed changes
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        node: {
+                            dark: '#0D253E',
+                            teal: '#2B93A6',
+                        }
+                    },
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #F4F7FB; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #F8FAFC; 
+            color: #0D253E;
+        }
         .text-node { color: #0D253E; }
-        .bg-node { background: #0D253E; }
-        .btn-node { background: #2563EB; }
-        .btn-node:hover { background: #1D4ED8; }
-        .shadow-soft { box-shadow: 0 22px 50px rgba(15, 23, 42, 0.08); }
-        .day-with-appointments { background-color: #DBEAFE; color: #1D4ED8; font-weight: bold; }
-        .selected-day { background-color: #2563EB; color: white; }
+        .bg-node-dark { background: #0D253E; }
+        .bg-node-teal { background: #2B93A6; }
+        .border-subtle { border-color: #E2E8F0; }
+        .shadow-soft { box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08); }
+        .sidebar-item { transition: all 0.2s ease; }
+        .sidebar-item:hover { background: #E8F2FA; color: #0D253E; }
+        .sidebar-item.active { background: #2B93A6; color: white; }
+        .time-slot { min-height: 80px; }
+        .cita-card { 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cita-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     </style>
 </head>
+<<<<<<< Updated upstream
 <body class="min-h-screen text-slate-900">
     <div class="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
         <header class="mb-6 flex flex-col gap-4 rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200 sm:flex-row sm:items-center sm:justify-between">
@@ -32,9 +69,29 @@
                 <button id="export-excel" class="inline-flex items-center justify-center rounded-full bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-green-500/10 transition hover:bg-green-700">Exportar a Excel</button>
                 <a href="inicio.html" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50">Volver al inicio</a>
                 <button onclick="window.logout()" class="inline-flex items-center justify-center rounded-full bg-[#0D253E] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#1d4ed8]">Cerrar sesión</button>
+=======
+<body class="min-h-screen">
+    <!-- Sidebar Fijo -->
+    <aside class="fixed left-0 top-0 h-screen w-80 border-r border-subtle bg-white shadow-sm flex flex-col z-40">
+        <div class="p-6 border-b border-subtle">
+            <div class="text-center mb-4">
+                <svg class="w-16 h-16 mx-auto mb-3" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="24" y="24" width="16" height="16" fill="#2B93A6" rx="2"/>
+                    <line x1="32" y1="8" x2="32" y2="24" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="32" y1="40" x2="32" y2="56" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="8" y1="32" x2="24" y2="32" stroke="#2B93A6" stroke-width="2"/>
+                    <line x1="40" y1="32" x2="56" y2="32" stroke="#2B93A6" stroke-width="2"/>
+                </svg>
             </div>
-        </header>
+            <div class="text-center">
+                <p class="text-2xl font-black text-node">NODE TECH</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal mt-2">Automatizacion inteligente</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal">para negocios</p>
+>>>>>>> Stashed changes
+            </div>
+        </div>
 
+<<<<<<< Updated upstream
         <main class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
             <section class="space-y-6">
                 <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
@@ -47,84 +104,233 @@
                             <button id="prev-month" class="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"><i class="fas fa-chevron-left"></i></button>
                             <div id="current-month" class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-600">
                                 <i class="fas fa-calendar-alt"></i> Cargando...
+=======
+        <nav class="mt-6 space-y-2 px-4 flex-1 overflow-y-auto">
+            <a href="inicio.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-home w-5 text-slate-400"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-robot w-5 text-slate-400"></i>
+                <span>Asistente</span>
+            </a>
+            <a href="agenda.html" class="sidebar-item active flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-white bg-node-teal shadow-sm">
+                <i class="fas fa-calendar-alt w-5"></i>
+                <span>Agenda</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-chart-line w-5 text-slate-400"></i>
+                <span>Finanzas</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-users w-5 text-slate-400"></i>
+                <span>Empleados</span>
+            </a>
+            <a href="#" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-address-book w-5 text-slate-400"></i>
+                <span>Clientes</span>
+            </a>
+        </nav>
+
+        <div class="mt-10 px-6">
+            <div class="rounded-[1.5rem] bg-gradient-to-br from-node-teal/10 to-node-teal/5 p-5 border border-node-teal/20">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal">Consejo</p>
+                <p class="mt-3 text-sm font-medium text-slate-700">Haz clic en un día para ver y crear citas.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-80 min-h-screen overflow-y-auto bg-gray-50 p-6">
+        <div class="space-y-6">
+            <!-- Header -->
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-node">Agenda de Citas</h1>
+                    <p class="text-slate-600 mt-1">Gestiona tus citas y servicios</p>
+                </div>
+                <button id="btn-nueva-cita" class="inline-flex items-center gap-2 bg-node-teal text-white font-bold px-6 py-3 rounded-lg hover:bg-[#23849b] transition shadow-soft">
+                    <i class="fas fa-plus"></i>
+                    Nueva cita
+                </button>
+            </div>
+
+            <!-- Grid principal: Timeline + Calendario -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Timeline (izquierda - 2 columnas) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Estadísticas del día -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-subtle">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 font-semibold">Citas Hoy</p>
+                                    <p class="text-2xl font-bold text-node mt-1" id="stat-citas-hoy">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <i class="fas fa-calendar-check text-blue-600 text-lg"></i>
+                                </div>
                             </div>
-                            <button id="next-month" class="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-subtle">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 font-semibold">Ingreso Hoy</p>
+                                    <p class="text-2xl font-bold text-node mt-1" id="stat-ingreso-hoy">EUR 0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-euro-sign text-green-600 text-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-subtle">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-slate-600 font-semibold">Total Citas</p>
+                                    <p class="text-2xl font-bold text-node mt-1" id="stat-total-citas">0</p>
+                                </div>
+                                <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                                    <i class="fas fa-list text-purple-600 text-lg"></i>
+                                </div>
+>>>>>>> Stashed changes
+                            </div>
                         </div>
                     </div>
+<<<<<<< Updated upstream
                     <div class="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
                         <div class="grid grid-cols-7 gap-px bg-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
                             <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+=======
+
+                    <!-- Timeline de hoy -->
+                    <div class="bg-white rounded-lg shadow-sm border border-subtle p-6">
+                        <h2 class="font-bold text-lg text-node mb-6 flex items-center gap-2">
+                            <i class="fas fa-clock text-node-teal"></i>
+                            Timeline de Hoy
+                        </h2>
+                        <div id="timeline" class="space-y-0 border-l-2 border-slate-300 pl-6">
+                            <!-- Se genera con JavaScript -->
+>>>>>>> Stashed changes
                         </div>
-                        <div id="calendar-days" class="grid grid-cols-7 gap-px bg-slate-200 p-4 text-sm text-center text-slate-600"></div>
                     </div>
                 </div>
 
-                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <p class="text-sm uppercase tracking-[0.35em] text-node">Citas del día</p>
-                            <h3 id="selected-date-title" class="mt-2 text-xl font-bold text-slate-950">Selecciona un día</h3>
+                <!-- Calendario + Próxima Cita (derecha - 1 columna) -->
+                <div class="space-y-6">
+                    <!-- Calendario Mensual -->
+                    <div class="bg-white rounded-lg shadow-sm border border-subtle p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-node">Calendario</h3>
+                            <div class="flex gap-2">
+                                <button id="prev-month" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                                    <i class="fas fa-chevron-left text-slate-400"></i>
+                                </button>
+                                <button id="next-month" class="p-2 hover:bg-slate-100 rounded-lg transition">
+                                    <i class="fas fa-chevron-right text-slate-400"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button id="add-appointment" class="inline-flex items-center gap-2 rounded-full bg-node px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-node/10 transition hover:bg-[#1d4ed8]">
-                            <i class="fas fa-plus"></i> Nueva cita
-                        </button>
+                        <p id="current-month-text" class="text-sm font-semibold text-slate-600 text-center mb-4">Abril 2026</p>
+                        
+                        <!-- Days of week headers -->
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">L</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">M</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">X</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">J</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">V</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">S</div>
+                            <div class="text-center text-xs font-bold text-slate-500 h-8 flex items-center justify-center">D</div>
+                        </div>
+                        
+                        <!-- Calendar days -->
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-1">
+                            <!-- Se genera con JavaScript -->
+                        </div>
                     </div>
-                    <div id="appointments-list" class="mt-6 space-y-4">
-                        <p class="text-slate-500">Haz clic en un día del calendario para ver las citas.</p>
-                    </div>
-                </div>
-            </section>
 
-            <aside class="space-y-6">
-                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
-                    <p class="text-sm uppercase tracking-[0.35em] text-node">Crear/Editar cita</p>
-                    <form id="appointment-form" class="mt-6 space-y-4">
-                        <input type="hidden" id="appointment-id">
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="client-name">Cliente</label>
-                            <input id="client-name" type="text" placeholder="Nombre del cliente" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" />
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-date">Fecha</label>
-                            <input id="appointment-date" type="date" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" />
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-time">Hora</label>
-                            <input id="appointment-time" type="time" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" />
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-description">Descripción</label>
-                            <textarea id="appointment-description" placeholder="Descripción de la cita" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" rows="3"></textarea>
-                        </div>
-                        <div class="flex gap-3">
-                            <button type="submit" class="flex-1 rounded-full bg-node px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]">Guardar cita</button>
-                            <button type="button" id="cancel-edit" class="flex-1 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
-                    <p class="text-sm uppercase tracking-[0.35em] text-node">Estadísticas</p>
-                    <div class="mt-6 grid gap-4">
-                        <div class="rounded-[1.75rem] bg-slate-50 p-4 text-center">
-                            <p class="text-2xl font-bold text-slate-950" id="total-appointments">0</p>
-                            <p class="text-sm text-slate-500">Citas totales</p>
-                        </div>
-                        <div class="rounded-[1.75rem] bg-slate-50 p-4 text-center">
-                            <p class="text-2xl font-bold text-slate-950" id="today-appointments">0</p>
-                            <p class="text-sm text-slate-500">Citas hoy</p>
-                        </div>
-                        <div class="rounded-[1.75rem] bg-slate-50 p-4 text-center">
-                            <p class="text-2xl font-bold text-slate-950" id="upcoming-appointments">0</p>
-                            <p class="text-sm text-slate-500">Próximas citas</p>
+                    <!-- Próxima Cita -->
+                    <div class="bg-white rounded-lg shadow-sm border border-subtle p-6">
+                        <h3 class="font-bold text-node mb-4">Próxima Cita</h3>
+                        <div id="proxima-cita" class="bg-gradient-to-br from-node-teal/10 to-node-teal/5 rounded-lg p-4 border border-node-teal/20">
+                            <p class="text-sm text-slate-600">No hay citas próximas</p>
                         </div>
                     </div>
                 </div>
-            </aside>
-        </main>
+            </div>
+
+            <!-- Lista de todas las citas -->
+            <div class="bg-white rounded-lg shadow-sm border border-subtle p-6">
+                <h2 class="font-bold text-lg text-node mb-4 flex items-center gap-2">
+                    <i class="fas fa-list text-node-teal"></i>
+                    Todas las Citas
+                </h2>
+                <div id="citas-list" class="space-y-2 max-h-96 overflow-y-auto">
+                    <p class="text-sm text-slate-500 text-center py-4">No hay citas registradas</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Crear/Editar Cita -->
+    <div id="modal-cita" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="modal-title" class="text-xl font-bold text-node">Nueva Cita</h2>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="form-cita" class="space-y-4">
+                <input type="hidden" id="cita-id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Cliente</label>
+                    <input type="text" id="cita-cliente" placeholder="Nombre del cliente" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Servicio</label>
+                    <select id="cita-servicio" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                        <option value="">Selecciona un servicio</option>
+                        <option value="Corte">Corte</option>
+                        <option value="Coloracion">Coloracion</option>
+                        <option value="Peinado">Peinado</option>
+                        <option value="Tratamiento Capilar">Tratamiento Capilar</option>
+                        <option value="Reunion">Reunión</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
+                        <input type="date" id="cita-fecha" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Hora</label>
+                        <input type="time" id="cita-hora" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Precio (EUR)</label>
+                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" step="0.01">
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 bg-node-teal text-white font-bold py-2 rounded-lg hover:bg-[#23849b] transition">Guardar</button>
+                    <button type="button" id="btn-cancelar" class="flex-1 border border-subtle text-slate-600 font-bold py-2 rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
+<<<<<<< Updated upstream
     <script type="module" src="../logic/navigation.js"></script>
     <script defer src="../logic/agenda.js"></script>
+=======
+    <script src="../logic/agenda.js"></script>
+>>>>>>> Stashed changes
 </body>
 </html>

@@ -1,167 +1,277 @@
-// chatbot.js - Funcionalidad del asistente de chat
-class ChatBot {
-    constructor() {
-        this.chatForm = null;
+// chatbot.js - Gestor del Asistente (Chatbot) integrado en el CRM
+
+class ChatbotManager {
+    constructor(navigationManager) {
+        this.navManager = navigationManager;
+        this.chatHistory = null;
         this.chatInput = null;
-        this.chatMessages = null;
-        this.init();
+        this.chatForm = null;
     }
 
-    init() {
+    render() {
+        return `
+            <div class="space-y-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-900">🤖 Asistente NODE</h2>
+                        <p class="text-slate-600 mt-1">Tu asistente inteligente para gestión empresarial</p>
+                    </div>
+                </div>
+
+                <!-- Chat Container -->
+                <div class="flex-1 bg-white rounded-2xl shadow-sm p-6 overflow-y-auto border border-slate-200 flex flex-col" style="height: 600px;">
+                    <div id="chat-history" class="space-y-4 flex flex-col flex-1 overflow-y-auto">
+                        <!-- Los mensajes se cargarán aquí -->
+                    </div>
+                </div>
+
+                <!-- Chat Form -->
+                <form id="chat-form" class="flex gap-3">
+                    <input 
+                        id="chat-input" 
+                        type="text" 
+                        placeholder="Escribe qué necesitas... (ej: Crea una cita para Cliente X mañana)"
+                        class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm"
+                        autocomplete="off"
+                    >
+                    <button 
+                        type="submit"
+                        class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        Enviar
+                    </button>
+                </form>
+
+                <!-- Sugerencias Rápidas -->
+                <div id="sugerencias-rapidas" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <!-- Se cargarán dinámicamente -->
+                </div>
+            </div>
+        `;
+    }
+
+    setupListeners() {
+        console.log('📱 Inicializando Chatbot...');
+        
         this.chatForm = document.getElementById('chat-form');
+        this.chatHistory = document.getElementById('chat-history');
         this.chatInput = document.getElementById('chat-input');
-        this.chatMessages = document.getElementById('chat-messages');
-        
-        if (this.chatForm) {
-            this.setupEventListeners();
-            this.showWelcomeMessage();
+
+        if (!this.chatForm || !this.chatHistory || !this.chatInput) {
+            console.error('❌ Elementos del chat no encontrados en el DOM');
+            return;
         }
-    }
 
-    setupEventListeners() {
-        this.chatForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            this.handleUserMessage();
+        console.log('✅ Elementos del chat encontrados');
+
+        // Mensaje de bienvenida
+        this.mostrarMensajeBot('🤖 ¡Hola! Soy el Asistente NODE. Cuéntame qué necesitas y te ayudaré.', [
+            { texto: '💰 Crear factura', comando: 'crea una factura de 50' },
+            { texto: '📅 Agendar cita', comando: 'crea una cita para Cliente A mañana a las 10:00' },
+            { texto: '👤 Buscar cliente', comando: 'busca a un cliente' },
+            { texto: '📊 Resumen del día', comando: 'resumen de hoy' }
+        ]);
+
+        // Manejar envío de mensaje
+        this.chatForm.addEventListener('submit', async (e) => {
+            try {
+                e.preventDefault();
+                const text = this.chatInput.value.trim();
+                if (!text) return;
+
+                console.log('💬 Mensaje usuario:', text);
+
+                // Mostrar mensaje del usuario
+                this.mostrarMensajeUsuario(text);
+                this.chatInput.value = '';
+                this.chatInput.focus();
+
+                // Procesar mensaje después de un delay
+                setTimeout(async () => {
+                    try {
+                        console.log('🔄 Procesando comando...');
+                        const respuesta = this.procesarMensaje(text);
+                        console.log('✅ Respuesta recibida:', respuesta);
+                        
+                        // Mostrar respuesta del asistente
+                        this.mostrarMensajeBot(respuesta.mensaje, respuesta.sugerencias || []);
+                    } catch (processError) {
+                        console.error('❌ Error procesando comando:', processError);
+                        this.mostrarMensajeBot('❌ Error: ' + (processError.message || 'No se pudo procesar tu mensaje'), []);
+                    }
+                }, 600);
+            } catch (error) {
+                console.error('❌ Error en el manejador del formulario:', error);
+            }
         });
+
+        // Cargar sugerencias iniciales
+        this.cargarSugerenciasRapidas();
+        console.log('✅ Chatbot inicializado correctamente');
     }
 
-    handleUserMessage() {
-        const text = this.chatInput.value.trim();
-        if (!text) return;
+    procesarMensaje(texto) {
+        const lower = texto.toLowerCase();
         
-        this.addMessage(text, 'user');
-        this.chatInput.value = '';
-        
-        // Procesar el mensaje después de un pequeño delay
-        setTimeout(() => {
-            const response = this.processMessage(text);
-            this.addMessage(response, 'bot');
-        }, 700);
-    }
-
-    processMessage(text) {
-        const lower = text.toLowerCase();
-        
-        if (lower.includes('cita') || lower.includes('agenda')) {
-            return this.handleAppointmentCreation(text);
+        // Detectar intención
+        if (lower.includes('cita') || lower.includes('agendar') || lower.includes('crea una cita')) {
+            return this.manejarCreacionCita(texto);
         } else if (lower.includes('cliente')) {
-            return '👥 He revisado datos del cliente y preparado la ficha en CRM.';
+            return { mensaje: '👥 He revisado datos del cliente y preparado la ficha en CRM.', sugerencias: [] };
         } else if (lower.includes('factura')) {
-            return '🧾 He comenzado la creación de la factura. Revisa Facturación.';
-        } else if (lower.includes('reporte') || lower.includes('informe')) {
-            return '📊 Generando reporte. Mira Reportes para el resumen.';
+            return { mensaje: '🧾 He comenzado la creación de la factura. Revisa Finanzas.', sugerencias: [] };
+        } else if (lower.includes('reporte') || lower.includes('resumen')) {
+            return { mensaje: '📊 Generando reporte. Mira el Dashboard para el resumen.', sugerencias: [] };
         } else if (lower.includes('ayuda') || lower.includes('help')) {
             return this.getHelpMessage();
         } else {
-            return '✅ Acción preparada. Revisa el módulo correspondiente para continuar.';
+            return { mensaje: '✅ Acción preparada. Revisa el módulo correspondiente para continuar.', sugerencias: [] };
         }
     }
 
-    handleAppointmentCreation(text) {
+    manejarCreacionCita(texto) {
         // Parsear cita del mensaje
-        const clientMatch = text.match(/(?:cita|cliente)\s+(.+?)(?:\s+(?:el|para|en|a las?|mañana|ayer|hoy))/i);
-        const dateMatch = text.match(/(?:el|para|en)\s+(\d{1,2}\/\d{1,2}\/\d{4}|\d{1,2} de \w+|\d{4}-\d{2}-\d{2}|mañana|hoy|ayer)/i);
-        const timeMatch = text.match(/(?:a las?)\s+(\d{1,2}:\d{2})/i);
-        const descMatch = text.match(/(?:para|de)\s+(.+)/i);
+        const clienteMatch = texto.match(/(?:para|cliente|cita para)\s+(.+?)(?:\s+(?:mañana|hoy|el|a las?))/i);
+        const fechaMatch = texto.match(/(?:mañana|hoy|ayer|el|a)?\s+(.+?)(?:\s+a las?)?/i);
+        const horaMatch = texto.match(/(?:a las?)\s+(\d{1,2}:\d{2})/i);
 
-        if (clientMatch && dateMatch) {
-            const client = clientMatch[1].trim();
-            let date = dateMatch[1];
-            const time = timeMatch ? timeMatch[1] : '09:00';
-            const description = descMatch ? descMatch[1] : 'Cita creada desde chatbot';
+        if (clienteMatch) {
+            const cliente = clienteMatch[1].trim();
+            const hora = horaMatch ? horaMatch[1] : '09:00';
+            const fecha = this.parsearFecha(fechaMatch ? fechaMatch[1] : 'mañana');
+            const servicio = 'Reunión';
 
-            // Convertir fechas relativas
-            date = this.parseDate(date);
+            // Guardar cita en localStorage
+            this.guardarCita({ cliente, fecha, hora, servicio });
 
-            // Guardar en localStorage
-            this.saveAppointment({ client, date, time, description });
-
-            return `📅 Cita creada para ${client} el ${date} a las ${time}. Revisa el módulo CRM para más detalles.`;
+            return {
+                mensaje: `📅 Cita creada para ${cliente} el ${fecha} a las ${hora}. ¡Se agregó a tu agenda!`,
+                sugerencias: [
+                    { texto: '📅 Ver agenda', comando: 'Ver mis citas' },
+                    { texto: '✏️ Editar', comando: 'Editar cita' }
+                ]
+            };
         } else {
-            return 'Para crear una cita, di algo como: "Crear cita para Cliente X el 23/04/2026 a las 10:00 para reunión".';
+            return {
+                mensaje: 'Para crear una cita, di algo como: "Crea una cita para Cliente X mañana a las 10:00".',
+                sugerencias: []
+            };
         }
     }
 
-    parseDate(dateStr) {
-        if (dateStr === 'mañana') {
+    parsearFecha(fechaStr) {
+        if (fechaStr.includes('mañana')) {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             return tomorrow.toISOString().split('T')[0];
-        } else if (dateStr === 'hoy') {
+        } else if (fechaStr.includes('hoy')) {
             return new Date().toISOString().split('T')[0];
-        } else if (dateStr === 'ayer') {
+        } else if (fechaStr.includes('ayer')) {
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             return yesterday.toISOString().split('T')[0];
-        } else if (dateStr.includes('/')) {
-            const parts = dateStr.split('/');
+        } else if (fechaStr.includes('/')) {
+            const parts = fechaStr.split('/');
             return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-        } else if (dateStr.includes(' de ')) {
-            // Simple conversion for "23 de abril" - assuming current year
-            const monthMap = { 
-                enero: '01', febrero: '02', marzo: '03', abril: '04', mayo: '05', junio: '06',
-                julio: '07', agosto: '08', septiembre: '09', octubre: '10', noviembre: '11', diciembre: '12' 
-            };
-            const parts = dateStr.split(' de ');
-            const month = monthMap[parts[1].toLowerCase()];
-            if (month) {
-                return `${new Date().getFullYear()}-${month}-${parts[0].padStart(2, '0')}`;
-            }
         }
-        return dateStr;
+        return new Date().toISOString().split('T')[0];
     }
 
-    saveAppointment(appointment) {
-        let appointments = JSON.parse(localStorage.getItem('crm-appointments')) || [];
+    guardarCita(cita) {
+        let citas = JSON.parse(localStorage.getItem('crm-appointments')) || [];
         const id = Date.now().toString();
-        appointments.push({ id, ...appointment });
-        localStorage.setItem('crm-appointments', JSON.stringify(appointments));
+        const precio = '0';
+        citas.push({ id, ...cita, precio });
+        localStorage.setItem('crm-appointments', JSON.stringify(citas));
     }
 
     getHelpMessage() {
-        return `🤖 Puedo ayudarte con:
-• Crear citas: "Crear cita para Cliente X mañana a las 10:00"
+        return {
+            mensaje: `🤖 Puedo ayudarte con:
+• Crear citas: "Crea una cita para Cliente X mañana a las 10:00"
 • Ver clientes: "Mostrar información de Cliente Y"
 • Generar facturas: "Crear factura para Cliente Z"
 • Ver reportes: "Mostrar reporte de ventas"
-• Más acciones en los módulos correspondientes.`;
+• Más acciones en los módulos correspondientes.`,
+            sugerencias: []
+        };
     }
 
-    addMessage(text, sender) {
-        const wrapper = document.createElement('div');
-        wrapper.className = sender === 'user' ? 'flex justify-end' : 'flex justify-start';
-        wrapper.innerHTML = `
-            <div class="max-w-[85%] rounded-3xl px-4 py-3 text-sm ${sender === 'user' ? 'bg-node text-white' : 'bg-white text-slate-900 border border-slate-200'} shadow-sm">
-                ${text}
+    mostrarMensajeUsuario(texto) {
+        const html = `
+            <div class="flex justify-end">
+                <div class="bg-blue-600 text-white p-3 rounded-2xl max-w-[85%] shadow-sm text-sm rounded-br-none">
+                    ${this.escapeHtml(texto)}
+                </div>
             </div>`;
-        this.chatMessages.appendChild(wrapper);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+        this.chatHistory.insertAdjacentHTML('beforeend', html);
+        this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
     }
 
-    showWelcomeMessage() {
-        const message = 'Hola, soy tu asistente NODE. Puedo crear citas automáticamente, solo di algo como "Crear cita para Cliente X mañana a las 10:00".';
-        setTimeout(() => {
-            this.addMessage(message, 'bot');
-        }, 1000);
+    mostrarMensajeBot(texto, sugerencias = []) {
+        const html = `
+            <div class="flex justify-start">
+                <div class="bg-slate-100 text-slate-900 p-4 rounded-2xl max-w-[85%] shadow-sm rounded-bl-none">
+                    <p class="text-sm whitespace-pre-wrap">${this.escapeHtml(texto)}</p>
+                    ${sugerencias.length > 0 ? `
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            ${sugerencias.map(s => `
+                                <button class="suggestion-btn bg-blue-600 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-700 transition" data-comando="${this.escapeHtml(s.comando)}">
+                                    ${this.escapeHtml(s.texto)}
+                                </button>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>`;
+        
+        this.chatHistory.insertAdjacentHTML('beforeend', html);
+        
+        // Agregar event listeners a los botones de sugerencia
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.chatInput.value = btn.dataset.comando;
+                this.chatInput.focus();
+            });
+        });
+        
+        this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
     }
 
-    // Función para atajos rápidos
-    addQuickMessage(text) {
-        if (this.chatInput) {
-            this.chatInput.value = text;
-            this.chatInput.focus();
-        }
+    cargarSugerenciasRapidas() {
+        const container = document.getElementById('sugerencias-rapidas');
+        if (!container) return;
+
+        const sugerencias = [
+            { icono: '💰', texto: 'Factura 50€', comando: 'crea una factura de 50 euros' },
+            { icono: '💰', texto: 'Factura 100€', comando: 'crea una factura de 100 euros' },
+            { icono: '📅', texto: 'Agendar cita', comando: 'crea una cita para Cliente A mañana a las 10:00' },
+            { icono: '👤', texto: 'Buscar cliente', comando: 'busca a un cliente' },
+            { icono: '📊', texto: 'Ver resumen', comando: 'resumen de hoy' },
+            { icono: '❓', texto: 'Ayuda', comando: 'ayuda' },
+        ];
+
+        container.innerHTML = sugerencias.map(s => `
+            <button class="sugerencia-rapida bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-slate-900 border border-blue-200 px-4 py-2 rounded-lg text-xs font-medium transition transform hover:scale-105 active:scale-95">
+                <span class="text-lg">${s.icono}</span><br>
+                <span class="text-xs">${s.texto}</span>
+            </button>
+        `).join('');
+
+        // Agregar event listeners
+        document.querySelectorAll('.sugerencia-rapida').forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                this.chatInput.value = sugerencias[idx].comando;
+                this.chatInput.focus();
+            });
+        });
+    }
+
+    escapeHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
     }
 }
-
-// Funciones globales para compatibilidad
-function addQuick(text) {
-    if (window.chatBot) {
-        window.chatBot.addQuickMessage(text);
-    }
-}
-
-// Inicializar chatbot cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    window.chatBot = new ChatBot();
-});

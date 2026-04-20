@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< Updated upstream
     <title>NODE | Asistente</title>
     <!-- Oculta el cuerpo hasta confirmar autenticación (navigation.js lo elimina) -->
     <style id="auth-loading">body{visibility:hidden!important}</style>
@@ -81,5 +82,365 @@
 
     <script type="module" src="../logic/navigation.js"></script>
     <script defer src="../logic/chatbot.js"></script>
+=======
+    <title>NODE | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F8FAFC;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 280px;
+            background: white;
+            border-right: 1px solid #E2E8F0;
+            overflow-y: auto;
+            z-index: 40;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 3px;
+        }
+
+        .main-content {
+            margin-left: 280px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #475569;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #F1F5F9;
+            color: #0F172A;
+        }
+
+        .nav-item.active {
+            background: #EFF6FF;
+            color: #2563EB;
+            border-left-color: #2563EB;
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .logo-section {
+            padding: 24px 20px;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .logo-text h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 0;
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: #64748B;
+            margin: 0;
+        }
+
+        .nav-section {
+            padding: 16px 0;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .nav-section:last-child {
+            border-bottom: none;
+        }
+
+        .nav-section-title {
+            padding: 12px 20px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #F1F5F9;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #E2E8F0;
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: #0F172A;
+            flex: 1;
+            width: 300px;
+        }
+
+        .search-box input::placeholder {
+            color: #94A3B8;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .header-icon:hover {
+            background: #F1F5F9;
+            color: #0F172A;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            background: #EF4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .user-info p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #0F172A;
+        }
+
+        .user-info span {
+            font-size: 12px;
+            color: #64748B;
+        }
+
+        .content-area {
+            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 240px;
+            }
+
+            .main-content {
+                margin-left: 240px;
+            }
+
+            .search-box input {
+                width: 150px;
+            }
+
+            .content-area {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <!-- Logo -->
+        <div class="logo-section">
+            <div class="logo-icon">N</div>
+            <div class="logo-text">
+                <h1>NODE</h1>
+                <p>🎯 Demo Abierta</p>
+            </div>
+        </div>
+
+        <!-- Navegación Principal -->
+        <nav class="nav-section">
+            <div class="nav-section-title">Menú Principal</div>
+            <a class="nav-item" data-view="inicio" href="#inicio">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a class="nav-item active" data-view="asistente" href="#asistente">
+                <i class="fas fa-robot"></i>
+                <span>Asistente</span>
+            </a>
+            <a class="nav-item" data-view="agenda" href="#agenda">
+                <i class="fas fa-calendar"></i>
+                <span>Agenda</span>
+            </a>
+        </nav>
+
+        <!-- Gestión -->
+        <nav class="nav-section">
+            <div class="nav-section-title">Gestión</div>
+            <a class="nav-item" data-view="finanzas" href="#finanzas">
+                <i class="fas fa-chart-line"></i>
+                <span>Finanzas</span>
+            </a>
+            <a class="nav-item" data-view="empleados" href="#empleados">
+                <i class="fas fa-users"></i>
+                <span>Empleados</span>
+            </a>
+            <a class="nav-item" data-view="clientes" href="#clientes">
+                <i class="fas fa-address-book"></i>
+                <span>Clientes</span>
+            </a>
+        </nav>
+
+        <!-- Otros -->
+        <nav class="nav-section">
+            <div class="nav-section-title">Soporte</div>
+            <a class="nav-item" href="#ayuda">
+                <i class="fas fa-question-circle"></i>
+                <span>Ayuda</span>
+            </a>
+            <a class="nav-item" href="#" id="logout-btn">
+                <i class="fas fa-redo"></i>
+                <span>Reiniciar</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button id="menu-toggle" style="display: none; background: none; border: none; cursor: pointer; font-size: 20px; color: #64748B;">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search" style="color: #94A3B8;"></i>
+                    <input type="text" placeholder="Buscar...">
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="header-icon">
+                    <i class="fas fa-bell"></i>
+                    <div class="notification-badge"></div>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar" id="user-initial">N</div>
+                    <div class="user-info">
+                        <p id="user-name">Demo NODE</p>
+                        <span id="user-email">modo@prueba</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area" id="content-area">
+            <!-- El contenido dinámico se cargará aquí -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="../logic/chatbot.js"></script>
+>>>>>>> Stashed changes
 </body>
 </html>
