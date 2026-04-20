@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NODE | Registro e Inicio de sesión</title>
+    <title>NODE | Acceso</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -12,13 +12,16 @@
         .bg-node { background: #0D253E; }
         .text-node { color: #0D253E; }
         .btn-primary { background-color: #2563EB; }
-        .btn-primary:hover { background-color: #1D4ED8; }
+        .btn-primary:hover:not(:disabled) { background-color: #1D4ED8; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-4 py-10">
     <div class="w-full max-w-6xl rounded-[2rem] bg-white shadow-[0_35px_80px_rgba(15,23,42,0.12)] overflow-hidden md:grid md:grid-cols-[1.1fr_0.9fr]">
+
+        <!-- Panel izquierdo -->
         <div class="relative bg-gradient-to-br from-[#0D253E] via-[#255A7D] to-[#2B93A6] px-10 py-12 text-white">
-            <div class="absolute inset-0 opacity-10 bg-[url('https://assets.codepen.io/292064/custom-clouds.svg')] bg-no-repeat bg-right-bottom"></div>
+            <div class="absolute inset-0 opacity-10 bg-no-repeat bg-right-bottom"></div>
             <div class="relative z-10 flex flex-col h-full justify-between">
                 <div>
                     <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-white/10 text-2xl font-bold">N</div>
@@ -40,33 +43,63 @@
                 </div>
             </div>
         </div>
+
+        <!-- Panel derecho: formulario -->
         <div class="px-8 py-10 sm:px-12">
             <div class="mb-8 flex items-center justify-between gap-4">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node">Crear cuenta</p>
+                    <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node">Acceso a NODE</p>
                     <h2 class="mt-3 text-3xl font-extrabold text-slate-950">Regístrate o inicia sesión</h2>
                 </div>
                 <span class="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm text-slate-600">Es gratis</span>
             </div>
 
-            <form class="space-y-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+            <!-- Mensaje de error -->
+            <div id="auth-error" class="hidden mb-4 flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 px-4 py-3">
+                <i class="fas fa-exclamation-circle text-red-500 flex-shrink-0"></i>
+                <p id="error-text" class="text-sm text-red-700"></p>
+            </div>
+
+            <form id="auth-form" class="space-y-5 rounded-[2rem] border border-slate-200 bg-slate-50 p-8 shadow-sm">
+
+                <!-- Campo nombre (solo en modo registro) -->
+                <div id="name-field" class="hidden">
+                    <label for="display-name" class="block text-sm font-medium text-slate-700">Nombre completo</label>
+                    <input id="display-name" type="text" placeholder="Tu nombre" autocomplete="name"
+                        class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
+                </div>
+
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-700">Correo electrónico</label>
-                    <input id="email" type="email" placeholder="tuemail@negocio.com" class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-node-teal focus:ring-2 focus:ring-node-teal/20" />
+                    <input id="email" type="email" placeholder="tuemail@negocio.com" autocomplete="email" required
+                        class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
                 </div>
+
                 <div>
                     <label for="password" class="block text-sm font-medium text-slate-700">Contraseña</label>
-                    <input id="password" type="password" placeholder="••••••••" class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-node-teal focus:ring-2 focus:ring-node-teal/20" />
+                    <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required
+                        class="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200" />
                 </div>
-                <a href="inicio.html" class="block text-center w-full rounded-3xl btn-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 transition">Iniciar sesión</a>
+
+                <button id="submit-btn" type="submit"
+                    class="block text-center w-full rounded-3xl btn-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/10 transition">
+                    Iniciar sesión
+                </button>
+
                 <div class="relative text-center text-sm text-slate-500">
-                    <span class="bg-slate-50 px-3">o</span>
+                    <span class="relative z-10 bg-slate-50 px-3">o</span>
                     <div class="absolute inset-x-0 top-1/2 h-px bg-slate-200"></div>
                 </div>
-                <button type="button" class="w-full rounded-3xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+
+                <button id="google-btn" type="button"
+                    class="w-full rounded-3xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     <i class="fab fa-google mr-2"></i> Continuar con Google
                 </button>
-                <p class="text-center text-sm text-slate-500">¿No tienes cuenta? <a href="#" class="font-semibold text-node hover:text-node-teal">Regístrate ahora</a></p>
+
+                <p class="text-center text-sm text-slate-500">
+                    <span id="mode-label">¿No tienes cuenta?</span>
+                    <a href="#" id="toggle-mode" class="ml-1 font-semibold text-node hover:underline">Regístrate ahora</a>
+                </p>
             </form>
 
             <div class="mt-8 grid gap-4 sm:grid-cols-2">
@@ -82,6 +115,6 @@
         </div>
     </div>
 
-    <script src="navigation.js"></script>
+    <script type="module" src="../logic/sign_up.js"></script>
 </body>
 </html>

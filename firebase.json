@@ -5,6 +5,38 @@
   },
   "hosting": {
     "public": "src/frontend/public",
+    "redirects": [
+      {
+        "source": "/welcome_page.html",
+        "destination": "/visual/welcome_page.html",
+        "type": 301
+      },
+      {
+        "source": "/sign_up.html",
+        "destination": "/visual/sign_up.html",
+        "type": 301
+      },
+      {
+        "source": "/inicio.html",
+        "destination": "/visual/inicio.html",
+        "type": 301
+      },
+      {
+        "source": "/agenda.html",
+        "destination": "/visual/agenda.html",
+        "type": 301
+      },
+      {
+        "source": "/chatbot.html",
+        "destination": "/visual/chatbot.html",
+        "type": 301
+      },
+      {
+        "source": "/login.html",
+        "destination": "/index.html",
+        "type": 301
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

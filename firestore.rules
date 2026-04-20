@@ -1,18 +1,76 @@
-rules_version='2'
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NODE — Reglas de seguridad de Firestore
+//
+// MODELO DE ACCESO:
+//   • Cada usuario solo puede leer/escribir su propio perfil.
+//   • Un usuario no puede cambiarse el role ni el status a sí mismo.
+//   • El rol "admin" puede leer y modificar cualquier documento de usuario.
+//   • Todo lo que no esté explícitamente permitido queda bloqueado.
+//
+// CÓMO ASIGNAR ADMIN:
+//   Firebase Console → Firestore → users → {uid} → editar campo role = "admin"
+//
+// NOTA SOBRE isAdmin():
+//   Usa get() para leer el documento del usuario en cada operación admin.
+//   Para alta escala, migrar a Firebase Custom Claims (Admin SDK) es más eficiente.
+//   Referencia: https://firebase.google.com/docs/auth/admin/custom-claims
+// ═══════════════════════════════════════════════════════════════════════════
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Comprueba si el usuario autenticado tiene role == "admin" en su propio documento.
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Colección: users ───────────────────────────────────────────────────
+    match /users/{userId} {
+
+      // Leer: propio perfil o admin
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Crear: solo el propio usuario, y únicamente con role:'user' y status:'active'
+      // (impide que alguien se auto-asigne rol de admin al registrarse)
+      allow create: if isOwner(userId)
+        && request.resource.data.role   == 'user'
+        && request.resource.data.status == 'active'
+        && request.resource.data.uid    == userId;
+
+      // Actualizar: el usuario puede editar su perfil pero NO cambiar role ni status.
+      //             El admin puede cambiar cualquier campo.
+      allow update: if (isOwner(userId)
+          && request.resource.data.role   == resource.data.role
+          && request.resource.data.status == resource.data.status)
+        || isAdmin();
+
+      // Eliminar: solo admin
+      allow delete: if isAdmin();
+    }
+
+    // ── Colección: appointments (preparado para migración desde localStorage) ──
+    // Descomenta cuando chatbot.js / agenda.js migren a Firestore.
+    //
+    // match /appointments/{appointmentId} {
+    //   allow read:   if isSignedIn() && resource.data.userId == request.auth.uid;
+    //   allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    //   allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // }
+
+    // ── Bloquear todo lo demás ─────────────────────────────────────────────
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 5, 16);
+      allow read, write: if false;
     }
   }
 }

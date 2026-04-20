@@ -9,3 +9,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Poblar barra de usuario cuando navigation.js confirme la sesión
+document.addEventListener('nodeUserReady', ({ detail }) => {
+    const { profile } = detail;
+    const name    = profile.displayName || profile.email || '—';
+    const initial = name.charAt(0).toUpperCase();
+
+    const avatarEl = document.getElementById('user-avatar');
+    const nameEl   = document.getElementById('user-display-name');
+    const emailEl  = document.getElementById('user-display-email');
+
+    if (avatarEl) avatarEl.textContent = initial;
+    if (nameEl)   nameEl.textContent   = name;
+    // Segunda línea: email solo si ya se mostró el displayName en la primera
+    if (emailEl)  emailEl.textContent  = profile.displayName ? profile.email : '';
+});

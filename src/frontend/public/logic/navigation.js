@@ -1,296 +1,143 @@
-// navigation.js - Manejo centralizado de navegación y eventos globales
+// navigation.js — Guarda de autenticación + navegación global
+//
+// Páginas privadas: deben incluir en <head>:
+//   <style id="auth-loading">body{visibility:hidden!important}</style>
+// Este módulo elimina ese estilo una vez que la autenticación queda confirmada,
+// evitando que el usuario vea contenido protegido antes de la verificación.
 
-class NavigationManager {
-    constructor() {
-        this.currentPage = this.detectCurrentPage();
-        this.init();
-    }
+import { auth, onAuthStateChanged, getUserProfile, logout } from './auth.js';
 
-    // Detectar la página actual basada en el HTML actual
-    detectCurrentPage() {
-        const path = window.location.pathname;
-        if (path.includes('inicio.html')) return 'inicio';
-        if (path.includes('crm_calendar.html')) return 'crm_calendar';
-        if (path.includes('sign_up.html')) return 'login';
-        if (path.includes('welcome_page.html')) return 'welcome';
-        return 'index';
-    }
+const PUBLIC_PAGES = ['index.html', 'welcome_page.html', 'sign_up.html', ''];
 
-    init() {
-        this.setupGlobalNavigation();
-        this.setupPageSpecificEvents();
-        this.checkAuthentication();
-    }
-
-    // ==================== NAVEGACIÓN GLOBAL ====================
-
-    setupGlobalNavigation() {
-        // Interceptar todos los enlaces internos
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('a[href]');
-            if (!link) return;
-
-            const href = link.getAttribute('href');
-            
-            // Ignorar enlaces externos, hashes y navegación especial
-            if (!href || href.startsWith('http') || href.startsWith('#')) return;
-
-            // Prevenir comportamiento por defecto y navegar
-            e.preventDefault();
-            this.navigateTo(href);
-        });
-
-        // Botones con data-action
-        document.addEventListener('click', (e) => {
-            const action = e.target.closest('[data-action]');
-            if (!action) return;
-            
-            const actionType = action.getAttribute('data-action');
-            this.executeAction(actionType);
-        });
-    }
-
-    // Navegar a una página
-    navigateTo(page) {
-        // Agregar animación de transición
-        document.body.style.opacity = '0.5';
-        setTimeout(() => {
-            window.location.href = page;
-        }, 200);
-    }
-
-    // Ejecutar acciones globales
-    executeAction(action) {
-        switch(action) {
-            case 'logout':
-                this.logout();
-                break;
-            case 'back':
-                this.goBack();
-                break;
-            case 'home':
-                this.navigateTo('menu.html');
-                break;
-            case 'scroll-to-chat':
-                this.scrollToElement('#chat');
-                break;
-            case 'toggle-menu':
-                this.toggleMobileMenu();
-                break;
-            default:
-                console.log('Acción desconocida:', action);
-        }
-    }
-
-    // Logout
-    logout() {
-        if (confirm('¿Deseas cerrar sesión?')) {
-            localStorage.removeItem('user-session');
-            sessionStorage.clear();
-            this.navigateTo('sign_up.html');
-        }
-    }
-
-    // Navegar hacia atrás
-    goBack() {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            this.navigateTo('menu.html');
-        }
-    }
-
-    // Scroll a un elemento
-    scrollToElement(selector) {
-        const element = document.querySelector(selector);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-
-    // Toggle menú móvil
-    toggleMobileMenu() {
-        const menu = document.querySelector('[data-mobile-menu]');
-        if (menu) {
-            menu.classList.toggle('hidden');
-        }
-    }
-
-    // ==================== AUTENTICACIÓN ====================
-
-    checkAuthentication() {
-        const publicPages = ['welcome_page.html', 'sign_up.html', 'index.html', 'login.html'];
-        const currentPageName = window.location.pathname.split('/').pop() || 'index.html';
-        
-        const isPublicPage = publicPages.some(page => currentPageName.includes(page));
-        const isLoggedIn = localStorage.getItem('user-session') || sessionStorage.getItem('user-session');
-
-        // Si no está en página pública y no está autenticado, redirigir a login
-        if (!isPublicPage && !isLoggedIn) {
-            this.navigateTo('sign_up.html');
-        }
-
-        // Si está en login y ya está autenticado, redirigir a menu
-        if (isPublicPage && isLoggedIn && currentPageName.includes('sign_up.html')) {
-            this.navigateTo('inicio.html');
-        }
-    }
-
-    // ==================== EVENTOS ESPECÍFICOS POR PÁGINA ====================
-
-    setupPageSpecificEvents() {
-        switch(this.currentPage) {
-            case 'inicio':
-                this.setupMenuPage();
-                break;
-            case 'crm_calendar':
-                this.setupCalendarPage();
-                break;
-            case 'login':
-                this.setupLoginPage();
-                break;
-            case 'welcome':
-                this.setupWelcomePage();
-                break;
-        }
-    }
-
-    // ==================== PÁGINA: MENU ====================
-
-    setupMenuPage() {
-        // Enlace "Abrir chat" con scroll suave
-        const chatButton = document.querySelector('a[href="#chat"]');
-        if (chatButton) {
-            chatButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.scrollToElement('#chat');
-            });
-        }
-
-        // Enlace "Cerrar sesión" en header
-        const logoutLink = document.querySelector('a[href="welcome_page.html"]');
-        if (logoutLink) {
-            logoutLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.logout();
-            });
-        }
-
-        // Setup para módulos que aún no tienen página
-        const placeholderModules = document.querySelectorAll('a[href="#"]');
-        placeholderModules.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('Este módulo aún está en desarrollo.');
-            });
-        });
-    }
-
-    // ==================== PÁGINA: LOGIN ====================
-
-    setupLoginPage() {
-        // Formulario de login
-        const form = document.querySelector('form');
-        if (form) {
-            // Botón "Iniciar sesión" 
-            const loginButton = form.querySelector('a[href="inicio.html"]');
-            if (loginButton) {
-                loginButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const email = document.getElementById('email')?.value;
-                    const password = document.getElementById('password')?.value;
-
-                    if (email && password) {
-                        // Simulación de login - en producción usar Firebase
-                        localStorage.setItem('user-session', JSON.stringify({ 
-                            email, 
-                            timestamp: Date.now() 
-                        }));
-                        this.navigateTo('inicio.html');
-                    } else {
-                        alert('Por favor completa los campos requeridos.');
-                    }
-                });
-            }
-
-            // Botón de Google
-            const googleButton = form.querySelector('button[type="button"]');
-            if (googleButton) {
-                googleButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    alert('La autenticación con Google será implementada con Firebase.');
-                });
-            }
-        }
-
-        // Link "Volver a la página principal"
-        const backLink = document.querySelector('a[href="welcome_page.html"]');
-        if (backLink) {
-            backLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.navigateTo('welcome_page.html');
-            });
-        }
-    }
-
-    // ==================== PÁGINA: WELCOME ====================
-
-    setupWelcomePage() {
-        // Los enlaces de "Solicitar demo" y "Entrar" simplemente navegan normalmente
-        // El navegador manejará el href naturalmente
-
-        // Smooth scroll para enlaces internos
-        document.querySelectorAll('a[href^="#"]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const target = link.getAttribute('href');
-                this.scrollToElement(target);
-            });
-        });
-    }
-
-    // ==================== PÁGINA: CALENDARIO CRM ====================
-
-    setupCalendarPage() {
-        // El calendario tiene su propia lógica en calendar.js
-        // Aquí solo manejamos navegación
-
-        // Botón para volver al menú (si existe)
-        const backButton = document.querySelector('[data-action="back-to-menu"]');
-        if (backButton) {
-            backButton.addEventListener('click', () => {
-                this.navigateTo('menu.html');
-            });
-        }
-    }
+function pageName() {
+  return window.location.pathname.split('/').pop() || '';
 }
 
-// ==================== INICIALIZACIÓN ====================
+function isPublicPage() {
+  return PUBLIC_PAGES.includes(pageName());
+}
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    window.navigationManager = new NavigationManager();
+function revealPage() {
+  document.getElementById('auth-loading')?.remove();
+}
+
+// ── Guarda de autenticación ──────────────────────────────────────────────────
+// Fallback: si Firebase no responde en 6 s, redirigir al login
+const authTimeout = isPublicPage() ? null : setTimeout(() => {
+  window.location.href = 'sign_up.html';
+}, 6000);
+
+onAuthStateChanged(auth, async (user) => {
+  if (authTimeout) clearTimeout(authTimeout);
+
+  if (isPublicPage()) {
+    revealPage();
+    return;
+  }
+
+  // Página privada sin sesión → login
+  if (!user) {
+    window.location.href = 'sign_up.html';
+    return;
+  }
+
+  try {
+    const profile = await getUserProfile(user.uid);
+
+    if (!profile || profile.status !== 'active') {
+      await logout();
+      window.location.href = 'sign_up.html';
+      return;
+    }
+
+    // Exponer datos del usuario para otros scripts de la página
+    window.currentUser = { user, profile };
+    document.dispatchEvent(new CustomEvent('nodeUserReady', { detail: { user, profile } }));
+    revealPage();
+
+  } catch (err) {
+    console.error('[auth-guard]', err);
+    window.location.href = 'sign_up.html';
+  }
 });
 
-// Funciones globales para acceso rápido (compatibilidad)
-window.navigateTo = (page) => {
-    if (window.navigationManager) {
-        window.navigationManager.navigateTo(page);
-    } else {
-        window.location.href = page;
-    }
-};
+// ── NavigationManager (UI, scroll, menú) ────────────────────────────────────
+class NavigationManager {
+  constructor() {
+    this.setupGlobalNavigation();
+    this.setupPageSpecificEvents();
+  }
 
-window.goBack = () => {
-    if (window.navigationManager) {
-        window.navigationManager.goBack();
-    } else {
-        window.history.back();
-    }
-};
+  setupGlobalNavigation() {
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href]');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto')) return;
+      e.preventDefault();
+      this.navigateTo(href);
+    });
 
-window.logout = () => {
-    if (window.navigationManager) {
-        window.navigationManager.logout();
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-action]');
+      if (el) this.executeAction(el.getAttribute('data-action'));
+    });
+  }
+
+  navigateTo(page) {
+    document.body.style.opacity = '0.5';
+    setTimeout(() => { window.location.href = page; }, 200);
+  }
+
+  executeAction(action) {
+    switch (action) {
+      case 'logout':        this.logout();                     break;
+      case 'back':          this.goBack();                     break;
+      case 'home':          this.navigateTo('inicio.html');    break;
+      case 'scroll-to-chat':this.scrollTo('#chat');           break;
+      case 'toggle-menu':   this.toggleMobileMenu();           break;
     }
-};
+  }
+
+  async logout() {
+    if (confirm('¿Deseas cerrar sesión?')) {
+      await logout();
+      window.location.href = 'sign_up.html';
+    }
+  }
+
+  goBack() {
+    window.history.length > 1 ? window.history.back() : this.navigateTo('inicio.html');
+  }
+
+  scrollTo(selector) {
+    document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  toggleMobileMenu() {
+    document.querySelector('[data-mobile-menu]')?.classList.toggle('hidden');
+  }
+
+  setupPageSpecificEvents() {
+    const page = pageName();
+    if (page === 'welcome_page.html') this.setupWelcomePage();
+  }
+
+  setupWelcomePage() {
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.scrollTo(link.getAttribute('href'));
+      });
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.navigationManager = new NavigationManager();
+});
+
+// Acceso global para compatibilidad con código inline
+window.navigateTo = (page) => window.navigationManager?.navigateTo(page) ?? (window.location.href = page);
+window.goBack     = ()     => window.navigationManager?.goBack()          ?? window.history.back();
+window.logout     = async () => window.navigationManager?.logout();
