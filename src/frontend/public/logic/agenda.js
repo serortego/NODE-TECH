@@ -25,7 +25,17 @@
     total: document.getElementById('total-appointments'),
     today: document.getElementById('today-appointments'),
     upcoming: document.getElementById('upcoming-appointments'),
-    exportBtn: document.getElementById('export-excel')
+    exportBtn: document.getElementById('export-excel'),
+    horaFin: document.getElementById('appointment-hora-fin'),
+    prioridad: document.getElementById('appointment-prioridad'),
+    estado: document.getElementById('appointment-estado'),
+    modal: document.getElementById('event-detail-modal'),
+    modalContent: document.getElementById('modal-content'),
+    modalClose: document.getElementById('modal-close'),
+    modalCloseBtn: document.getElementById('modal-close-btn'),
+    modalEditBtn: document.getElementById('modal-edit-btn'),
+    modalDeleteBtn: document.getElementById('modal-delete-btn'),
+    dayPreview: document.getElementById('day-preview')
   };
 
   function toISODate(d) {
@@ -50,6 +60,55 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.appointments));
   }
 
+  function timeToMinutes(time) {
+    const parts = (time || '00:00').split(':');
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
+  }
+
+  function getEventClass(a) {
+    const estado = a.estado || 'pendiente';
+    const prioridad = a.prioridad || 'normal';
+    if (estado === 'completada') return 'event-completed';
+    if (prioridad === 'importante') return 'event-important';
+    return 'event-normal';
+  }
+
+  function getDotClass(a) {
+    return getEventClass(a).replace('event-', 'dot-');
+  }
+
+  function assignEventLayout(items) {
+    const events = items.map(function(a) {
+      const start = timeToMinutes(a.hora || '00:00');
+      const end = a.horaFin ? timeToMinutes(a.horaFin) : start + 60;
+      return Object.assign({}, a, { _start: start, _end: Math.max(end, start + 30), _col: 0, _totalCols: 1 });
+    });
+
+    for (let i = 0; i < events.length; i++) {
+      const usedCols = new Set();
+      for (let j = 0; j < i; j++) {
+        if (events[i]._start < events[j]._end && events[i]._end > events[j]._start) {
+          usedCols.add(events[j]._col);
+        }
+      }
+      let col = 0;
+      while (usedCols.has(col)) col++;
+      events[i]._col = col;
+    }
+
+    for (let i = 0; i < events.length; i++) {
+      let maxCol = events[i]._col;
+      for (let j = 0; j < events.length; j++) {
+        if (i !== j && events[i]._start < events[j]._end && events[i]._end > events[j]._start) {
+          maxCol = Math.max(maxCol, events[j]._col);
+        }
+      }
+      events[i]._totalCols = maxCol + 1;
+    }
+
+    return events;
+  }
+
   function renderMonth() {
     const year = state.monthCursor.getFullYear();
     const month = state.monthCursor.getMonth();
@@ -63,8 +122,6 @@
     const rows = Math.ceil(totalCells / 7);
     const maxCells = rows * 7;
 
-    const appDates = new Set(state.appointments.map(a => a.fecha));
-
     let html = '';
     for (let i = 0; i < maxCells; i += 1) {
       const dayNum = i - mondayIndex + 1;
@@ -76,15 +133,24 @@
       const dayDate = new Date(year, month, dayNum);
       const iso = toISODate(dayDate);
       const isSelected = iso === state.selectedDate;
-      const hasAppointments = appDates.has(iso);
+      const dayApps = state.appointments.filter(function(a) { return a.fecha === iso; });
+      const hasAppointments = dayApps.length > 0;
+      const dotClasses = [...new Set(dayApps.map(function(a) { return getDotClass(a); }))];
 
       const classes = [
-        'h-12 rounded-xl flex items-center justify-center cursor-pointer transition border text-sm font-semibold',
+        'cal-day-cell rounded-xl flex flex-col items-center justify-center cursor-pointer transition border text-sm font-semibold py-1',
         isSelected ? 'selected-day border-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50',
         !isSelected && hasAppointments ? 'day-with-appointments' : ''
       ].join(' ');
 
-      html += '<button type="button" class="' + classes + '" data-date="' + iso + '">' + dayNum + '</button>';
+      html += '<button type="button" class="' + classes + '" data-date="' + iso + '">';
+      html += '<span>' + dayNum + '</span>';
+      if (dotClasses.length) {
+        html += '<div class="flex gap-0.5 mt-0.5">';
+        dotClasses.slice(0, 3).forEach(function(dc) { html += '<span class="day-dot ' + dc + '"></span>'; });
+        html += '</div>';
+      }
+      html += '</button>';
     }
 
     el.calendarDays.innerHTML = html;
@@ -111,34 +177,86 @@
     el.upcoming.textContent = String(upcoming);
   }
 
+  function showEventDetail(id) {
+    const a = state.appointments.find(function(item) { return item.id === id; });
+    if (!a) return;
+    const cls = getEventClass(a);
+    const badgeCls = cls.replace('event-', 'badge-');
+    const prioLabels = { normal: 'Normal', importante: 'Importante' };
+    const estadoLabels = { pendiente: 'Pendiente', en_curso: 'En curso', completada: 'Completada' };
+    const prioLabel = prioLabels[a.prioridad || 'normal'] || 'Normal';
+    const estadoLabel = estadoLabels[a.estado || 'pendiente'] || 'Pendiente';
+
+    const rows = [
+      ['Cliente', escapeHtml(a.cliente || '—')],
+      ['Hora inicio', escapeHtml(a.hora || '—')],
+      ['Hora fin', escapeHtml(a.horaFin || '—')],
+      ['Descripción', escapeHtml(a.descripcion || a.servicio || '—')],
+      ['Estado', '<span class="badge ' + badgeCls + '">' + estadoLabel + '</span>'],
+      ['Prioridad', '<span class="badge ' + badgeCls + '">' + prioLabel + '</span>']
+    ];
+
+    el.modalContent.innerHTML = rows.map(function(row) {
+      return '<div class="flex flex-col gap-0.5"><span class="text-xs font-semibold uppercase tracking-wider text-slate-400">' + row[0] + '</span><span class="text-sm text-slate-800">' + row[1] + '</span></div>';
+    }).join('');
+
+    el.modal.dataset.editId = id;
+    el.modal.style.display = 'flex';
+  }
+
   function renderDayList() {
     const d = new Date(state.selectedDate + 'T00:00:00');
     el.selectedDateTitle.textContent = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const items = getSelectedDayAppointments();
+
     if (!items.length) {
-      el.appointmentsList.innerHTML = '<p class="text-slate-500">No hay citas para este día.</p>';
+      el.appointmentsList.innerHTML = '<p class="text-slate-500 view-fade">No hay citas para este día.</p>';
       return;
     }
 
-    el.appointmentsList.innerHTML = items.map(a => {
-      const label = a.descripcion || a.servicio || 'Cita';
-      return [
-        '<article class="rounded-2xl border border-slate-200 bg-slate-50 p-4">',
-        '  <div class="flex items-start justify-between gap-3">',
-        '    <div>',
-        '      <p class="font-semibold text-slate-900">' + escapeHtml(a.cliente || 'Cliente') + '</p>',
-        '      <p class="text-sm text-slate-600 mt-1">' + escapeHtml(label) + '</p>',
-        '      <p class="text-sm text-slate-500 mt-1">' + escapeHtml(a.hora || '--:--') + '</p>',
-        '    </div>',
-        '    <div class="flex gap-2">',
-        '      <button type="button" data-action="edit" data-id="' + a.id + '" class="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-white">Editar</button>',
-        '      <button type="button" data-action="delete" data-id="' + a.id + '" class="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">Eliminar</button>',
-        '    </div>',
-        '  </div>',
-        '</article>'
-      ].join('');
-    }).join('');
+    const HOUR_START = 7;
+    const HOUR_END = 21;
+    const HOUR_HEIGHT = 60;
+    const gridHeight = (HOUR_END - HOUR_START) * HOUR_HEIGHT;
+
+    const laid = assignEventLayout(items);
+
+    let hoursHtml = '';
+    for (let h = HOUR_START; h <= HOUR_END; h++) {
+      hoursHtml += '<div class="timeline-hour-label">' + String(h).padStart(2, '0') + ':00</div>';
+    }
+
+    let slotsHtml = '';
+    for (let h = HOUR_START; h <= HOUR_END; h++) {
+      slotsHtml += '<div class="timeline-slot"></div>';
+    }
+
+    let eventsHtml = '';
+    laid.forEach(function(a) {
+      const clampedStart = Math.max(a._start, HOUR_START * 60);
+      const topOffset = clampedStart - HOUR_START * 60;
+      const height = Math.max(((a._end - a._start) / 60) * HOUR_HEIGHT, 28);
+      const cls = getEventClass(a);
+      const colWidth = 100 / a._totalCols;
+      const leftPct = a._col * colWidth;
+      const style = 'top:' + topOffset + 'px;height:' + height + 'px;left:calc(' + leftPct + '% + 3px);width:calc(' + colWidth + '% - 6px);';
+      const label = escapeHtml(a.descripcion || a.servicio || 'Cita');
+      const timeLabel = escapeHtml(a.hora || '--:--') + (a.horaFin ? ' – ' + escapeHtml(a.horaFin) : '');
+
+      eventsHtml += '<div class="event-block ' + cls + '" style="' + style + '" data-action="detail" data-id="' + a.id + '">';
+      eventsHtml += '<div class="font-semibold truncate">' + escapeHtml(a.cliente || 'Cliente') + '</div>';
+      eventsHtml += '<div class="truncate" style="opacity:0.75">' + label + '</div>';
+      eventsHtml += '<div style="opacity:0.6;font-size:10px">' + timeLabel + '</div>';
+      eventsHtml += '</div>';
+    });
+
+    el.appointmentsList.innerHTML = [
+      '<div class="timeline-container view-fade">',
+      '<div class="timeline-hours">' + hoursHtml + '</div>',
+      '<div class="timeline-grid" style="min-height:' + gridHeight + 'px;">' + slotsHtml + eventsHtml + '</div>',
+      '</div>'
+    ].join('');
   }
 
   function resetForm() {
@@ -146,7 +264,10 @@
     el.client.value = '';
     el.date.value = state.selectedDate;
     el.time.value = '';
+    el.horaFin.value = '';
     el.description.value = '';
+    el.prioridad.value = 'normal';
+    el.estado.value = 'pendiente';
   }
 
   function upsertAppointment(payload) {
@@ -167,13 +288,16 @@
   }
 
   function editAppointment(id) {
-    const a = state.appointments.find(item => item.id === id);
+    const a = state.appointments.find(function(item) { return item.id === id; });
     if (!a) return;
     el.id.value = a.id;
     el.client.value = a.cliente || '';
     el.date.value = a.fecha || state.selectedDate;
     el.time.value = a.hora || '';
+    el.horaFin.value = a.horaFin || '';
     el.description.value = a.descripcion || a.servicio || '';
+    el.prioridad.value = a.prioridad || 'normal';
+    el.estado.value = a.estado || 'pendiente';
     state.selectedDate = a.fecha || state.selectedDate;
     renderMonth();
     renderDayList();
@@ -185,13 +309,16 @@
       return;
     }
 
-    const rows = state.appointments.map(a => ({
+    const rows = state.appointments.map(function(a) { return {
       ID: a.id,
       Cliente: a.cliente || '',
       Fecha: a.fecha || '',
       Hora: a.hora || '',
-      Descripcion: a.descripcion || a.servicio || ''
-    }));
+      HoraFin: a.horaFin || '',
+      Descripcion: a.descripcion || a.servicio || '',
+      Prioridad: a.prioridad || 'normal',
+      Estado: a.estado || 'pendiente'
+    }; });
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -250,13 +377,19 @@
         return;
       }
 
+      const horaFin = el.horaFin.value;
+      const prioridad = el.prioridad.value || 'normal';
+      const estado = el.estado.value || 'pendiente';
       const id = el.id.value || String(Date.now());
       upsertAppointment({
         id,
         cliente,
         fecha,
         hora,
+        horaFin,
         descripcion,
+        prioridad,
+        estado,
         servicio: descripcion || 'Cita'
       });
 
@@ -271,16 +404,59 @@
       el.client.focus();
     });
 
-    el.appointmentsList.addEventListener('click', (e) => {
+    el.appointmentsList.addEventListener('click', function(e) {
       const actionBtn = e.target.closest('[data-action]');
       if (!actionBtn) return;
       const id = actionBtn.getAttribute('data-id');
       const action = actionBtn.getAttribute('data-action');
+      if (action === 'detail') { showEventDetail(id); return; }
       if (action === 'edit') editAppointment(id);
-      if (action === 'delete' && confirm('¿Eliminar cita?')) removeAppointment(id);
+      if (action === 'delete' && confirm('\u00bfEliminar cita?')) removeAppointment(id);
     });
 
     el.exportBtn.addEventListener('click', exportExcel);
+
+    // Day preview on hover
+    el.calendarDays.addEventListener('mouseover', function(e) {
+      const btn = e.target.closest('[data-date]');
+      if (!btn) { el.dayPreview.style.display = 'none'; return; }
+      const iso = btn.getAttribute('data-date');
+      const apps = state.appointments
+        .filter(function(a) { return a.fecha === iso; })
+        .sort(function(a, b) { return (a.hora || '').localeCompare(b.hora || ''); });
+      if (!apps.length) { el.dayPreview.style.display = 'none'; return; }
+      const rect = btn.getBoundingClientRect();
+      el.dayPreview.style.top = (rect.bottom + 6 + window.scrollY) + 'px';
+      el.dayPreview.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 230) + 'px';
+      el.dayPreview.innerHTML = '<div style="font-weight:600;color:#1e293b;margin-bottom:6px">' + apps.length + ' cita(s)</div>' +
+        apps.slice(0, 3).map(function(a) {
+          const dc = getDotClass(a);
+          return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="day-dot ' + dc + '"></span><span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(a.hora || '--') + ' \u00b7 ' + escapeHtml(a.cliente || 'Cliente') + '</span></div>';
+        }).join('') +
+        (apps.length > 3 ? '<div style="color:#94a3b8;font-size:10px;margin-top:2px">+' + (apps.length - 3) + ' m\u00e1s</div>' : '');
+      el.dayPreview.style.display = 'block';
+    });
+
+    el.calendarDays.addEventListener('mouseleave', function() {
+      el.dayPreview.style.display = 'none';
+    });
+
+    // Modal controls
+    el.modalClose.addEventListener('click', function() { el.modal.style.display = 'none'; });
+    el.modalCloseBtn.addEventListener('click', function() { el.modal.style.display = 'none'; });
+    el.modal.addEventListener('click', function(e) {
+      if (e.target === el.modal) el.modal.style.display = 'none';
+    });
+    el.modalEditBtn.addEventListener('click', function() {
+      const id = el.modal.dataset.editId;
+      el.modal.style.display = 'none';
+      if (id) { editAppointment(id); el.client.focus(); }
+    });
+    el.modalDeleteBtn.addEventListener('click', function() {
+      const id = el.modal.dataset.editId;
+      el.modal.style.display = 'none';
+      if (id && confirm('\u00bfEliminar esta cita?')) removeAppointment(id);
+    });
 
     refresh();
   });

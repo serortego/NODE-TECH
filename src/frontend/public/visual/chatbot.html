@@ -54,6 +54,10 @@
                     <i class="fas fa-chart-line text-slate-400 w-5 text-center"></i>
                     <span>Finanzas</span>
                 </a>
+                <a href="contabilidad.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-file-invoice-dollar text-slate-400 w-5 text-center"></i>
+                    <span>Contabilidad</span>
+                </a>
             </nav>
             <div class="mt-4 px-4 pb-4">
                 <button onclick="window.logout()" class="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
@@ -86,6 +90,11 @@
                     <button type="button" onclick="addQuick('Crear cita para Cliente A mañana a las 10:00 para revisión')" class="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Crear cita mañana</button>
                     <button type="button" onclick="addQuick('Crear cita para Cliente B el 25/04/2026 a las 14:00 para presentación')" class="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Programar reunión</button>
                     <button type="button" onclick="addQuick('Mostrar citas de hoy')" class="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Ver citas de hoy</button>
+                </div>
+                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                    <button type="button" onclick="addQuick('Crear factura para Cliente Ejemplo')" class="rounded-3xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"><i class="fas fa-file-invoice-dollar mr-1"></i> Nueva factura</button>
+                    <button type="button" onclick="addQuick('Ver mis facturas pendientes')" class="rounded-3xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"><i class="fas fa-list mr-1"></i> Facturas pendientes</button>
+                    <button type="button" onclick="addQuick('Ir a Contabilidad')" class="rounded-3xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"><i class="fas fa-calculator mr-1"></i> Módulo Contabilidad</button>
                 </div>
             </div>
         </main>

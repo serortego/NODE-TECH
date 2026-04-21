@@ -18,6 +18,31 @@
         .shadow-soft { box-shadow: 0 22px 50px rgba(15, 23, 42, 0.08); }
         .day-with-appointments { background-color: #DBEAFE; color: #1D4ED8; font-weight: bold; }
         .selected-day { background-color: #2563EB; color: white; }
+        /* Agenda enhancements */
+        .day-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .dot-normal { background: #2563EB; }
+        .dot-important { background: #F97316; }
+        .dot-completed { background: #22C55E; }
+        .cal-day-cell { min-height: 3.5rem; }
+        #day-preview { position: fixed; z-index: 40; background: white; border-radius: 0.75rem; padding: 0.625rem 0.875rem; box-shadow: 0 10px 30px rgba(0,0,0,0.12); border: 1px solid #e2e8f0; min-width: 160px; max-width: 220px; pointer-events: none; font-size: 12px; line-height: 1.4; }
+        .timeline-container { display: flex; max-height: 520px; overflow-y: auto; }
+        .timeline-hours { width: 52px; flex-shrink: 0; }
+        .timeline-hour-label { height: 60px; display: flex; align-items: flex-start; padding-top: 3px; font-size: 11px; color: #94a3b8; font-weight: 500; }
+        .timeline-grid { flex: 1; position: relative; border-left: 1px solid #e2e8f0; }
+        .timeline-slot { height: 60px; border-top: 1px solid #f1f5f9; }
+        .event-block { position: absolute; border-radius: 8px; padding: 4px 7px; font-size: 11px; cursor: pointer; transition: opacity 0.15s, box-shadow 0.15s; overflow: hidden; line-height: 1.35; box-sizing: border-box; }
+        .event-block:hover { opacity: 0.88; box-shadow: 0 4px 14px rgba(0,0,0,0.14); }
+        .event-normal { background: #EFF6FF; border-left: 3px solid #2563EB; color: #1E40AF; }
+        .event-important { background: #FFF7ED; border-left: 3px solid #F97316; color: #9A3412; }
+        .event-completed { background: #F0FDF4; border-left: 3px solid #22C55E; color: #166534; }
+        .view-fade { animation: agFadeIn 0.22s ease; }
+        @keyframes agFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.45); backdrop-filter: blur(3px); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-box { background: white; border-radius: 1.5rem; padding: 1.5rem; max-width: 400px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.2); animation: agFadeIn 0.2s ease; }
+        .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .badge-normal { background: #EFF6FF; color: #1D4ED8; }
+        .badge-important { background: #FFF7ED; color: #C2410C; }
+        .badge-completed { background: #F0FDF4; color: #15803D; }
     </style>
 </head>
 <body class="min-h-screen text-slate-900">
@@ -96,6 +121,25 @@
                             <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-description">Descripción</label>
                             <textarea id="appointment-description" placeholder="Descripción de la cita" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" rows="3"></textarea>
                         </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-hora-fin">Hora de fin</label>
+                            <input id="appointment-hora-fin" type="time" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20" />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-prioridad">Prioridad</label>
+                            <select id="appointment-prioridad" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20">
+                                <option value="normal">Normal</option>
+                                <option value="importante">Importante</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-medium text-slate-700" for="appointment-estado">Estado</label>
+                            <select id="appointment-estado" class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-node focus:ring-2 focus:ring-node/20">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en_curso">En curso</option>
+                                <option value="completada">Completada</option>
+                            </select>
+                        </div>
                         <div class="flex gap-3">
                             <button type="submit" class="flex-1 rounded-full bg-node px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]">Guardar cita</button>
                             <button type="button" id="cancel-edit" class="flex-1 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancelar</button>
@@ -122,6 +166,23 @@
                 </div>
             </aside>
         </main>
+    </div>
+
+    <div id="day-preview" style="display:none;"></div>
+
+    <div id="event-detail-modal" style="display:none;" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex items-start justify-between mb-4">
+                <h2 class="text-lg font-bold text-slate-950">Detalle de cita</h2>
+                <button id="modal-close" class="rounded-full bg-slate-100 w-8 h-8 flex items-center justify-center text-slate-500 hover:bg-slate-200 flex-shrink-0 text-lg leading-none">×</button>
+            </div>
+            <div id="modal-content" class="space-y-3"></div>
+            <div class="mt-5 flex gap-2">
+                <button id="modal-edit-btn" class="flex-1 rounded-full bg-[#0D253E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] transition">Editar</button>
+                <button id="modal-delete-btn" class="flex-1 rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition">Eliminar</button>
+                <button id="modal-close-btn" class="flex-1 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Cerrar</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="../logic/navigation.js"></script>
