@@ -134,6 +134,7 @@ function translateError(code) {
     'auth/user-not-found':          'No existe una cuenta con este correo.',
     'auth/wrong-password':          'Contraseña incorrecta.',
     'auth/invalid-credential':      'Correo o contraseña incorrectos.',
+    'auth/google-only-account':     'Esta cuenta fue creada con Google. Usa el botón "Continuar con Google" para iniciar sesión.',
     'auth/too-many-requests':       'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
     'auth/network-request-failed':  'Error de red. Comprueba tu conexión a internet.',
     'auth/popup-blocked':           'El navegador bloqueó la ventana emergente. Permite popups para este sitio.',
