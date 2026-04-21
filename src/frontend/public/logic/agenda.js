@@ -5,59 +5,91 @@ class AgendaManager {
         this.navManager = navigationManager;
         this.agendaView = 'day'; // 'day', 'week', 'month'
         this.selectedDate = new Date();
+        this.recursos = ['María García', 'Juan López', 'Pedro Sánchez']; // Trabajadores
+        this.tiempoGranularidad = 15; // minutos (15 o 30)
+        this.sidebarVisible = true;
+        this.citaStates = {
+            'no-presentado': { bg: '#F3F4F6', border: '#9CA3AF', text: '#4B5563' },
+            'esperando': { bg: '#FEF3C7', border: '#FBBF24', text: '#92400E' },
+            'atendiendose': { bg: '#DBEAFE', border: '#3B82F6', text: '#1E40AF' },
+            'completado': { bg: '#DCFCE7', border: '#22C55E', text: '#166534' }
+        };
     }
 
     render() {
         const proximasCitas = this.navManager.getProximasCitas(5);
+        const hoy = new Date().toISOString().split('T')[0];
+        const citasHoy = this.navManager.citas.filter(c => c.fecha === hoy).length;
 
         return `
-            <div class="space-y-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="flex items-center gap-3 mb-2">
-                            <i class="fas fa-calendar-alt text-node-teal text-2xl"></i>
-                            <h2 class="text-3xl font-bold text-node">Agenda</h2>
-                        </div>
-                        <p class="text-sm text-slate-600">Gestiona tus citas y horarios</p>
+            <div class="space-y-2">
+                <!-- Header COMPACTO - Una sola línea -->
+                <div class="flex items-center justify-between gap-4 pb-2 border-b border-gray-200">
+                    <!-- Título izquierda -->
+                    <div class="flex items-center gap-2 min-w-fit">
+                        <i class="fas fa-calendar-alt text-node-teal text-lg"></i>
+                        <h2 class="text-xl font-bold text-gray-900">Agenda</h2>
                     </div>
-                    <button id="btn-nueva-cita" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700">
-                        <i class="fas fa-plus"></i> Nueva cita
-                    </button>
+
+                    <!-- Vistas + Navegación centro -->
+                    <div class="flex items-center gap-3 flex-1">
+                        <div class="flex gap-1 bg-gray-100 p-1 rounded-lg">
+                            <button class="agenda-view-btn px-2.5 py-1 bg-white text-gray-900 rounded text-xs font-semibold active" data-view="day">Día</button>
+                            <button class="agenda-view-btn px-2.5 py-1 text-gray-600 text-xs font-semibold hover:bg-white/50" data-view="week">Semana</button>
+                            <button class="agenda-view-btn px-2.5 py-1 text-gray-600 text-xs font-semibold hover:bg-white/50" data-view="month">Mes</button>
+                        </div>
+                        
+                        <div class="flex items-center gap-1">
+                            <button id="agenda-prev-btn" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition">
+                                <i class="fas fa-chevron-left text-xs"></i>
+                            </button>
+                            <input type="date" id="agenda-date-input" value="${this.selectedDate.toISOString().split('T')[0]}" class="px-2 py-1 border border-gray-300 rounded text-xs w-28">
+                            <button id="agenda-next-btn" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition">
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Botones derecha -->
+                    <div class="flex gap-2 min-w-fit">
+                        <button id="btn-toggle-sidebar" class="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold text-xs" title="Expandir/Contraer panel">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <button id="btn-nueva-cita" class="inline-flex items-center gap-1 rounded-lg bg-node-teal px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:shadow-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-plus"></i> Cita
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Navegación -->
-                <div class="flex items-center gap-3 pb-4 border-b border-subtle flex-wrap">
-                    <button id="agenda-prev-btn" class="text-slate-600 hover:text-node-teal transition p-2">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-slate-700 text-sm">Fecha:</span>
-                        <input type="date" id="agenda-date-input" value="${this.selectedDate.toISOString().split('T')[0]}" class="px-3 py-1 border border-subtle rounded-lg text-sm">
+                <!-- Métricas rápidas del día -->
+                <div class="flex gap-2 text-xs px-1">
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded font-semibold">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>${citasHoy} citas</span>
                     </div>
-                    <button id="agenda-next-btn" class="text-slate-600 hover:text-node-teal transition p-2">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <div class="ml-auto flex gap-2">
-                        <button class="agenda-view-btn px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-semibold active" data-view="day">Día</button>
-                        <button class="agenda-view-btn px-4 py-2 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-50" data-view="week">Semana</button>
-                        <button class="agenda-view-btn px-4 py-2 text-slate-600 rounded-lg text-sm font-semibold hover:bg-slate-50" data-view="month">Mes</button>
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 rounded font-semibold">
+                        <i class="fas fa-clock"></i>
+                        <span>2 pendientes</span>
+                    </div>
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded font-semibold">
+                        <i class="fas fa-euro-sign"></i>
+                        <span>350€ est.</span>
                     </div>
                 </div>
 
                 <!-- Contenido Principal -->
-                <div class="grid gap-6 lg:grid-cols-[2.5fr_1fr]">
-                    <!-- Timeline/Calendario -->
-                    <div id="agenda-content" class="bg-white border border-subtle rounded-xl shadow-sm overflow-hidden">
+                <div class="flex gap-4">
+                    <!-- Timeline/Calendario (flex-1) -->
+                    <div id="agenda-content" class="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto relative">
                         ${this.renderContent()}
                     </div>
 
-                    <!-- Sidebar -->
-                    <div class="space-y-6">
+                    <!-- Sidebar (derecho) -->
+                    <div id="agenda-sidebar" class="w-64 space-y-4 transition-all duration-300">
                         <!-- Calendario Mini -->
-                        <div class="bg-white rounded-xl border border-subtle shadow-sm p-5">
-                            <div class="text-center mb-4">
-                                <h4 class="font-bold text-node text-sm">Calendario</h4>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                            <div class="text-center mb-3">
+                                <h4 class="font-bold text-gray-900 text-sm">Calendario</h4>
                             </div>
                             <div id="calendar-mini">
                                 ${this.renderCalendarMini()}
@@ -65,56 +97,42 @@ class AgendaManager {
                         </div>
 
                         <!-- Próximas Citas -->
-                        <div class="bg-white rounded-xl border border-subtle shadow-sm p-5">
-                            <h4 class="font-bold text-node text-sm mb-4">Próximas citas</h4>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                            <h4 class="font-bold text-gray-900 text-sm mb-3">Próximas citas</h4>
                             ${proximasCitas.length > 0 ? `
-                                <div id="proximas-citas-container" class="space-y-3 max-h-80 overflow-y-auto">
-                                    ${proximasCitas.map(cita => `
-                                        <div class="p-3 border border-subtle rounded-lg hover:bg-slate-50 transition cursor-pointer" data-cita-id="${cita.id}">
-                                            <div class="flex items-start justify-between mb-2">
-                                                <div class="flex items-center gap-2">
-                                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                                                        ${cita.cliente.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div>
-                                                        <p class="text-sm font-bold text-node">${cita.cliente}</p>
-                                                        <p class="text-xs text-slate-600">${cita.servicio}</p>
-                                                    </div>
-                                                </div>
-                                                <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                                                    ${new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-ES', {month: 'short', day: 'numeric'})} ${cita.hora}
-                                                </span>
-                                            </div>
-                                            <button class="btn-ver-detalles w-full px-3 py-1 border border-blue-600 text-blue-600 rounded text-xs font-bold hover:bg-blue-50 transition" data-cita-id="${cita.id}">
-                                                Ver detalles
-                                            </button>
+                                <div id="proximas-citas-container" class="space-y-2 max-h-80 overflow-y-auto">
+                                    ${proximasCitas.slice(0, 5).map(cita => `
+                                        <div class="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer text-xs" data-cita-id="${cita.id}">
+                                            <p class="font-bold text-gray-900 truncate">${cita.cliente}</p>
+                                            <p class="text-gray-600 text-xs truncate">${cita.servicio}</p>
+                                            <p class="text-gray-500 text-xs mt-1">${cita.hora}</p>
                                         </div>
                                     `).join('')}
                                 </div>
                             ` : `
-                                <p class="text-sm text-slate-500 text-center py-6">No hay citas próximas</p>
+                                <p class="text-xs text-gray-500 text-center py-4">Sin citas próximas</p>
                             `}
                         </div>
 
                         <!-- Leyenda -->
-                        <div class="bg-white rounded-xl border border-subtle shadow-sm p-5">
-                            <h4 class="font-bold text-node text-sm mb-3">Servicios</h4>
-                            <div class="space-y-2 text-xs">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                            <h4 class="font-bold text-gray-900 text-sm mb-2">Estado</h4>
+                            <div class="space-y-1 text-xs">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background-color: #3B82F6;"></div>
-                                    <span class="text-slate-600">Corte</span>
+                                    <div class="w-3 h-3 rounded" style="background-color: #9CA3AF;"></div>
+                                    <span class="text-gray-600">No presentado</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background-color: #10B981;"></div>
-                                    <span class="text-slate-600">Coloración</span>
+                                    <div class="w-3 h-3 rounded" style="background-color: #FBBF24;"></div>
+                                    <span class="text-gray-600">Esperando</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background-color: #8B5CF6;"></div>
-                                    <span class="text-slate-600">Peinado</span>
+                                    <div class="w-3 h-3 rounded" style="background-color: #3B82F6;"></div>
+                                    <span class="text-gray-600">En atención</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" style="background-color: #F59E0B;"></div>
-                                    <span class="text-slate-600">Reunión</span>
+                                    <div class="w-3 h-3 rounded" style="background-color: #22C55E;"></div>
+                                    <span class="text-gray-600">Completado</span>
                                 </div>
                             </div>
                         </div>
@@ -137,6 +155,9 @@ class AgendaManager {
     renderTimelineCompleto() {
         const horas = Array.from({ length: 10 }, (_, i) => 9 + i);
         const fechaStr = this.selectedDate.toISOString().split('T')[0];
+        const ahora = new Date();
+        const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+        const estaHoy = fechaStr === ahora.toISOString().split('T')[0];
         
         const colorMap = {
             'Corte': { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
@@ -146,55 +167,141 @@ class AgendaManager {
             'Reunion': { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' }
         };
 
-        let html = '<div class="grid grid-cols-12 gap-0">';
-        
-        // Columna de horas
-        html += '<div class="col-span-2 border-r border-subtle bg-slate-50 p-2">';
-        horas.forEach(hora => {
-            html += `
-                <div class="h-24 flex items-start justify-center pt-2 border-b border-subtle text-xs font-semibold text-slate-600">
-                    ${String(hora).padStart(2, '0')}:00
-                </div>
-            `;
-        });
-        html += '</div>';
+        // Calcular slots de 15 minutos por hora
+        const slotsPerHora = 60 / this.tiempoGranularidad;
+        const pixelsPorHora = 96; // 4 slots * 24px = 96px por hora
+        const pixelsPorSlot = pixelsPorHora / slotsPerHora; // 24px por slot
 
-        // Columna de citas
-        html += '<div class="col-span-10 relative">';
+        let html = '<div class="relative w-full" style="overflow-x: auto;">';
         
+        // Grid: hora | Maria | Juan | Pedro
+        html += `<div class="grid" style="grid-template-columns: 70px repeat(${this.recursos.length}, 1fr); gap: 0;">`;
+        
+        // ===== HEADER CON NOMBRES DE RECURSOS =====
+        html += '<div class="bg-gray-100 border-b-2 border-gray-300 p-3 font-bold text-xs text-gray-600 sticky top-0 z-10"></div>';
+        this.recursos.forEach((recurso, idx) => {
+            html += `<div class="bg-gray-50 hover:bg-gray-100 transition border-b-2 border-gray-300 p-3 font-bold text-xs text-gray-900 sticky top-0 z-10 ${idx > 0 ? 'border-l border-gray-300' : ''} text-center shadow-sm">${recurso}</div>`;
+        });
+
+        // ===== TIMELINE CON GRANULARIDAD =====
         horas.forEach((hora) => {
-            const horaStr = String(hora).padStart(2, '0') + ':00';
-            const citasHora = this.navManager.citas.filter(c => c.hora === horaStr && c.fecha === fechaStr);
+            const horaStr = String(hora).padStart(2, '0');
             
-            html += `<div class="h-24 border-b border-subtle p-2 relative" style="display: grid; grid-template-columns: repeat(${Math.max(citasHora.length, 1)}, 1fr); gap: 2px;">`;
-            
-            if (citasHora.length > 0) {
-                citasHora.forEach(cita => {
-                    const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
-                    html += `
-                        <div class="rounded-lg p-2 h-full border-l-4 overflow-hidden cursor-pointer hover:shadow-md transition text-xs" 
-                             style="background-color: ${colors.bg}; border-left-color: ${colors.border}; color: ${colors.text};">
-                            <p class="font-bold leading-tight truncate">${cita.cliente}</p>
-                            <p class="opacity-75 leading-tight truncate text-xs">${cita.servicio}</p>
-                            ${cita.precio ? `<p class="font-semibold text-xs mt-0.5">€${parseFloat(cita.precio).toFixed(0)}</p>` : ''}
-                            <div class="flex gap-1 mt-1 text-xs">
-                                <button class="btn-edit-cita opacity-60 hover:opacity-100" data-id="${cita.id}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-delete-cita opacity-60 hover:opacity-100" data-id="${cita.id}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
+            // Para cada slot de 15/30 min
+            for (let slot = 0; slot < slotsPerHora; slot++) {
+                const minutos = slot * this.tiempoGranularidad;
+                const tiempoStr = `${horaStr}:${String(minutos).padStart(2, '0')}`;
+                const isMediaHora = minutos === 30;
+
+                // Celda de hora (solo en el primer slot)
+                if (slot === 0) {
+                    html += `<div class="bg-gray-50 border-r border-gray-200 p-1 font-bold text-xs text-gray-600 text-right pr-2" style="grid-row: span ${slotsPerHora}; border-bottom: 1px solid #E5E7EB;">${horaStr}:00</div>`;
+                }
+
+                // Celdas de recursos para este slot - AISLADAS CON position: relative
+                this.recursos.forEach((recurso) => {
+                    const borderStyle = isMediaHora ? '1px dashed #E5E7EB' : '1px solid #E5E7EB';
+                    const bgStyle = isMediaHora ? 'bg-gray-50' : 'bg-white';
+                    
+                    html += `<div class="relative p-0.5 border-r ${bgStyle} cursor-pointer hover:bg-blue-50 transition text-center text-xs border-l" 
+                             style="border-bottom: ${borderStyle}; min-height: ${pixelsPorSlot}px; position: relative;" 
+                             data-recurso="${recurso}" 
+                             data-tiempo="${tiempoStr}" 
+                             data-fecha="${fechaStr}">
+                    </div>`;
                 });
             }
-            
-            html += '</div>';
         });
 
-        html += '</div></div>';
+        html += '</div>'; // Cierra grid
+
+        // ===== CITAS ABSOLUTAS - Contenedor wrapper con posicionamiento =====
+        html = this.renderCitasOverlay(html, fechaStr, colorMap, pixelsPorHora);
+
+        // ===== LÍNEA DE HORA ACTUAL (Current Time Indicator) =====
+        if (estaHoy) {
+            const horasDesdeInicio = ahora.getHours() - 9;
+            const minutosEnHora = ahora.getMinutes();
+            const topPx = 50 + (horasDesdeInicio * pixelsPorHora) + ((minutosEnHora / 60) * pixelsPorHora);
+            
+            if (topPx >= 50 && topPx <= (50 + pixelsPorHora * 10)) {
+                html += `
+                    <div class="absolute left-0 right-0 pointer-events-none z-40" style="top: ${topPx}px;">
+                        <div class="h-1 bg-red-500 w-full shadow-lg" style="box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);"></div>
+                        <div class="absolute left-1 -top-2.5 text-xs font-bold text-white bg-red-500 px-2 py-0.5 rounded shadow-md">${horaActual}</div>
+                    </div>
+                `;
+            }
+        }
+
+        html += '</div>'; // Cierra relative wrapper
         return html;
+    }
+
+    renderCitasOverlay(html, fechaStr, colorMap, pixelsPorHora) {
+        // Renderizar las tarjetas de citas como overlay (absolute positioning dentro de la grilla)
+        const citasDelDia = this.navManager.citas.filter(c => c.fecha === fechaStr);
+        const hMin = 9;
+        const hMax = 19;
+        
+        const citasHTML = citasDelDia.map((cita, idx) => {
+            const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
+            const [citaHora, citaMin] = cita.hora.split(':').map(Number);
+            
+            // Validar que la cita esté dentro del rango de horas
+            if (citaHora < hMin || citaHora > hMax) return '';
+            
+            // Calcular posición Y (en píxeles desde el inicio del timeline)
+            const horasDesdeInicio = citaHora - hMin;
+            const minutosEnHora = citaMin;
+            const topPx = 50 + (horasDesdeInicio * pixelsPorHora) + ((minutosEnHora / 60) * pixelsPorHora);
+            
+            // Altura: calcular basada en horaFin si existe, si no usar 60 minutos
+            let heightPx = pixelsPorHora; // DEFAULT: 1 hora
+            if (cita.horaFin) {
+                const [finHora, finMin] = cita.horaFin.split(':').map(Number);
+                const minutosTotales = (finHora - citaHora) * 60 + (finMin - citaMin);
+                heightPx = (minutosTotales / 60) * pixelsPorHora;
+            }
+            
+            // Distribuir recursos: usar índice para distribuir entre columnas
+            const resourceIndex = idx % this.recursos.length;
+            const columnWidth = 100 / this.recursos.length;
+            const leftPercent = columnWidth * resourceIndex;
+            
+            // Estado: por ahora "atendiendose" (en desarrollo puedes agregar campo 'estado' a cita)
+            const estado = 'atendiendose';
+            const estadoStyle = this.citaStates[estado] || this.citaStates['atendiendose'];
+
+            return `
+                <div class="absolute rounded-lg border-l-4 text-xs shadow-md cursor-grab active:cursor-grabbing hover:shadow-lg transition z-20 overflow-hidden"
+                     style="
+                        background-color: ${estadoStyle.bg};
+                        border-left-color: ${estadoStyle.border};
+                        color: ${estadoStyle.text};
+                        top: ${topPx}px;
+                        left: calc(70px + (100% - 70px) * ${leftPercent / 100});
+                        width: calc((100% - 70px) / ${this.recursos.length} - 10px);
+                        height: ${heightPx}px;
+                        min-height: 48px;
+                        display: flex;
+                        flex-direction: column;
+                        padding: 8px;
+                     "
+                     draggable="true"
+                     data-cita-id="${cita.id}">
+                    <p class="font-bold text-xs truncate leading-tight">${cita.cliente}</p>
+                    <p class="text-xs opacity-90 truncate leading-tight flex-1">${cita.servicio}</p>
+                    <div class="flex justify-between items-center mt-auto pt-1 border-t" style="border-top-color: rgba(0,0,0,0.1);">
+                        <span class="text-xs font-semibold">${cita.hora}${cita.horaFin ? ' - ' + cita.horaFin : ''}</span>
+                        ${cita.precio ? `<span class="text-xs font-bold">€${parseInt(cita.precio)}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Insertar cards justo antes del cierre de wrapper (<!-- CARDS_MARKER -->)
+        return html + citasHTML;
     }
 
     renderWeekView() {
@@ -220,23 +327,23 @@ class AgendaManager {
         let html = '<div class="overflow-x-auto"><div class="grid" style="grid-template-columns: 60px repeat(7, 1fr); gap: 0;">';
         
         // Header días
-        html += '<div class="bg-slate-50 border-b border-subtle"></div>';
+        html += '<div class="bg-gray-50 border-b border-gray-200"></div>';
         dias.forEach(dia => {
             const diaNombre = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'][dia.getDay()];
             const isToday = dia.toDateString() === new Date().toDateString();
-            html += `<div class="p-2 border-b border-subtle text-center font-bold text-xs ${isToday ? 'bg-blue-50 text-blue-600' : 'bg-slate-50'}">${diaNombre} ${dia.getDate()}</div>`;
+            html += `<div class="p-2 border-b border-gray-200 text-center font-bold text-xs ${isToday ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-900'}">${diaNombre} ${dia.getDate()}</div>`;
         });
 
         // Horas y citas
         horas.forEach(hora => {
             const horaStr = String(hora).padStart(2, '0') + ':00';
-            html += `<div class="bg-slate-50 border-r border-subtle border-b text-xs font-semibold text-center text-slate-600 p-1">${horaStr}</div>`;
+            html += `<div class="bg-gray-50 border-r border-gray-200 border-b text-xs font-semibold text-center text-gray-600 p-1">${horaStr}</div>`;
             
             dias.forEach(dia => {
                 const fechaStr = dia.toISOString().split('T')[0];
                 const citasHora = this.navManager.citas.filter(c => c.hora === horaStr && c.fecha === fechaStr);
                 
-                html += `<div class="border-r border-b border-subtle p-1 h-20 overflow-y-auto text-xs space-y-0.5">`;
+                html += `<div class="border-r border-b border-gray-200 p-1 h-20 overflow-y-auto text-xs space-y-0.5">`;
                 citasHora.forEach(cita => {
                     const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
                     html += `
@@ -265,21 +372,21 @@ class AgendaManager {
         const startingDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
         let html = `
-            <div class="p-6">
-                <h3 class="text-lg font-bold text-node mb-4 text-center">${meses[month]} ${year}</h3>
+            <div class="p-4">
+                <h3 class="text-base font-bold text-gray-900 mb-3 text-center">${meses[month]} ${year}</h3>
                 <div class="grid grid-cols-7 gap-1">
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">L</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">M</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">X</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">J</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">V</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">S</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">D</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">L</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">M</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">X</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">J</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">V</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">S</div>
+                    <div class="text-xs font-bold text-gray-500 p-2 text-center">D</div>
         `;
 
         // Días vacíos
         for (let i = 0; i < startingDayOfWeek; i++) {
-            html += '<div class="p-2 bg-slate-50 rounded"></div>';
+            html += '<div class="p-2 bg-gray-50 rounded"></div>';
         }
 
         // Días del mes
@@ -289,9 +396,9 @@ class AgendaManager {
             const isToday = day === new Date().getDate() && month === new Date().getMonth();
 
             html += `
-                <div class="p-3 border rounded-lg cursor-pointer hover:shadow-md transition min-h-16 ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-subtle'}" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">
-                    <p class="text-xs font-bold text-slate-600 mb-1">${day}</p>
-                    ${citasDay.length > 0 ? `<div class="text-xs"><p class="font-semibold text-blue-600">${citasDay.length} cita${citasDay.length > 1 ? 's' : ''}</p></div>` : ''}
+                <div class="p-2 border rounded-lg cursor-pointer hover:shadow-md transition min-h-14 text-xs ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'}" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">
+                    <p class="text-xs font-bold text-gray-600 mb-1">${day}</p>
+                    ${citasDay.length > 0 ? `<p class="font-semibold text-blue-600 text-xs">${citasDay.length} cita${citasDay.length > 1 ? 's' : ''}</p>` : ''}
                 </div>
             `;
         }
@@ -312,17 +419,17 @@ class AgendaManager {
         const startingDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
 
         let html = `
-            <div class="text-center mb-3">
-                <p class="text-sm font-bold text-node">${meses[month]} ${year}</p>
+            <div class="text-center mb-2">
+                <p class="text-xs font-bold text-gray-900">${meses[month]} ${year}</p>
             </div>
-            <div class="grid grid-cols-7 gap-1 text-center mb-3">
-                <div class="text-xs font-bold text-slate-500">L</div>
-                <div class="text-xs font-bold text-slate-500">M</div>
-                <div class="text-xs font-bold text-slate-500">X</div>
-                <div class="text-xs font-bold text-slate-500">J</div>
-                <div class="text-xs font-bold text-slate-500">V</div>
-                <div class="text-xs font-bold text-slate-500">S</div>
-                <div class="text-xs font-bold text-slate-500">D</div>
+            <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                <div class="text-xs font-bold text-gray-500">L</div>
+                <div class="text-xs font-bold text-gray-500">M</div>
+                <div class="text-xs font-bold text-gray-500">X</div>
+                <div class="text-xs font-bold text-gray-500">J</div>
+                <div class="text-xs font-bold text-gray-500">V</div>
+                <div class="text-xs font-bold text-gray-500">S</div>
+                <div class="text-xs font-bold text-gray-500">D</div>
         `;
 
         // Días vacíos
@@ -338,13 +445,13 @@ class AgendaManager {
             const isSelected = day === this.selectedDate.getDate() && month === this.selectedDate.getMonth() && year === this.selectedDate.getFullYear();
 
             if (isToday) {
-                html += `<div class="h-8 w-8 mx-auto rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold cursor-pointer" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-blue-700" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else if (isSelected) {
                 html += `<div class="h-8 w-8 mx-auto rounded text-xs font-bold text-blue-600 flex items-center justify-center border-2 border-blue-600 cursor-pointer" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else if (hasCita) {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-blue-600 flex items-center justify-center cursor-pointer font-bold" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto text-xs text-blue-600 flex items-center justify-center cursor-pointer font-bold hover:bg-blue-50 rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-100 rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto text-xs text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             }
         }
 
@@ -353,29 +460,48 @@ class AgendaManager {
     }
 
     setupListeners() {
-        // Guardar referencia global para usar en modales
+        // Guardar referencia global
         window.agendaManagerInstance = this;
 
-        // Vista buttons
+        // ===== TOGGLE SIDEBAR =====
+        const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+        const sidebar = document.getElementById('agenda-sidebar');
+        if (btnToggleSidebar && sidebar) {
+            btnToggleSidebar.addEventListener('click', () => {
+                this.sidebarVisible = !this.sidebarVisible;
+                if (this.sidebarVisible) {
+                    sidebar.classList.remove('hidden', 'w-0');
+                    sidebar.classList.add('w-64');
+                    btnToggleSidebar.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                } else {
+                    sidebar.classList.add('hidden');
+                    btnToggleSidebar.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                }
+            });
+        }
+
+        // ===== VISTA BUTTONS =====
         document.querySelectorAll('.agenda-view-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.agenda-view-btn').forEach(b => {
-                    b.classList.remove('bg-blue-50', 'text-blue-600');
-                    b.classList.add('text-slate-600');
+                    b.classList.remove('bg-white', 'text-gray-900');
+                    b.classList.add('text-gray-600');
                 });
-                btn.classList.add('bg-blue-50', 'text-blue-600');
-                btn.classList.remove('text-slate-600');
+                btn.classList.add('bg-white', 'text-gray-900');
+                btn.classList.remove('text-gray-600');
                 
                 this.agendaView = btn.getAttribute('data-view');
                 const agendaContent = document.getElementById('agenda-content');
                 if (agendaContent) {
                     agendaContent.innerHTML = this.renderContent();
                     this.attachCitaListeners();
+                    this.setupClickToAdd();
+                    this.setupDragDrop();
                 }
             });
         });
 
-        // Botones anterior/siguiente
+        // ===== BOTONES ANTERIOR/SIGUIENTE =====
         const prevBtn = document.getElementById('agenda-prev-btn');
         const nextBtn = document.getElementById('agenda-next-btn');
         const dateInput = document.getElementById('agenda-date-input');
@@ -403,90 +529,143 @@ class AgendaManager {
             });
         }
 
-        // Nueva cita
+        // ===== NUEVA CITA =====
         const btnNueva = document.getElementById('btn-nueva-cita');
         if (btnNueva) {
             btnNueva.addEventListener('click', () => {
-                const citaForm = document.getElementById('cita-fecha');
-                if (citaForm) {
-                    citaForm.value = this.selectedDate.toISOString().split('T')[0];
-                }
-                this.navManager.openModal();
+                this.navManager.showNewCitaModal({
+                    fecha: this.selectedDate.toISOString().split('T')[0]
+                });
             });
         }
 
-        // Ver detalles de cita próxima
-        document.querySelectorAll('.btn-ver-detalles').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const citaId = btn.getAttribute('data-cita-id');
-                const cita = this.navManager.citas.find(c => c.id === citaId);
-                if (cita) {
-                    this.mostrarDetallesCita(cita);
+        // ===== CLICK-TO-ADD Y DRAG-DROP =====
+        this.setupClickToAdd();
+        this.setupDragDrop();
+        this.attachCitaListeners();
+    }
+
+    setupClickToAdd() {
+        // Hacer clickeables las celdas vacías para crear citas rápidamente
+        document.querySelectorAll('[data-recurso][data-tiempo][data-fecha]').forEach(celda => {
+            celda.addEventListener('click', (e) => {
+                if (e.target === celda || e.target.closest('[data-recurso]')) {
+                    const recurso = celda.getAttribute('data-recurso');
+                    const tiempo = celda.getAttribute('data-tiempo');
+                    const fecha = celda.getAttribute('data-fecha');
+                    
+                    // Abrir modal con pre-rellenado
+                    this.navManager.showNewCitaModal({
+                        fecha: fecha,
+                        hora: tiempo,
+                        recurso: recurso
+                    });
                 }
+            });
+        });
+    }
+
+    setupDragDrop() {
+        const citas = document.querySelectorAll('[data-cita-id][draggable="true"]');
+        
+        citas.forEach(cita => {
+            cita.addEventListener('dragstart', (e) => {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', cita.getAttribute('data-cita-id'));
             });
         });
 
-        // Hacer las citas próximas clickeables para ver detalles
-        document.querySelectorAll('#proximas-citas-container > div[data-cita-id]').forEach(div => {
-            div.addEventListener('click', (e) => {
-                // No ejecutar si ya se hizo click en el botón
-                if (!e.target.closest('.btn-ver-detalles')) {
-                    const citaId = div.getAttribute('data-cita-id');
-                    const cita = this.navManager.citas.find(c => c.id === citaId);
-                    if (cita) {
-                        this.mostrarDetallesCita(cita);
-                    }
+        const recursos = document.querySelectorAll('[data-recurso][data-tiempo][data-fecha]');
+        recursos.forEach(recurso => {
+            recurso.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                recurso.classList.add('bg-blue-100');
+            });
+
+            recurso.addEventListener('dragleave', (e) => {
+                recurso.classList.remove('bg-blue-100');
+            });
+
+            recurso.addEventListener('drop', (e) => {
+                e.preventDefault();
+                recurso.classList.remove('bg-blue-100');
+                
+                const citaId = e.dataTransfer.getData('text/plain');
+                const cita = this.navManager.citas.find(c => c.id === citaId);
+                
+                if (cita) {
+                    const nuevoTiempo = recurso.getAttribute('data-tiempo');
+                    const nuevaFecha = recurso.getAttribute('data-fecha');
+                    
+                    cita.hora = nuevoTiempo;
+                    cita.fecha = nuevaFecha;
+                    
+                    this.navManager.saveCita(cita);
+                    this.refresh();
                 }
             });
         });
-        
-        // Edit y delete
-        this.attachCitaListeners();
     }
 
     mostrarDetallesCita(cita) {
         const detalles = `
-            <div class="space-y-4">
-                <div class="flex items-center gap-3 pb-4 border-b border-subtle">
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 pb-3 border-b border-gray-200">
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
                         ${cita.cliente.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <p class="text-lg font-bold text-node">${cita.cliente}</p>
-                        <p class="text-sm text-slate-600">${cita.servicio}</p>
+                        <p class="text-base font-bold text-gray-900">${cita.cliente}</p>
+                        <p class="text-xs text-gray-600">${cita.servicio}</p>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                        <p class="text-xs uppercase font-bold text-slate-500 mb-1">Fecha</p>
-                        <p class="text-sm font-semibold text-node">${new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-ES', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Fecha</p>
+                        <p class="font-semibold text-gray-900">${new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-ES', {weekday: 'short', month: 'short', day: 'numeric'})}</p>
                     </div>
                     <div>
-                        <p class="text-xs uppercase font-bold text-slate-500 mb-1">Hora</p>
-                        <p class="text-sm font-semibold text-node">${cita.hora}</p>
+                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Hora</p>
+                        <p class="font-semibold text-gray-900">${cita.hora}</p>
                     </div>
                 </div>
 
                 <div>
-                    <p class="text-xs uppercase font-bold text-slate-500 mb-1">Servicio</p>
-                    <p class="text-sm font-semibold text-node">${cita.servicio}</p>
+                    <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Servicio</p>
+                    <p class="font-semibold text-gray-900 text-sm">${cita.servicio}</p>
                 </div>
 
                 ${cita.precio ? `
                     <div>
-                        <p class="text-xs uppercase font-bold text-slate-500 mb-1">Precio</p>
+                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Precio</p>
                         <p class="text-lg font-bold text-blue-600">€${parseFloat(cita.precio).toFixed(2)}</p>
                     </div>
                 ` : ''}
 
-                <div class="flex gap-2 pt-4 border-t border-subtle">
-                    <button onclick="document.getElementById('cita-id').value = '${cita.id}'; document.getElementById('cita-cliente').value = '${cita.cliente}'; document.getElementById('cita-servicio').value = '${cita.servicio}'; document.getElementById('cita-fecha').value = '${cita.fecha}'; document.getElementById('cita-hora').value = '${cita.hora}'; document.getElementById('cita-precio').value = '${cita.precio || ''}'; document.getElementById('modal-title').textContent = 'Editar Cita'; document.getElementById('modal-cita').classList.remove('hidden');" class="flex-1 px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition">
-                        Editar
+                <div class="flex gap-2 pt-3 border-t border-gray-200">
+                    <button onclick="
+                        const modal = document.getElementById('modal-cita');
+                        document.getElementById('cita-id').value = '${cita.id}';
+                        document.getElementById('cita-cliente').value = '${cita.cliente.replace(/'/g, "\\'")}';
+                        document.getElementById('cita-servicio').value = '${cita.servicio.replace(/'/g, "\\'")}';
+                        document.getElementById('cita-fecha').value = '${cita.fecha}';
+                        document.getElementById('cita-hora').value = '${cita.hora}';
+                        document.getElementById('cita-precio').value = '${cita.precio || ''}';
+                        document.getElementById('modal-title').textContent = 'Editar Cita';
+                        modal.classList.remove('hidden');
+                        document.getElementById('modal-detalles-cita').remove();
+                    " class="flex-1 px-3 py-2 bg-blue-600 text-white font-bold rounded text-sm hover:bg-blue-700 transition">
+                        <i class="fas fa-edit mr-1"></i> Editar
                     </button>
-                    <button onclick="if (confirm('¿Eliminar cita?')) { const currentView = document.querySelector('[data-view].active'); const agendaManager = window.agendaManagerInstance; if (agendaManager) agendaManager.navManager.deleteCita('${cita.id}'); }" class="flex-1 px-4 py-2 border border-red-500 text-red-500 font-bold rounded-lg hover:bg-red-50 transition">
-                        Eliminar
+                    <button onclick="
+                        if (confirm('¿Eliminar esta cita?')) {
+                            window.agendaManagerInstance.navManager.deleteCita('${cita.id}');
+                            document.getElementById('modal-detalles-cita').remove();
+                        }
+                    " class="flex-1 px-3 py-2 border border-red-500 text-red-600 font-bold rounded text-sm hover:bg-red-50 transition">
+                        <i class="fas fa-trash mr-1"></i> Eliminar
                     </button>
                 </div>
             </div>
@@ -497,14 +676,14 @@ class AgendaManager {
         modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
         modal.id = 'modal-detalles-cita';
         modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-lg max-w-md w-full mx-4">
-                <div class="flex items-center justify-between p-6 border-b border-subtle">
-                    <h3 class="text-xl font-bold text-node">Detalles de la cita</h3>
-                    <button onclick="document.getElementById('modal-detalles-cita').remove()" class="text-slate-400 hover:text-slate-600 text-2xl">
+            <div class="bg-white rounded-lg shadow-lg max-w-sm w-full mx-4">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-900">Detalles de la cita</h3>
+                    <button onclick="document.getElementById('modal-detalles-cita').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">
                         ×
                     </button>
                 </div>
-                <div class="p-6">
+                <div class="p-4">
                     ${detalles}
                 </div>
             </div>
@@ -517,23 +696,51 @@ class AgendaManager {
     }
 
     attachCitaListeners() {
-        document.querySelectorAll('.btn-edit-cita').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.getAttribute('data-id');
+        // Edit y delete en las tarjetas de citas (overlay)
+        document.querySelectorAll('[data-cita-id]').forEach(card => {
+            card.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const id = card.getAttribute('data-cita-id');
                 const cita = this.navManager.citas.find(c => c.id === id);
-                if (cita) this.navManager.openModal(cita);
-            });
-        });
-
-        document.querySelectorAll('.btn-delete-cita').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const id = btn.getAttribute('data-id');
-                if (confirm('¿Eliminar cita?')) {
-                    this.navManager.deleteCita(id);
+                if (cita) {
+                    this.mostrarMenuContextual(cita, e.clientX, e.clientY);
                 }
             });
+
+            // Click para ver detalles
+            card.addEventListener('click', (e) => {
+                if (e.button === 0 && !card.dragging) { // Click izquierdo
+                    const id = card.getAttribute('data-cita-id');
+                    const cita = this.navManager.citas.find(c => c.id === id);
+                    if (cita) {
+                        this.mostrarDetallesCita(cita);
+                    }
+                }
+            });
+        });
+    }
+
+    mostrarMenuContextual(cita, x, y) {
+        const menu = document.createElement('div');
+        menu.className = 'fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1';
+        menu.style.top = y + 'px';
+        menu.style.left = x + 'px';
+        menu.innerHTML = `
+            <button onclick="window.agendaManagerInstance.navManager.openModal(this.closest('[data-cita-id]')); this.closest('[class*=fixed]').remove();" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 block text-gray-900 font-medium">
+                <i class="fas fa-edit mr-2"></i> Editar
+            </button>
+            <button onclick="if (confirm('¿Eliminar cita?')) { window.agendaManagerInstance.navManager.deleteCita('${cita.id}'); } this.closest('[class*=fixed]').remove();" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 block text-red-600 font-medium">
+                <i class="fas fa-trash mr-2"></i> Eliminar
+            </button>
+        `;
+        
+        document.body.appendChild(menu);
+        setTimeout(() => {
+            document.addEventListener('click', (e) => {
+                if (e.target !== menu && !menu.contains(e.target)) {
+                    menu.remove();
+                }
+            }, { once: true });
         });
     }
 
@@ -548,6 +755,8 @@ class AgendaManager {
             calendarMini.innerHTML = this.renderCalendarMini();
         }
         
+        this.setupClickToAdd();
+        this.setupDragDrop();
         this.attachCitaListeners();
     }
 }

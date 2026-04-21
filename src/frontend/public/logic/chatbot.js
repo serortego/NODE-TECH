@@ -136,21 +136,40 @@ class ChatbotManager {
         const clienteMatch = texto.match(/(?:para|cliente|cita para)\s+(.+?)(?:\s+(?:mañana|hoy|el|a las?))/i);
         const fechaMatch = texto.match(/(?:mañana|hoy|ayer|el|a)?\s+(.+?)(?:\s+a las?)?/i);
         const horaMatch = texto.match(/(?:a las?)\s+(\d{1,2}:\d{2})/i);
+        const servicioMatch = texto.match(/(?:de|para|servicio|para un)\s+(.+?)(?:\s+(?:mañana|hoy|ayer|el))?/i);
 
         if (clienteMatch) {
             const cliente = clienteMatch[1].trim();
-            const hora = horaMatch ? horaMatch[1] : '09:00';
+            const horaInicio = horaMatch ? horaMatch[1] : '09:00';
+            
+            // Calcular hora de fin (por defecto 1 hora después)
+            const [h, m] = horaInicio.split(':').map(Number);
+            const horaFin = String((h + 1) % 24).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+            
             const fecha = this.parsearFecha(fechaMatch ? fechaMatch[1] : 'mañana');
-            const servicio = 'Reunión';
+            const servicio = servicioMatch ? servicioMatch[1].trim() : 'Reunión';
 
-            // Guardar cita en localStorage
-            this.guardarCita({ cliente, fecha, hora, servicio });
+            // Crear cita usando el sistema centralizado
+            const nuevaCita = {
+                id: String(Math.max(...this.navManager.citas.map(c => parseInt(c.id) || 0), 0) + 1),
+                cliente: cliente,
+                servicio: servicio,
+                fecha: fecha,
+                hora: horaInicio,
+                horaFin: horaFin,
+                precio: '0',
+                recurso: this.navManager.recursos?.[0] || 'Auto-asignado',
+                notas: 'Creada desde Chatbot',
+                estado: 'esperando'
+            };
+
+            this.navManager.createNewCita(nuevaCita);
 
             return {
-                mensaje: `📅 Cita creada para ${cliente} el ${fecha} a las ${hora}. ¡Se agregó a tu agenda!`,
+                mensaje: `📅 ✅ Cita creada para ${cliente} el ${fecha} de ${horaInicio} a ${horaFin}. ¡Se agregó a tu agenda!`,
                 sugerencias: [
                     { texto: '📅 Ver agenda', comando: 'Ver mis citas' },
-                    { texto: '✏️ Editar', comando: 'Editar cita' }
+                    { texto: '➕ Otra cita', comando: 'Crea otra cita' }
                 ]
             };
         } else {
@@ -177,14 +196,6 @@ class ChatbotManager {
             return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
         }
         return new Date().toISOString().split('T')[0];
-    }
-
-    guardarCita(cita) {
-        let citas = JSON.parse(localStorage.getItem('crm-appointments')) || [];
-        const id = Date.now().toString();
-        const precio = '0';
-        citas.push({ id, ...cita, precio });
-        localStorage.setItem('crm-appointments', JSON.stringify(citas));
     }
 
     getHelpMessage() {

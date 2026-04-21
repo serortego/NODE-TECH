@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE TECH | Finanzas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        node: {
+                            dark: '#0D253E',
+                            teal: '#3B82F6',
+                        }
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #F8FAFC; 
+            color: #0D253E;
+        }
+        .text-node { color: #0D253E; }
+        .bg-node-dark { background: #0D253E; }
+        .bg-node-teal { background: #3B82F6; }
+        .border-subtle { border-color: #E2E8F0; }
+        .shadow-soft { box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08); }
+        .sidebar-item { transition: all 0.2s ease; }
+        .sidebar-item:hover { background: #E8F2FA; color: #0D253E; }
+        .sidebar-item.active { background: #3B82F6; color: white; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Sidebar Fijo -->
+    <aside class="fixed left-0 top-0 h-screen w-80 border-r border-subtle bg-white shadow-sm flex flex-col z-40">
+        <div class="p-6 border-b border-subtle">
+            <div class="text-center mb-4">
+                <svg class="w-16 h-16 mx-auto mb-3" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="24" y="24" width="16" height="16" fill="#3B82F6" rx="2"/>
+                    <line x1="32" y1="8" x2="32" y2="24" stroke="#3B82F6" stroke-width="2"/>
+                    <line x1="32" y1="40" x2="32" y2="56" stroke="#3B82F6" stroke-width="2"/>
+                    <line x1="8" y1="32" x2="24" y2="32" stroke="#3B82F6" stroke-width="2"/>
+                    <line x1="40" y1="32" x2="56" y2="32" stroke="#3B82F6" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-black text-node">NODE TECH</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal mt-2">Automatizacion inteligente</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal">para negocios</p>
+            </div>
+        </div>
+
+        <nav class="mt-6 space-y-2 px-4 flex-1 overflow-y-auto">
+            <a href="inicio.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-home w-5 text-slate-400"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="chatbot.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-robot w-5 text-slate-400"></i>
+                <span>Asistente</span>
+            </a>
+            <a href="agenda.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-calendar-alt w-5 text-slate-400"></i>
+                <span>Agenda</span>
+            </a>
+            <a href="finanzas.html" class="sidebar-item active flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-white bg-node-teal shadow-sm">
+                <i class="fas fa-chart-line w-5"></i>
+                <span>Finanzas</span>
+            </a>
+            <a href="empleados.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-users w-5 text-slate-400"></i>
+                <span>Empleados</span>
+            </a>
+            <a href="clientes.html" class="sidebar-item flex items-center gap-3 rounded-2xl px-4 py-3 font-medium text-slate-700">
+                <i class="fas fa-address-book w-5 text-slate-400"></i>
+                <span>Clientes</span>
+            </a>
+        </nav>
+
+        <div class="mt-10 px-6">
+            <div class="rounded-[1.5rem] bg-gradient-to-br from-node-teal/10 to-node-teal/5 p-5 border border-node-teal/20">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-node-teal">Consejo</p>
+                <p class="mt-3 text-sm font-medium text-slate-700">Analiza tus finanzas.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-80 min-h-screen overflow-y-auto bg-gray-50 p-6" id="content-area">
+        <!-- Contenido dinámico desde NavigationManager -->
+    </main>
+
+    <!-- Modal para citas -->
+    <div id="modal-cita" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h2 id="modal-title" class="text-2xl font-bold text-node mb-4">Nueva Cita</h2>
+            <form id="form-cita" class="space-y-4">
+                <input type="hidden" id="cita-id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Cliente</label>
+                    <input type="text" id="cita-cliente" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Servicio</label>
+                    <select id="cita-servicio" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                        <option value="">Selecciona un servicio</option>
+                        <option value="Corte">Corte</option>
+                        <option value="Coloracion">Coloracion</option>
+                        <option value="Peinado">Peinado</option>
+                        <option value="Tratamiento Capilar">Tratamiento Capilar</option>
+                        <option value="Reunion">Reunión</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Fecha</label>
+                        <input type="date" id="cita-fecha" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Hora</label>
+                        <input type="time" id="cita-hora" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Precio (EUR)</label>
+                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-4 py-2 border border-subtle rounded-lg focus:outline-none focus:ring-2 focus:ring-node-teal" step="0.01">
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 bg-node-teal text-white font-bold py-2 rounded-lg hover:bg-[#23849b] transition">Guardar</button>
+                    <button type="button" id="btn-cancelar-modal" class="flex-1 border border-subtle text-slate-600 font-bold py-2 rounded-lg hover:bg-slate-50 transition">Cancelar</button>
+                </div>
+            </form>
+            <button id="close-modal" class="absolute top-2 right-2 text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Load all managers before navigation -->
+    <script src="../logic/agenda.js"></script>
+    <script src="../logic/empleados.js"></script>
+    <script src="../logic/clientes.js"></script>
+    <script src="../logic/finanzas.js"></script>
+    <script src="../logic/chatbot.js"></script>
+    <script src="../logic/navigation.js"></script>
+</body>
+</html>

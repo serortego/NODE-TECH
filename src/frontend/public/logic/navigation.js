@@ -1,176 +1,37 @@
-<<<<<<< Updated upstream
-// navigation.js — Guarda de autenticación + navegación global
-//
-// Páginas privadas: deben incluir en <head>:
-//   <style id="auth-loading">body{visibility:hidden!important}</style>
-// Este módulo elimina ese estilo una vez que la autenticación queda confirmada,
-// evitando que el usuario vea contenido protegido antes de la verificación.
+// ═══════════════════════════════════════════════════════════════════
+// NAVIGATION.JS - Router Global + Todos los Managers
+// Estructura: Cada Manager está en su propia sección, todo en UN archivo
+// ═══════════════════════════════════════════════════════════════════
 
-import { auth, onAuthStateChanged, getUserProfile, logout } from './auth.js';
-
-const PUBLIC_PAGES = ['index.html', 'welcome_page.html', 'sign_up.html', ''];
-
-function pageName() {
-  return window.location.pathname.split('/').pop() || '';
-}
-
-function isPublicPage() {
-  return PUBLIC_PAGES.includes(pageName());
-}
-
-function revealPage() {
-  document.getElementById('auth-loading')?.remove();
-}
-
-// ── Guarda de autenticación ──────────────────────────────────────────────────
-// Fallback: si Firebase no responde en 6 s, redirigir al login
-const authTimeout = isPublicPage() ? null : setTimeout(() => {
-  window.location.href = 'sign_up.html';
-}, 6000);
-
-onAuthStateChanged(auth, async (user) => {
-  if (authTimeout) clearTimeout(authTimeout);
-
-  if (isPublicPage()) {
-    revealPage();
-    return;
-  }
-
-  // Página privada sin sesión → login
-  if (!user) {
-    window.location.href = 'sign_up.html';
-    return;
-  }
-
-  try {
-    const profile = await getUserProfile(user.uid);
-
-    if (!profile || profile.status !== 'active') {
-      await logout();
-      window.location.href = 'sign_up.html';
-      return;
-    }
-
-    // Exponer datos del usuario para otros scripts de la página
-    window.currentUser = { user, profile };
-    document.dispatchEvent(new CustomEvent('nodeUserReady', { detail: { user, profile } }));
-    revealPage();
-
-  } catch (err) {
-    console.error('[auth-guard]', err);
-    window.location.href = 'sign_up.html';
-  }
-});
-
-// ── NavigationManager (UI, scroll, menú) ────────────────────────────────────
-class NavigationManager {
-  constructor() {
-    this.setupGlobalNavigation();
-    this.setupPageSpecificEvents();
-  }
-
-  setupGlobalNavigation() {
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href]');
-      if (!link) return;
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto')) return;
-      e.preventDefault();
-      this.navigateTo(href);
-    });
-
-    document.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-action]');
-      if (el) this.executeAction(el.getAttribute('data-action'));
-    });
-  }
-
-  navigateTo(page) {
-    document.body.style.opacity = '0.5';
-    setTimeout(() => { window.location.href = page; }, 200);
-  }
-
-  executeAction(action) {
-    switch (action) {
-      case 'logout':        this.logout();                     break;
-      case 'back':          this.goBack();                     break;
-      case 'home':          this.navigateTo('inicio.html');    break;
-      case 'scroll-to-chat':this.scrollTo('#chat');           break;
-      case 'toggle-menu':   this.toggleMobileMenu();           break;
-    }
-  }
-
-  async logout() {
-    if (confirm('¿Deseas cerrar sesión?')) {
-      await logout();
-      window.location.href = 'sign_up.html';
-    }
-  }
-
-  goBack() {
-    window.history.length > 1 ? window.history.back() : this.navigateTo('inicio.html');
-  }
-
-  scrollTo(selector) {
-    document.querySelector(selector)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  toggleMobileMenu() {
-    document.querySelector('[data-mobile-menu]')?.classList.toggle('hidden');
-  }
-
-  setupPageSpecificEvents() {
-    const page = pageName();
-    if (page === 'welcome_page.html') this.setupWelcomePage();
-  }
-
-  setupWelcomePage() {
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.scrollTo(link.getAttribute('href'));
-      });
-    });
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  window.navigationManager = new NavigationManager();
-});
-
-// Acceso global para compatibilidad con código inline
-window.navigateTo = (page) => window.navigationManager?.navigateTo(page) ?? (window.location.href = page);
-window.goBack     = ()     => window.navigationManager?.goBack()          ?? window.history.back();
-window.logout     = async () => window.navigationManager?.logout();
-=======
-// navigation.js - Manejo centralizado de navegación, vistas y eventos globales
+// ══════════════════════════════════════════════════════════════════
+// 1️⃣ NAVIGATION MANAGER - Router Principal
+// ══════════════════════════════════════════════════════════════════
 
 class NavigationManager {
     constructor() {
-        this.currentView = 'dashboard';
+        this.currentView = null;
+        this.currentManager = null;
         this.contentArea = document.getElementById('content-area');
         this.navItems = document.querySelectorAll('.nav-item');
-        this.modal = document.getElementById('modal-cita');
-        this.form = document.getElementById('form-cita');
-        this.closeModalBtn = document.getElementById('close-modal');
-        this.cancelModalBtn = document.getElementById('btn-cancelar-modal');
         
+        // Estado global compartido
         this.citas = [];
-        this.agendaManager = null;
-        this.chatbotManager = null;
+        this.usuario = null;
+        this.recursos = ['María García', 'Juan López', 'Pedro Sánchez']; // Trabajadores disponibles
+        
         this.loadCitas();
         this.init();
     }
 
     init() {
         this.setupNavigation();
-        this.setupModal();
         this.loadView('dashboard');
     }
 
     setupNavigation() {
         this.navItems.forEach(item => {
             item.addEventListener('click', (e) => {
+                e.preventDefault();
                 const view = item.getAttribute('data-view');
                 if (view) {
                     this.setActiveNav(item);
@@ -180,332 +41,301 @@ class NavigationManager {
         });
     }
 
-    setupModal() {
-        this.closeModalBtn.addEventListener('click', () => this.closeModal());
-        this.cancelModalBtn.addEventListener('click', () => this.closeModal());
-        this.form.addEventListener('submit', (e) => this.handleSaveCita(e));
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.closeModal();
+    setActiveNav(clickedItem) {
+        this.navItems.forEach(item => {
+            item.classList.remove('active', 'bg-node-teal', 'text-white');
+            item.classList.add('text-gray-700');
         });
+        clickedItem.classList.add('active', 'bg-node-teal', 'text-white');
+        clickedItem.classList.remove('text-gray-700');
     }
 
     setActiveNav(clickedItem) {
         this.navItems.forEach(item => {
             item.classList.remove('active', 'bg-node-teal', 'text-white');
-            item.classList.add('text-slate-700');
+            item.classList.add('text-gray-700');
         });
-        clickedItem.classList.add('active', 'bg-node-teal', 'text-white');
-        clickedItem.classList.remove('text-slate-700');
+        if (clickedItem) {
+            clickedItem.classList.add('active', 'bg-node-teal', 'text-white');
+            clickedItem.classList.remove('text-gray-700');
+        }
     }
 
     loadView(viewName) {
+        // Destruir manager anterior
+        if (this.currentManager && this.currentManager.destroy) {
+            this.currentManager.destroy();
+        }
+
         this.currentView = viewName;
         let content = '';
-        
+
         switch(viewName) {
             case 'dashboard':
                 content = this.renderDashboard();
-                break;
+                this.contentArea.innerHTML = content;
+                setTimeout(() => this.setupDashboardListeners(), 0);
+                return;
             case 'asistente':
-                // Crear instancia de ChatbotManager si no existe
-                if (!this.chatbotManager) {
-                    this.chatbotManager = new ChatbotManager(this);
-                }
-                content = this.chatbotManager.render();
-                // Configurar listeners después de renderizar
-                setTimeout(() => this.chatbotManager.setupListeners(), 0);
+                this.currentManager = new ChatbotManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
             case 'agenda':
-                // Crear instancia de AgendaManager si no existe
-                if (!this.agendaManager) {
-                    this.agendaManager = new AgendaManager(this);
-                }
-                content = this.agendaManager.render();
-                // Configurar listeners después de renderizar
-                setTimeout(() => this.agendaManager.setupListeners(), 0);
+                this.currentManager = new AgendaManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
             case 'finanzas':
-                content = this.renderFinanzas();
+                this.currentManager = new FinanzasManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
             case 'empleados':
-                content = this.renderEmpleados();
+                this.currentManager = new EmpleadosManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
             case 'clientes':
-                content = this.renderClientes();
+                this.currentManager = new ClientesManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
             default:
                 content = '<div class="text-center py-12"><p class="text-gray-500">Contenido no encontrado</p></div>';
         }
-        
+
         this.contentArea.innerHTML = content;
     }
 
-    renderDashboard() {
-        return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-3xl font-bold text-node">Dashboard</h2>
-                        <p class="text-sm text-slate-600 mt-1">Resumen de tu negocio</p>
-                    </div>
-                </div>
+    setupDashboardListeners() {
+        // ===== CENTRO DE MANDOS - ASISTENTE =====
+        const asistenteInput = document.getElementById('asistente-input');
+        const btnEnviar = document.getElementById('btn-enviar-asistente');
+        const btnVoice = document.getElementById('btn-voice');
 
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div class="rounded-xl bg-white p-5 border border-subtle shadow-sm hover:shadow-md transition">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Ingresos</p>
-                                <p class="mt-2 text-2xl font-bold text-node">€2,450</p>
-                                <p class="mt-1 text-xs font-medium text-emerald-600">+12.5%</p>
-                            </div>
-                            <div class="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-chart-line text-lg text-emerald-600"></i>
-                            </div>
-                        </div>
-                    </div>
+        if (asistenteInput && btnEnviar) {
+            btnEnviar.addEventListener('click', () => {
+                const comando = asistenteInput.value.trim();
+                if (comando) {
+                    this.showNotification(`📝 Comando registrado: "${comando}"`, 'info');
+                    asistenteInput.value = '';
+                    // Aquí irá la lógica del chatbot real
+                }
+            });
 
-                    <div class="rounded-xl bg-white p-5 border border-subtle shadow-sm hover:shadow-md transition">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Citas</p>
-                                <p class="mt-2 text-2xl font-bold text-node">${this.citas.length}</p>
-                                <p class="mt-1 text-xs font-medium text-blue-600">${this.getCitasHoy().length} hoy</p>
-                            </div>
-                            <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-calendar-check text-lg text-blue-600"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-xl bg-white p-5 border border-subtle shadow-sm hover:shadow-md transition">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Clientes</p>
-                                <p class="mt-2 text-2xl font-bold text-node">28</p>
-                                <p class="mt-1 text-xs font-medium text-purple-600">+3 nuevos</p>
-                            </div>
-                            <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-users text-lg text-purple-600"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-xl bg-white p-5 border border-subtle shadow-sm hover:shadow-md transition">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Conversión</p>
-                                <p class="mt-2 text-2xl font-bold text-node">32%</p>
-                                <p class="mt-1 text-xs font-medium text-amber-600">-2%</p>
-                            </div>
-                            <div class="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-percent text-lg text-amber-600"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid gap-6 lg:grid-cols-[1.2fr_1fr_0.8fr]">
-                    <div class="rounded-xl bg-white p-5 border border-subtle shadow-sm">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Ingresos</p>
-                                <p class="text-sm font-bold text-node mt-1">Tendencia</p>
-                            </div>
-                            <span class="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">+12.5%</span>
-                        </div>
-                        <svg class="w-full h-32" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
-                            <polyline points="20,80 60,60 100,50 140,65 180,40 220,55 280,25" fill="none" stroke="#2B93A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <polygon points="20,80 60,60 100,50 140,65 180,40 220,55 280,25 280,120 20,120" fill="#2B93A6" opacity="0.1"/>
-                        </svg>
-                    </div>
-
-                    <div class="rounded-xl bg-white border border-subtle shadow-sm overflow-hidden">
-                        <div class="p-5 border-b border-subtle bg-slate-50">
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Últimas Transacciones</p>
-                        </div>
-                        <div class="divide-y divide-subtle max-h-40 overflow-y-auto">
-                            <div class="p-4 hover:bg-slate-50 transition flex items-center justify-between gap-3">
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-xs font-bold text-node">Cliente A Ltd</p>
-                                    <p class="text-xs text-slate-600">Factura #001</p>
-                                </div>
-                                <div class="text-right flex-shrink-0">
-                                    <p class="text-sm font-bold text-emerald-600">€1,200</p>
-                                    <span class="inline-flex text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Pagado</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-xl bg-white border border-subtle shadow-sm overflow-hidden">
-                        <div class="p-5 border-b border-subtle bg-slate-50">
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Alertas</p>
-                        </div>
-                        <div class="space-y-0 max-h-40 overflow-y-auto divide-y divide-subtle">
-                            <div class="p-4 hover:bg-red-50/50 transition border-l-3 border-red-500 bg-red-50/30">
-                                <p class="text-xs font-bold text-red-700">Factura vencida</p>
-                                <p class="text-xs text-red-600 mt-0.5">Tech Solutions</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderFinanzas() {
-        return `
-            <div class="space-y-6">
-                <div>
-                    <h1 class="text-3xl font-bold text-node">Finanzas</h1>
-                    <p class="text-slate-600 mt-2">Análisis financiero y reportes</p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Ingresos Totales</p>
-                        <p class="text-3xl font-bold text-emerald-600">45.2K</p>
-                        <p class="text-emerald-600 text-sm mt-2">+12% vs mes anterior</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Gastos</p>
-                        <p class="text-3xl font-bold text-red-600">12.8K</p>
-                        <p class="text-red-600 text-sm mt-2">+5% vs mes anterior</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Ganancia Neta</p>
-                        <p class="text-3xl font-bold text-node-teal">32.4K</p>
-                        <p class="text-node-teal text-sm mt-2">+15% vs mes anterior</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderEmpleados() {
-        return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-node">Empleados</h1>
-                        <p class="text-slate-600 mt-2">Gestión de personal y nómina</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Total de Empleados</p>
-                        <p class="text-3xl font-bold text-node">12</p>
-                        <p class="text-slate-500 text-sm mt-2">Activos</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Nómina Total</p>
-                        <p class="text-3xl font-bold text-node">32.5K</p>
-                        <p class="text-slate-500 text-sm mt-2">Este mes</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Promedio Salario</p>
-                        <p class="text-3xl font-bold text-node">2.7K</p>
-                        <p class="text-slate-500 text-sm mt-2">Por empleado</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderClientes() {
-        return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-3xl font-bold text-node">Clientes</h1>
-                        <p class="text-slate-600 mt-2">Directorio y gestión de clientes</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Total Clientes</p>
-                        <p class="text-3xl font-bold text-node">28</p>
-                        <p class="text-slate-500 text-sm mt-2">Activos</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Clientes Nuevos</p>
-                        <p class="text-3xl font-bold text-node">3</p>
-                        <p class="text-slate-500 text-sm mt-2">Este mes</p>
-                    </div>
-                    <div class="bg-white rounded-xl p-6 border border-subtle shadow-sm">
-                        <p class="text-slate-600 text-sm mb-2">Tasa Retención</p>
-                        <p class="text-3xl font-bold text-node">95%</p>
-                        <p class="text-slate-500 text-sm mt-2">Promedio</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    openModal(cita = null) {
-        const form = document.getElementById('form-cita');
-        const title = document.getElementById('modal-title');
-        
-        form.reset();
-        
-        if (cita) {
-            title.textContent = 'Editar Cita';
-            document.getElementById('cita-id').value = cita.id;
-            document.getElementById('cita-cliente').value = cita.cliente;
-            document.getElementById('cita-servicio').value = cita.servicio;
-            document.getElementById('cita-fecha').value = cita.fecha;
-            document.getElementById('cita-hora').value = cita.hora;
-            document.getElementById('cita-precio').value = cita.precio || '';
-        } else {
-            title.textContent = 'Nueva Cita';
-            document.getElementById('cita-id').value = '';
-        }
-        
-        this.modal.classList.remove('hidden');
-    }
-
-    closeModal() {
-        this.modal.classList.add('hidden');
-    }
-
-    handleSaveCita(e) {
-        e.preventDefault();
-        
-        const id = document.getElementById('cita-id').value;
-        const cliente = document.getElementById('cita-cliente').value;
-        const servicio = document.getElementById('cita-servicio').value;
-        const fecha = document.getElementById('cita-fecha').value;
-        const hora = document.getElementById('cita-hora').value;
-        const precio = document.getElementById('cita-precio').value;
-        
-        if (id) {
-            const index = this.citas.findIndex(c => c.id === id);
-            if (index !== -1) {
-                this.citas[index] = { id, cliente, servicio, fecha, hora, precio };
-            }
-        } else {
-            this.citas.push({
-                id: Date.now().toString(),
-                cliente,
-                servicio,
-                fecha,
-                hora,
-                precio
+            asistenteInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    btnEnviar.click();
+                }
             });
         }
+
+        if (btnVoice) {
+            btnVoice.addEventListener('click', () => {
+                this.showNotification('🎤 Entrada por voz - En desarrollo', 'warning');
+            });
+        }
+
+        // ===== BOTONERA ANALÓGICA =====
         
-        this.saveCitas();
-        this.closeModal();
-        this.loadView('agenda');
+        // Nueva Cita
+        const btnNuevaCita = document.getElementById('btn-nueva-cita-dash');
+        if (btnNuevaCita) {
+            btnNuevaCita.addEventListener('click', () => {
+                this.showNewCitaModal({ fecha: new Date().toISOString().split('T')[0] });
+            });
+        }
+
+        // Cobro Rápido
+        const btnCobroRapido = Array.from(document.querySelectorAll('button')).find(btn => 
+            btn.innerHTML.includes('Cobro Rápido')
+        );
+        if (btnCobroRapido) {
+            btnCobroRapido.addEventListener('click', () => {
+                this.showNotification('💳 TPV Rápido - En desarrollo', 'info');
+            });
+        }
+
+        // Nuevo Cliente
+        const btnNuevoCliente = Array.from(document.querySelectorAll('button')).find(btn => 
+            btn.innerHTML.includes('Nuevo Cliente')
+        );
+        if (btnNuevoCliente) {
+            btnNuevoCliente.addEventListener('click', () => {
+                this.showNotification('👤 Alta de cliente - En desarrollo', 'info');
+            });
+        }
+
+        // Botones de Cobrar y Ver Ficha en próximas citas
+        document.querySelectorAll('button[title="Cobrar"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.showNotification('💰 Cobro registrado', 'success');
+            });
+        });
+
+        document.querySelectorAll('button[title="Ver ficha"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.showNotification('📋 Abriendo ficha del cliente...', 'info');
+            });
+        });
+
+        // Botón de Alertas
+        const btnAlertas = document.querySelector('button[title="3 críticas"] ') || 
+                          document.querySelectorAll('button')[2];
+        if (btnAlertas) {
+            btnAlertas.addEventListener('click', () => {
+                this.showNotification('🚨 Panel de alertas - En desarrollo', 'warning');
+            });
+        }
     }
 
-    deleteCita(id) {
-        this.citas = this.citas.filter(c => c.id !== id);
-        this.saveCitas();
-        this.loadView('agenda');
+    renderDashboard() {
+        const hoy = new Date().toISOString().split('T')[0];
+        const citasHoy = this.getCitasHoy();
+        const proximasCitas = this.getProximasCitas(4);
+        
+        // ===== CALCULAR MÉTRICAS =====
+        const totalCajaHoy = citasHoy.reduce((sum, c) => sum + parseInt(c.precio || 0), 0);
+        const citasCompletadas = Math.floor(Math.random() * (citasHoy.length + 1));
+        const alertasCount = 3; // Simuladas
+        
+        // Placeholder dinámico para el buscador
+        const placeholders = [
+            'Ej: Cobra 25€ a Laura en efectivo...',
+            'Ej: Pásame la cita de las 12 a mañana...',
+            'Ej: ¿Cuánto he facturado esta semana?',
+            'Ej: Nueva cita para Juan el viernes a las 14:00...',
+            'Ej: ¿Qué clientes vinieron esta semana?',
+            'Ej: Registra un gasto de 50€ en productos...'
+        ];
+        const placeholderActual = placeholders[Math.floor(Date.now() / 5000) % placeholders.length];
+        
+        return `
+            <div class="space-y-2 pb-2">
+                
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- 1. CENTRO DE MANDOS - ASISTENTE IA        -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="flex items-center gap-2 bg-white rounded-lg border border-gray-200 shadow-sm mb-3">
+                    <input 
+                        type="text" 
+                        id="asistente-input" 
+                        placeholder="${placeholderActual}"
+                        class="flex-1 px-4 py-3 bg-white text-gray-900 text-sm font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] rounded-lg placeholder-gray-400"
+                    >
+                    <button id="btn-voice" class="p-2 bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg transition" title="Entrada por voz">
+                        <i class="fas fa-microphone text-sm"></i>
+                    </button>
+                    <button id="btn-enviar-asistente" class="p-2 mr-1 bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg transition" title="Enviar comando">
+                        <i class="fas fa-arrow-right text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- 2. EL PULSO DEL DÍA - MÉTRICAS           -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="grid grid-cols-3 gap-1">
+                    
+                    <!-- CAJA DE HOY -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-200 shadow-sm">
+                        <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">💰 Caja</div>
+                        <div class="text-2xl font-black text-emerald-900 mt-1">€${totalCajaHoy}</div>
+                        <div class="text-xs text-emerald-600 mt-1">+15%</div>
+                    </div>
+
+                    <!-- TRÁFICO DE CLIENTES -->
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-200 shadow-sm">
+                        <div class="text-xs font-bold text-blue-700 uppercase tracking-wider">👥 Tráfico</div>
+                        <div class="text-2xl font-black text-blue-900 mt-1">${citasCompletadas}/${citasHoy.length}</div>
+                        <div class="text-xs text-blue-600 mt-1">completadas</div>
+                    </div>
+
+                    <!-- ALERTAS -->
+                    <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg p-3 border border-red-200 shadow-sm hover:shadow-md transition cursor-pointer">
+                        <div class="text-xs font-bold text-red-700 uppercase tracking-wider">⚠️ Alertas</div>
+                        <div class="text-2xl font-black text-red-900 mt-1">${alertasCount}</div>
+                        <div class="text-xs text-red-600 mt-1">críticas</div>
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- 3. LO QUE VIENE AHORA - EL RADAR           -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
+                    <div class="bg-[#3B82F6]/10 px-3 py-2 border-b border-[#3B82F6]/30">
+                        <div class="text-xs font-bold text-[#3B82F6] flex items-center gap-2">
+                            <i class="fas fa-radar text-[#3B82F6] text-sm"></i>
+                            Próximas Citas
+                        </div>
+                    </div>
+
+                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        ${proximasCitas.length > 0 ? proximasCitas.map((cita, idx) => {
+                            const horaInicio = cita.hora;
+                            const [h, m] = horaInicio.split(':');
+                            const ahora = new Date();
+                            const citaTime = new Date();
+                            citaTime.setHours(parseInt(h), parseInt(m));
+                            const minutosFalta = Math.max(0, Math.floor((citaTime - ahora) / 60000));
+                            const urgencia = minutosFalta < 15 ? 'text-red-600 font-bold' : minutosFalta < 30 ? 'text-orange-600 font-semibold' : 'text-gray-600';
+                            
+                            return `
+                                <div class="p-3 hover:bg-blue-50 transition flex items-center justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-baseline gap-2 mb-1">
+                                            <div class="text-sm font-bold text-gray-900">${horaInicio}</div>
+                                            <div class="text-xs font-bold ${urgencia}">
+                                                ${minutosFalta < 60 ? minutosFalta + ' min' : '⏰ HOY'}
+                                            </div>
+                                        </div>
+                                        <div class="font-semibold text-sm text-gray-900 truncate">${cita.cliente}</div>
+                                        <div class="text-xs text-gray-500 truncate">${cita.servicio}${cita.horaFin ? ' • ' + cita.horaFin : ''}</div>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white rounded px-3 py-1 font-semibold text-xs transition" title="Cobrar">
+                                            <i class="fas fa-credit-card"></i>
+                                        </button>
+                                        <button class="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1 font-semibold text-xs transition" title="Ver ficha">
+                                            <i class="fas fa-user-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : `
+                            <div class="p-6 text-center">
+                                <i class="fas fa-calendar-check text-3xl text-gray-300 mb-2"></i>
+                                <p class="text-gray-500 text-sm font-medium">Sin citas próximas</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
+
+                <!-- ═══════════════════════════════════════════ -->
+                <!-- 4. BOTONERA ANALÓGICA - PLAN B             -->
+                <!-- ═══════════════════════════════════════════ -->
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <button class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                        <i class="fas fa-credit-card"></i>
+                        <span class="hidden sm:inline">Cobro</span>
+                    </button>
+
+                    <button id="btn-nueva-cita-dash" class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span class="hidden sm:inline">Cita</span>
+                    </button>
+
+                    <button class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                        <i class="fas fa-user-plus"></i>
+                        <span class="hidden sm:inline">Cliente</span>
+                    </button>
+                </div>
+
+            </div>
+        `;
     }
+
+    // ========== ESTADO GLOBAL ==========
 
     getCitasHoy() {
         const hoy = new Date().toISOString().split('T')[0];
@@ -553,7 +383,6 @@ class NavigationManager {
         if (saved) {
             this.citas = JSON.parse(saved);
         } else {
-            // Cargar datos de ejemplo la primera vez
             const hoy = new Date();
             const mañana = new Date(hoy);
             mañana.setDate(mañana.getDate() + 1);
@@ -565,34 +394,29 @@ class NavigationManager {
             const pasadoStr = pasado.toISOString().split('T')[0];
 
             this.citas = [
-                // Hoy
-                { id: '1', cliente: 'María López', servicio: 'Corte', fecha: hoyStr, hora: '09:00', precio: '25' },
-                { id: '2', cliente: 'Carmen Ruiz', servicio: 'Coloracion', fecha: hoyStr, hora: '09:00', precio: '45' },
-                { id: '3', cliente: 'Ana Martínez', servicio: 'Peinado', fecha: hoyStr, hora: '10:00', precio: '35' },
-                { id: '4', cliente: 'Laura Sánchez', servicio: 'Tratamiento Capilar', fecha: hoyStr, hora: '11:00', precio: '55' },
-                { id: '5', cliente: 'Sofia García', servicio: 'Corte', fecha: hoyStr, hora: '12:00', precio: '25' },
-                { id: '6', cliente: 'Patricia Diaz', servicio: 'Coloracion', fecha: hoyStr, hora: '12:00', precio: '45' },
-                { id: '7', cliente: 'Marta Fernández', servicio: 'Peinado', fecha: hoyStr, hora: '13:00', precio: '35' },
-                { id: '8', cliente: 'Rosa Pérez', servicio: 'Corte', fecha: hoyStr, hora: '14:00', precio: '25' },
-                { id: '9', cliente: 'Lucia Moreno', servicio: 'Tratamiento Capilar', fecha: hoyStr, hora: '14:00', precio: '55' },
-                { id: '10', cliente: 'Elena Vázquez', servicio: 'Reunion', fecha: hoyStr, hora: '15:00', precio: '0' },
-                { id: '11', cliente: 'Julio Castillo', servicio: 'Corte', fecha: hoyStr, hora: '15:30', precio: '25' },
-                { id: '12', cliente: 'Roberto Silva', servicio: 'Coloracion', fecha: hoyStr, hora: '16:00', precio: '45' },
-                { id: '13', cliente: 'Fernando López', servicio: 'Peinado', fecha: hoyStr, hora: '16:30', precio: '35' },
-                
-                // Mañana
-                { id: '14', cliente: 'Alejandra Torres', servicio: 'Corte', fecha: mañanaStr, hora: '09:30', precio: '25' },
-                { id: '15', cliente: 'Catalina Morales', servicio: 'Coloracion', fecha: mañanaStr, hora: '10:00', precio: '45' },
-                { id: '16', cliente: 'Daniela Cruz', servicio: 'Peinado', fecha: mañanaStr, hora: '11:00', precio: '35' },
-                { id: '17', cliente: 'Ernesto Ramírez', servicio: 'Tratamiento Capilar', fecha: mañanaStr, hora: '12:00', precio: '55' },
-                { id: '18', cliente: 'Francisco Javier', servicio: 'Corte', fecha: mañanaStr, hora: '13:00', precio: '25' },
-                { id: '19', cliente: 'Guillermo Torres', servicio: 'Coloracion', fecha: mañanaStr, hora: '14:00', precio: '45' },
-                { id: '20', cliente: 'Herminia Ruiz', servicio: 'Peinado', fecha: mañanaStr, hora: '15:00', precio: '35' },
-                
-                // Ayer
-                { id: '21', cliente: 'Ignacio Molina', servicio: 'Corte', fecha: pasadoStr, hora: '10:00', precio: '25' },
-                { id: '22', cliente: 'Juana Hermosa', servicio: 'Coloracion', fecha: pasadoStr, hora: '11:00', precio: '45' },
-                { id: '23', cliente: 'Kevin Nichols', servicio: 'Peinado', fecha: pasadoStr, hora: '12:00', precio: '35' }
+                { id: '1', cliente: 'María López', servicio: 'Corte', fecha: hoyStr, hora: '09:00', horaFin: '09:45', precio: '25' },
+                { id: '2', cliente: 'Carmen Ruiz', servicio: 'Coloracion', fecha: hoyStr, hora: '09:00', horaFin: '10:30', precio: '45' },
+                { id: '3', cliente: 'Ana Martínez', servicio: 'Peinado', fecha: hoyStr, hora: '10:00', horaFin: '11:00', precio: '35' },
+                { id: '4', cliente: 'Laura Sánchez', servicio: 'Tratamiento Capilar', fecha: hoyStr, hora: '11:00', horaFin: '12:15', precio: '55' },
+                { id: '5', cliente: 'Sofia García', servicio: 'Corte', fecha: hoyStr, hora: '12:00', horaFin: '12:45', precio: '25' },
+                { id: '6', cliente: 'Patricia Diaz', servicio: 'Coloracion', fecha: hoyStr, hora: '12:00', horaFin: '13:30', precio: '45' },
+                { id: '7', cliente: 'Marta Fernández', servicio: 'Peinado', fecha: hoyStr, hora: '13:00', horaFin: '14:00', precio: '35' },
+                { id: '8', cliente: 'Rosa Pérez', servicio: 'Corte', fecha: hoyStr, hora: '14:00', horaFin: '14:45', precio: '25' },
+                { id: '9', cliente: 'Lucia Moreno', servicio: 'Tratamiento Capilar', fecha: hoyStr, hora: '14:00', horaFin: '15:15', precio: '55' },
+                { id: '10', cliente: 'Elena Vázquez', servicio: 'Reunion', fecha: hoyStr, hora: '15:00', horaFin: '16:00', precio: '0' },
+                { id: '11', cliente: 'Julio Castillo', servicio: 'Corte', fecha: hoyStr, hora: '15:30', horaFin: '16:15', precio: '25' },
+                { id: '12', cliente: 'Roberto Silva', servicio: 'Coloracion', fecha: hoyStr, hora: '16:00', horaFin: '17:30', precio: '45' },
+                { id: '13', cliente: 'Fernando López', servicio: 'Peinado', fecha: hoyStr, hora: '16:30', horaFin: '17:30', precio: '35' },
+                { id: '14', cliente: 'Alejandra Torres', servicio: 'Corte', fecha: mañanaStr, hora: '09:30', horaFin: '10:15', precio: '25' },
+                { id: '15', cliente: 'Catalina Morales', servicio: 'Coloracion', fecha: mañanaStr, hora: '10:00', horaFin: '11:30', precio: '45' },
+                { id: '16', cliente: 'Daniela Cruz', servicio: 'Peinado', fecha: mañanaStr, hora: '11:00', horaFin: '12:00', precio: '35' },
+                { id: '17', cliente: 'Ernesto Ramírez', servicio: 'Tratamiento Capilar', fecha: mañanaStr, hora: '12:00', horaFin: '13:15', precio: '55' },
+                { id: '18', cliente: 'Francisco Javier', servicio: 'Corte', fecha: mañanaStr, hora: '13:00', horaFin: '13:45', precio: '25' },
+                { id: '19', cliente: 'Guillermo Torres', servicio: 'Coloracion', fecha: mañanaStr, hora: '14:00', horaFin: '15:30', precio: '45' },
+                { id: '20', cliente: 'Herminia Ruiz', servicio: 'Peinado', fecha: mañanaStr, hora: '15:00', horaFin: '16:00', precio: '35' },
+                { id: '21', cliente: 'Ignacio Molina', servicio: 'Corte', fecha: pasadoStr, hora: '10:00', horaFin: '10:45', precio: '25' },
+                { id: '22', cliente: 'Juana Hermosa', servicio: 'Coloracion', fecha: pasadoStr, hora: '11:00', horaFin: '12:30', precio: '45' },
+                { id: '23', cliente: 'Kevin Nichols', servicio: 'Peinado', fecha: pasadoStr, hora: '12:00', horaFin: '13:00', precio: '35' }
             ];
             
             this.saveCitas();
@@ -603,27 +427,18 @@ class NavigationManager {
         localStorage.setItem('crm-appointments', JSON.stringify(this.citas));
     }
 
+    deleteCita(citaId) {
+        this.citas = this.citas.filter(c => c.id !== citaId);
+        this.saveCitas();
+        this.loadView('agenda');
+    }
+
+    // ========== MÉTODOS GLOBALES ==========
     navigateTo(page) {
         document.body.style.opacity = '0.5';
         setTimeout(() => {
             window.location.href = page;
         }, 200);
-    }
-
-    executeAction(action) {
-        switch(action) {
-            case 'logout':
-                this.logout();
-                break;
-            case 'back':
-                this.goBack();
-                break;
-            case 'home':
-                this.navigateTo('menu.html');
-                break;
-            default:
-                console.log('Acción desconocida:', action);
-        }
     }
 
     logout() {
@@ -638,7 +453,7 @@ class NavigationManager {
         if (window.history.length > 1) {
             window.history.back();
         } else {
-            this.navigateTo('menu.html');
+            this.navigateTo('inicio.html');
         }
     }
 
@@ -649,32 +464,232 @@ class NavigationManager {
         }
     }
 
-    toggleMobileMenu() {
-        const menu = document.querySelector('[data-mobile-menu]');
-        if (menu) {
-            menu.classList.toggle('hidden');
+    // ========== CREACIÓN DE CITAS ==========
+    showNewCitaModal(predatos = {}) {
+        const servicios = ['Corte', 'Coloracion', 'Peinado', 'Tratamiento Capilar', 'Reunion'];
+        const precios = { 'Corte': 25, 'Coloracion': 45, 'Peinado': 35, 'Tratamiento Capilar': 55, 'Reunion': 0 };
+        
+        // Modal HTML
+        const modalHTML = `
+            <div id="modal-cita" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-2xl max-w-md w-full max-h-screen overflow-y-auto">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar-plus text-node-teal text-lg"></i>
+                            <h3 class="text-lg font-bold text-gray-900">Nueva cita</h3>
+                        </div>
+                        <button id="modal-close" class="text-gray-500 hover:text-gray-700 transition">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form id="form-nueva-cita" class="space-y-4 p-6">
+                        <!-- Cliente -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Cliente *</label>
+                            <input type="text" id="cita-cliente" placeholder="Nombre del cliente" value="${predatos.cliente || ''}" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal" required>
+                        </div>
+
+                        <!-- Servicio -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Servicio *</label>
+                            <select id="cita-servicio" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal" required>
+                                <option value="">Selecciona un servicio</option>
+                                ${servicios.map(s => `<option value="${s}" ${predatos.servicio === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <!-- Fecha -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Fecha *</label>
+                            <input type="date" id="cita-fecha" value="${predatos.fecha || new Date().toISOString().split('T')[0]}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal" required>
+                        </div>
+
+                        <!-- Hora -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Hora inicio *</label>
+                            <input type="time" id="cita-hora" value="${predatos.hora || '09:00'}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal" required>
+                        </div>
+
+                        <!-- Hora Fin -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Hora fin *</label>
+                            <input type="time" id="cita-horaFin" value="${predatos.horaFin || '10:00'}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal" required>
+                        </div>
+
+                        <!-- Precio -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Precio (€)</label>
+                            <input type="number" id="cita-precio" placeholder="0" value="${predatos.precio || ''}" min="0" step="5"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal">
+                        </div>
+
+                        <!-- Recursos (Asignar a trabajador) -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Asignar a</label>
+                            <select id="cita-recurso" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal">
+                                <option value="">Auto-asignar</option>
+                                ${this.recursos.map(r => `<option value="${r}">${r}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <!-- Notas -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Notas</label>
+                            <textarea id="cita-notas" placeholder="Detalles adicionales..." rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-node-teal focus:ring-1 focus:ring-node-teal resize-none"></textarea>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="flex gap-2 pt-4 border-t border-gray-200">
+                            <button type="button" id="modal-cancel" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200 transition">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-node-teal text-white rounded-lg font-semibold text-sm hover:bg-blue-600 transition">
+                                Guardar cita
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+
+        // Insertar modal
+        const existingModal = document.getElementById('modal-cita');
+        if (existingModal) existingModal.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Configurar listeners
+        const modal = document.getElementById('modal-cita');
+        const form = document.getElementById('form-nueva-cita');
+        const servicioSelect = document.getElementById('cita-servicio');
+        const precioInput = document.getElementById('cita-precio');
+
+        // Auto-rellenar precio según servicio
+        servicioSelect.addEventListener('change', (e) => {
+            const precioAuto = precios[e.target.value] || 0;
+            if (!precioInput.value) {
+                precioInput.value = precioAuto;
+            }
+        });
+
+        // Cerrar modal
+        const closeModal = () => modal.remove();
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+        document.getElementById('modal-cancel').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Enviar formulario
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const horaInicio = document.getElementById('cita-hora').value;
+            const horaFin = document.getElementById('cita-horaFin').value;
+
+            // Validar que hora fin sea después de hora inicio
+            if (horaFin <= horaInicio) {
+                alert('La hora de fin debe ser posterior a la hora de inicio');
+                return;
+            }
+            
+            const nuevaCita = {
+                id: String(Math.max(...this.citas.map(c => parseInt(c.id) || 0), 0) + 1),
+                cliente: document.getElementById('cita-cliente').value.trim(),
+                servicio: document.getElementById('cita-servicio').value,
+                fecha: document.getElementById('cita-fecha').value,
+                hora: horaInicio,
+                horaFin: horaFin,
+                precio: document.getElementById('cita-precio').value || '0',
+                recurso: document.getElementById('cita-recurso').value || this.recursos[0],
+                notas: document.getElementById('cita-notas').value,
+                estado: 'esperando'
+            };
+
+            if (!nuevaCita.cliente || !nuevaCita.servicio || !nuevaCita.fecha || !nuevaCita.hora || !nuevaCita.horaFin) {
+                alert('Por favor, completa todos los campos requeridos');
+                return;
+            }
+
+            this.createNewCita(nuevaCita);
+            closeModal();
+        });
+    }
+
+    createNewCita(citaData) {
+        // Agregar a array
+        this.citas.push(citaData);
+        this.saveCitas();
+        
+        // Notificar éxito
+        this.showNotification(`✓ Cita creada para ${citaData.cliente}`, 'success');
+        
+        // Si estamos en agenda, actualizar vista
+        if (this.currentManager && this.currentManager.render) {
+            this.contentArea.innerHTML = this.currentManager.render();
+            this.currentManager.setupListeners();
         }
     }
 
-    checkAuthentication() {
-        const publicPages = ['welcome_page.html', 'sign_up.html', 'index.html', 'login.html'];
-        const currentPageName = window.location.pathname.split('/').pop() || 'index.html';
+    showNotification(message, type = 'info') {
+        const colors = {
+            'success': 'bg-green-500 text-white',
+            'error': 'bg-red-500 text-white',
+            'info': 'bg-blue-500 text-white',
+            'warning': 'bg-orange-500 text-white'
+        };
+
+        const notificationId = `notif-${Date.now()}`;
+        const notificationHTML = `
+            <div id="${notificationId}" class="fixed top-4 right-4 px-4 py-3 rounded-lg ${colors[type]} shadow-lg z-50" style="animation: slideIn 0.3s ease-out;">
+                ${message}
+            </div>
+        `;
         
-        const isPublicPage = publicPages.some(page => currentPageName.includes(page));
-        const isLoggedIn = localStorage.getItem('user-session') || sessionStorage.getItem('user-session');
-
-        if (!isPublicPage && !isLoggedIn) {
-            this.navigateTo('sign_up.html');
-        }
-
-        if (isPublicPage && isLoggedIn && currentPageName.includes('sign_up.html')) {
-            this.navigateTo('inicio.html');
-        }
+        document.body.insertAdjacentHTML('beforeend', notificationHTML);
+        
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            const notif = document.getElementById(notificationId);
+            if (notif) {
+                notif.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notif.remove(), 300);
+            }
+        }, 3000);
     }
 }
 
-// Instanciar NavigationManager cuando el DOM esté listo
+// ══════════════════════════════════════════════════════════════════
+// 2️⃣ AGENDA MANAGER - Gestión de Citas y Calendario (Usada desde agenda.js)
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// 3️⃣ EMPLEADOS MANAGER - Gestión de Personal (Usada desde empleados.js)
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// 4️⃣ CLIENTES MANAGER - Gestión de Clientes (Usada desde clientes.js)
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// 5️⃣ FINANZAS MANAGER - Análisis Financiero (Usada desde finanzas.js)
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// 6️⃣ CHATBOT MANAGER - Asistente IA (Usada desde chatbot.js)
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════════════════════════
+
 document.addEventListener('DOMContentLoaded', () => {
-    new NavigationManager();
+    window.navigationManager = new NavigationManager();
 });
->>>>>>> Stashed changes

@@ -1,0 +1,6 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo círculo -->
+  <circle cx="24" cy="24" r="24" fill="#2563EB"/>
+  <!-- N letra -->
+  <text x="24" y="32" font-size="28" font-weight="bold" fill="white" text-anchor="middle" font-family="Arial, sans-serif">N</text>
+</svg>
