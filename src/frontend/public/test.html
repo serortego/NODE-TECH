@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE - Test Diagnóstico</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', monospace;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .test-section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #93c5fd;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #0f172a;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            color: #10b981;
+        }
+        
+        .status.error {
+            color: #ef4444;
+        }
+        
+        .status.info {
+            color: #3b82f6;
+        }
+        
+        .status::before {
+            content: '●';
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .console {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .console-log {
+            margin: 5px 0;
+            color: #94a3b8;
+        }
+        
+        .console-error {
+            color: #ef4444;
+        }
+        
+        .console-success {
+            color: #10b981;
+        }
+        
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #1d4ed8;
+        }
+        
+        input {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 NODE - Test Diagnóstico v2.5</h1>
+        
+        <!-- Test de Módulos -->
+        <div class="test-section">
+            <h2>1. Verificar Módulos Cargados</h2>
+            <div id="module-tests"></div>
+        </div>
+        
+        <!-- Test de Firebase -->
+        <div class="test-section">
+            <h2>2. Verificar Firebase</h2>
+            <div id="firebase-tests"></div>
+        </div>
+        
+        <!-- Test de Command Processor -->
+        <div class="test-section">
+            <h2>3. Probar Command Processor</h2>
+            <input type="text" id="test-input" placeholder="Escribe: crea una factura de 50 euros">
+            <button onclick="testCommand()">Probar Comando</button>
+            <div id="command-result"></div>
+        </div>
+        
+        <!-- Console Log -->
+        <div class="test-section">
+            <h2>4. Console Log</h2>
+            <button onclick="clearConsole()">Limpiar</button>
+            <button onclick="location.reload()">Recargar</button>
+            <div id="console-output" class="console"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        const consoleOutput = document.getElementById('console-output');
+        const moduleTests = document.getElementById('module-tests');
+        const firebaseTests = document.getElementById('firebase-tests');
+        
+        // Capturar console.log
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        window.consoleLogs = [];
+        
+        console.log = function(...args) {
+            originalLog(...args);
+            const message = args.join(' ');
+            window.consoleLogs.push({ type: 'log', message });
+            updateConsole();
+        };
+        
+        console.error = function(...args) {
+            originalError(...args);
+            const message = args.join(' ');
+            window.consoleLogs.push({ type: 'error', message });
+            updateConsole();
+        };
+        
+        function updateConsole() {
+            consoleOutput.innerHTML = window.consoleLogs.map(log => {
+                const className = log.type === 'error' ? 'console-error' : 'console-log';
+                return `<div class="console-log ${className}">${log.message}</div>`;
+            }).join('');
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        function addTest(section, title, success, message) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${success ? 'success' : 'error'}`;
+            statusDiv.textContent = `${title}: ${message}`;
+            section.appendChild(statusDiv);
+        }
+        
+        // Test 1: Módulos
+        try {
+            console.log('🧪 Iniciando tests...');
+            console.log('📦 Cargando módulos...');
+            
+            import { procesarMensajeUsuario } from '../js/modules/command-processor.js'
+                .then(() => {
+                    addTest(moduleTests, '✅ Command Processor', true, 'Cargado correctamente');
+                    console.log('✅ Command Processor importado');
+                })
+                .catch(err => {
+                    addTest(moduleTests, '❌ Command Processor', false, err.message);
+                    console.error('❌ Error Command Processor:', err);
+                });
+            
+            import { db } from '../js/modules/firebase-config.js'
+                .then(() => {
+                    addTest(moduleTests, '✅ Firebase Config', true, 'Cargado correctamente');
+                    console.log('✅ Firebase Config importado');
+                })
+                .catch(err => {
+                    addTest(moduleTests, '❌ Firebase Config', false, err.message);
+                    console.error('❌ Error Firebase:', err);
+                });
+            
+            import { renderAsistente, initAsistente } from '../js/views/asistente.js'
+                .then(() => {
+                    addTest(moduleTests, '✅ Asistente View', true, 'Cargado correctamente');
+                    console.log('✅ Asistente importado');
+                    
+                    // Guardar para uso después
+                    window.testAsistente = { renderAsistente, initAsistente };
+                })
+                .catch(err => {
+                    addTest(moduleTests, '❌ Asistente View', false, err.message);
+                    console.error('❌ Error Asistente:', err);
+                });
+            
+        } catch (error) {
+            console.error('Error loading modules:', error);
+            addTest(moduleTests, 'Module Loading', false, error.message);
+        }
+        
+        // Función para probar comando
+        window.testCommand = async function() {
+            try {
+                const input = document.getElementById('test-input').value;
+                if (!input) {
+                    alert('Por favor escribe un comando');
+                    return;
+                }
+                
+                console.log('🧪 Probando comando:', input);
+                
+                const { procesarMensajeUsuario } = await import('../js/modules/command-processor.js');
+                const respuesta = await procesarMensajeUsuario(input);
+                
+                console.log('✅ Respuesta recibida:', respuesta);
+                
+                const resultDiv = document.getElementById('command-result');
+                resultDiv.innerHTML = `
+                    <div style="background: #0f172a; padding: 15px; border-radius: 4px; margin-top: 10px;">
+                        <strong>Tipo:</strong> ${respuesta.tipo}<br>
+                        <strong>Mensaje:</strong> ${respuesta.mensaje}<br>
+                        <strong>Sugerencias:</strong> ${(respuesta.sugerencias || []).length}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('❌ Error testing command:', error);
+                alert('Error: ' + error.message);
+            }
+        };
+        
+        window.clearConsole = function() {
+            window.consoleLogs = [];
+            consoleOutput.innerHTML = '';
+        };
+        
+        console.log('✅ Test HTML cargado. Abre F12 para ver los logs.');
+    </script>
+</body>
+</html>
