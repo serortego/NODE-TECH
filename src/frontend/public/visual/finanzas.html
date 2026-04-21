@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NODE | Finanzas</title>
+    <style id="auth-loading">body{visibility:hidden!important}</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #F4F7FB; }
+        .sidebar-item:hover { background: #EFF6FF; }
+        .shadow-soft { box-shadow: 0 25px 50px rgba(15, 23, 42, 0.08); }
+        .ingreso { border-left: 3px solid #22c55e; }
+        .gasto   { border-left: 3px solid #ef4444; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-72 border-r border-slate-200 bg-white shadow-sm flex flex-col flex-shrink-0">
+            <div class="p-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-3xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">N</div>
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.35em] text-slate-500">NODE</p>
+                        <h1 class="text-xl font-bold text-slate-950">Finanzas</h1>
+                    </div>
+                </div>
+            </div>
+            <nav class="px-4 space-y-1 flex-1">
+                <a href="inicio.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-home text-slate-400 w-5 text-center"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="chatbot.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-robot text-slate-400 w-5 text-center"></i>
+                    <span>Asistente</span>
+                </a>
+                <a href="agenda.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-calendar-alt text-slate-400 w-5 text-center"></i>
+                    <span>Agenda</span>
+                </a>
+                <a href="clientes.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-users text-slate-400 w-5 text-center"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="empleados.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 text-slate-700">
+                    <i class="fas fa-user-tie text-slate-400 w-5 text-center"></i>
+                    <span>Empleados</span>
+                </a>
+                <a href="finanzas.html" class="sidebar-item flex items-center gap-3 rounded-3xl px-4 py-3 bg-blue-600 text-white shadow-sm">
+                    <i class="fas fa-chart-line w-5 text-center"></i>
+                    <span>Finanzas</span>
+                </a>
+            </nav>
+            <div class="p-4">
+                <button onclick="window.logout()" class="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 p-8 overflow-auto">
+            <div class="flex flex-col gap-6 max-w-6xl mx-auto">
+
+                <!-- Barra de usuario -->
+                <div class="rounded-[2rem] bg-white px-6 py-4 shadow-soft border border-slate-200 flex items-center justify-end gap-4">
+                    <div class="flex items-center gap-3">
+                        <div id="user-avatar" class="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold select-none">?</div>
+                        <div>
+                            <p id="user-display-name" class="text-sm font-semibold text-slate-900 leading-tight">—</p>
+                            <p id="user-display-email" class="text-xs text-slate-500 leading-tight"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <article class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
+                        <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Ingresos</p>
+                        <p id="stat-ingresos" class="mt-4 text-4xl font-extrabold text-green-600">—</p>
+                        <p class="mt-2 text-sm text-slate-600">Total acumulado</p>
+                    </article>
+                    <article class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
+                        <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Gastos</p>
+                        <p id="stat-gastos" class="mt-4 text-4xl font-extrabold text-red-500">—</p>
+                        <p class="mt-2 text-sm text-slate-600">Total acumulado</p>
+                    </article>
+                    <article class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
+                        <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Balance</p>
+                        <p id="stat-balance" class="mt-4 text-4xl font-extrabold text-slate-950">—</p>
+                        <p class="mt-2 text-sm text-slate-600">Resultado neto</p>
+                    </article>
+                </div>
+
+                <!-- Contenido: lista + formulario -->
+                <div class="grid gap-6 xl:grid-cols-[1fr_400px]">
+
+                    <!-- Lista -->
+                    <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200">
+                        <div class="flex items-center justify-between gap-4 mb-6">
+                            <div>
+                                <p class="text-sm uppercase tracking-[0.35em] text-slate-500">Movimientos</p>
+                                <h2 class="mt-2 text-xl font-bold text-slate-950">Historial de transacciones</h2>
+                            </div>
+                            <button id="btn-nuevo" type="button" class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                                <i class="fas fa-plus"></i> Nueva
+                            </button>
+                        </div>
+                        <div id="finanzas-list" class="space-y-3">
+                            <p class="text-slate-500 text-sm">Cargando transacciones...</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario -->
+                    <div class="rounded-[2rem] bg-white p-6 shadow-soft border border-slate-200 h-fit">
+                        <p class="text-sm uppercase tracking-[0.35em] text-slate-500 mb-6" id="form-title">Añadir transacción</p>
+                        <form id="finanza-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo *</label>
+                                <div class="flex gap-3">
+                                    <label class="flex-1 flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm cursor-pointer hover:bg-green-50 hover:border-green-300 transition">
+                                        <input id="f-tipo-ingreso" type="radio" name="f-tipo" value="ingreso" class="accent-green-600" checked />
+                                        <span class="font-medium text-slate-700">Ingreso</span>
+                                    </label>
+                                    <label class="flex-1 flex items-center gap-2 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm cursor-pointer hover:bg-red-50 hover:border-red-300 transition">
+                                        <input id="f-tipo-gasto" type="radio" name="f-tipo" value="gasto" class="accent-red-500" />
+                                        <span class="font-medium text-slate-700">Gasto</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1" for="f-concepto">Concepto *</label>
+                                <input id="f-concepto" type="text" placeholder="Descripción de la transacción" required
+                                    class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1" for="f-importe">Importe (€) *</label>
+                                <input id="f-importe" type="number" min="0" step="0.01" placeholder="0.00" required
+                                    class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1" for="f-fecha">Fecha *</label>
+                                <input id="f-fecha" type="date" required
+                                    class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1" for="f-categoria">Categoría</label>
+                                <input id="f-categoria" type="text" placeholder="Ej: Ventas, Nóminas, Alquiler..."
+                                    class="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
+                            </div>
+                            <div class="flex gap-3">
+                                <button type="submit" class="flex-1 rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">Guardar</button>
+                                <button type="button" id="cancel-edit" class="flex-1 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../logic/navigation.js"></script>
+    <script type="module" src="../logic/finanzas.js"></script>
+</body>
+</html>
