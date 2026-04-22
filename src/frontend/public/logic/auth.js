@@ -1,18 +1,20 @@
-// auth.js — Operaciones de autenticación y gestión de perfil de usuario
+// auth.js — Autenticación + guard para NODE
 //
-// Modelo de datos en Firestore (colección: users / documento: uid):
-//   uid            : string
-//   email          : string
-//   displayName    : string | null
-//   role           : "user" | "admin"    ← asigna "admin" manualmente desde Firestore Console
-//   status         : "active" | "disabled"
-//   createdAt      : Timestamp (serverTimestamp)
-//   lastLoginAt    : Timestamp (serverTimestamp, actualizado en cada login)
+// USO EN PÁGINAS PROTEGIDAS:
+//   <style id="auth-loading">body{visibility:hidden!important}</style>  ← en <head>
+//   <script type="module" src="../logic/auth.js"></script>
 //
-// NOTA SOBRE ADMIN:
-// El rol "admin" se asigna manualmente desde Firebase Console → Firestore → users/{uid}
-// Para mayor seguridad en producción (Custom Claims via Admin SDK), ver:
-// https://firebase.google.com/docs/auth/admin/custom-claims
+// USO DESDE OTROS MÓDULOS ES:
+//   import { auth, onAuthStateChanged, registerWithEmail, ... } from './auth.js';
+//
+// GLOBALES expuestos en páginas protegidas (NO en sign_up.html):
+//   window.db, window.firebaseUser, window.firebaseProfile,
+//   window.firebaseSignOut, window.fs
+// EVENTO: dispara 'appReady' en document cuando la auth está confirmada.
+//
+// Modelo Firestore (users/{uid}):
+//   uid, email, displayName, role ("user"|"admin"), status ("active"|"disabled"),
+//   createdAt, lastLoginAt
 
 import {
   createUserWithEmailAndPassword,
@@ -26,7 +28,9 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 import {
-  doc, setDoc, getDoc, updateDoc, serverTimestamp
+  doc, setDoc, getDoc, updateDoc, serverTimestamp,
+  collection, addDoc, getDocs, deleteDoc,
+  query, orderBy, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 import { auth, db } from './firebase-config.js';
@@ -35,14 +39,14 @@ export { auth, onAuthStateChanged };
 
 const googleProvider = new GoogleAuthProvider();
 
-// Registra un nuevo usuario con email y contraseña, y crea su perfil en Firestore.
+// ─── Funciones de autenticación exportables ───────────────────────────────────
+
 export async function registerWithEmail(email, password, displayName = null) {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
   await _createUserProfile(credential.user, displayName);
   return credential.user;
 }
 
-// Inicia sesión con email y contraseña. No crea perfil (debe existir previamente).
 export async function loginWithEmail(email, password) {
   try {
     const credential = await signInWithEmailAndPassword(auth, email, password);
@@ -69,7 +73,6 @@ export async function loginWithEmail(email, password) {
   }
 }
 
-// Inicia sesión con Google. Crea perfil si es la primera vez.
 export async function loginWithGoogle() {
   const credential = await signInWithPopup(auth, googleProvider);
   const info = getAdditionalUserInfo(credential);
@@ -86,18 +89,15 @@ export async function loginWithGoogle() {
   return credential.user;
 }
 
-// Cierra la sesión activa.
 export async function logout() {
   await signOut(auth);
 }
 
-// Devuelve el perfil Firestore del usuario o null si no existe.
 export async function getUserProfile(uid) {
   const snap = await getDoc(doc(db, 'users', uid));
   return snap.exists() ? snap.data() : null;
 }
 
-// Crea el documento de perfil en Firestore. Role y status por defecto.
 async function _createUserProfile(user, displayName = null) {
   await setDoc(doc(db, 'users', user.uid), {
     uid:         user.uid,
@@ -116,4 +116,60 @@ async function _updateLastLogin(uid) {
   } catch {
     // Silencioso: si falla no bloquea el login
   }
+}
+
+// ─── Guard de autenticación (solo en páginas protegidas) ─────────────────────
+// Se omite en sign_up.html para evitar redirección circular.
+
+if (!window.location.pathname.endsWith('sign_up.html')) {
+
+  // Exponer helpers de Firestore como globales para scripts no-module
+  window.fs = {
+    collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc,
+    doc, query, orderBy, serverTimestamp, Timestamp
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.replace('sign_up.html');
+      return;
+    }
+
+    let profile = {};
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists()) {
+        profile = snap.data();
+        if (profile.status === 'disabled') {
+          await signOut(auth);
+          window.location.replace('sign_up.html');
+          return;
+        }
+      }
+    } catch {
+      // No bloqueamos si Firestore no responde temporalmente
+    }
+
+    // Exponer globales para scripts no-module
+    window.db              = db;
+    window.firebaseUser    = user;
+    window.firebaseProfile = profile;
+    window.firebaseSignOut = () => signOut(auth);
+
+    // Rellenar nombre/rol en el sidebar
+    const name = profile.displayName || user.email || 'Usuario';
+    const role = profile.role === 'admin' ? 'Administrador' : 'Propietario';
+    document.querySelectorAll('.sidebar-user-name').forEach(el => el.textContent = name);
+    document.querySelectorAll('.sidebar-user-role').forEach(el => el.textContent = role);
+
+    // Mostrar la página
+    const authStyle = document.getElementById('auth-loading');
+    if (authStyle) authStyle.remove();
+    document.body.style.visibility = '';
+
+    // Notificar a los módulos que la app está lista
+    document.dispatchEvent(new CustomEvent('appReady', {
+      detail: { user, profile, db }
+    }));
+  });
 }

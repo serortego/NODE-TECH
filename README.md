@@ -1,9 +1,111 @@
-# 🎯 NODE - Software de Gestión Empresarial (Versión Demo)
+# NODE — Software de Gestión Empresarial
 
-> **Estado Actual**: 🎯 **MODO DEMO ABIERTO** (Sin autenticación)  
-> Para versión con login, ver [DEMO_MODE.md](./DEMO_MODE.md)
+Aplicación web para la gestión integral de pequeños negocios. Construida con Vanilla JS, Firebase (Auth + Firestore + Hosting) y Tailwind CSS.
 
-## 🚀 Empezar Rápido
+**URL de producción:** desplegada en Firebase Hosting (proyecto `node-tech`)
+
+---
+
+## Módulos
+
+| Módulo | Descripción |
+|---|---|
+| **Inicio** | Dashboard SPA principal. Carga todos los módulos dinámicamente. Muestra resumen de actividad reciente. |
+| **Asistente** | Chatbot con comandos en lenguaje natural para crear facturas, citas y consultar datos. |
+| **Agenda** | Calendario interactivo. Gestión de citas con vista diaria/semanal. |
+| **Clientes** | CRM básico. Alta, edición, búsqueda y filtrado de clientes. |
+| **Empleados** | Gestión del equipo. Fichas de empleados con datos de contacto y rol. |
+| **Finanzas** | Panel de ingresos/gastos con gráficos. Registro de transacciones. |
+| **Contabilidad** | Facturación completa: creación, edición, filtrado por estado y exportación a PDF. |
+
+Todos los módulos guardan datos en Firestore bajo `users/{uid}/{colección}`, por lo que cada usuario tiene su propia base de datos aislada.
+
+---
+
+## Estructura del proyecto
+
+```
+src/frontend/public/
+├── visual/           ← Páginas HTML (una por módulo + sign_up + welcome)
+├── logic/            ← Lógica JS
+│   ├── firebase-config.js   ← Inicialización de Firebase
+│   ├── auth.js              ← Auth (registro/login/Google) + guard de páginas privadas
+│   ├── navigation.js        ← NavigationManager: SPA routing en inicio.html
+│   ├── inicio.js            ← Dashboard: KPIs y carga de vistas
+│   ├── contabilidad.js      ← ContabilidadManager: facturas (usado en SPA y standalone)
+│   ├── clientes.js          ← CRUD clientes → Firestore users/{uid}/clientes
+│   ├── empleados.js         ← CRUD empleados → Firestore users/{uid}/empleados
+│   ├── finanzas.js          ← CRUD finanzas → Firestore users/{uid}/finanzas
+│   ├── agenda.js            ← CRUD agenda → Firestore users/{uid}/agenda
+│   └── chatbot.js           ← Lógica del asistente IA
+└── assets/           ← Recursos estáticos
+```
+
+---
+
+## Arquitectura
+
+### Autenticación
+`auth.js` es el único archivo de autenticación. Hace dos cosas:
+
+1. **Exporta funciones** (`registerWithEmail`, `loginWithEmail`, `loginWithGoogle`, `logout`, `getUserProfile`) usadas por `sign_up.js`.
+2. **Guard automático**: cuando se carga como `<script type="module">` en cualquier página protegida, verifica la sesión activa. Si no hay usuario, redirige a `sign_up.html`. Cuando la sesión está confirmada, expone globales (`window.db`, `window.firebaseUser`, `window.fs`, etc.) y dispara el evento `appReady`.
+
+### SPA (inicio.html)
+`inicio.html` es el SPA principal. `navigation.js` gestiona el routing interno mediante `loadView(viewName)`. Cada módulo (clientes, empleados, finanzas, contabilidad...) es una clase manager que recibe el contenedor donde renderizar.
+
+### Datos por usuario
+Cada módulo escribe en `users/{uid}/{colección}` en Firestore. Esto garantiza que cada usuario solo accede a sus propios datos.
+
+---
+
+## Configuración Firebase
+
+Proyecto: `node-tech`  
+Servicios activos: Authentication (email/password + Google), Firestore, Hosting.
+
+Reglas Firestore (`firestore.rules`): los usuarios solo pueden leer/escribir sus propios documentos bajo `users/{uid}`.
+
+---
+
+## Despliegue
+
+```bash
+firebase deploy --only hosting --project node-tech
+```
+
+Para desplegar también reglas e índices:
+
+```bash
+firebase deploy --project node-tech
+```
+
+---
+
+## Desarrollo local
+
+```bash
+# Servir directamente desde la carpeta public
+cd src/frontend/public
+python -m http.server 8000
+# o
+npx http-server .
+```
+
+Abre `http://localhost:8000/visual/sign_up.html` para acceder.
+
+---
+
+## Stack tecnológico
+
+- **Frontend**: Vanilla JS (ES modules), sin frameworks
+- **Estilos**: Tailwind CSS (CDN)
+- **Iconos**: Font Awesome 6
+- **Base de datos**: Firebase Firestore
+- **Auth**: Firebase Authentication
+- **Hosting**: Firebase Hosting
+- **PDF**: jsPDF (módulo Contabilidad)
+
 
 ```bash
 # Opción 1: Python
