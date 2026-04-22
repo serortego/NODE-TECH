@@ -6,23 +6,20 @@
     <title>NODE TECH | Automatización inteligente para negocios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'Inter', 'sans-serif'],
                     },
                     colors: {
                         node: {
-                            dark: '#0D253E',
-                            teal: '#3B82F6',
+                            dark: '#060D1A',
+                            teal: '#2B93A6',
                             tealLight: '#38BDF8',
-                            tealDark: '#133947',
-                            bg: '#F8FAFC',
-                            surface: '#FFFFFF',
-                            accent: '#2563EB',
                         }
                     },
                 }
@@ -30,362 +27,940 @@
         }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #F8FAFC; }
-        .text-node { color: #0D253E; }
-        .bg-node { background: #F8FAFC; }
-        .shadow-soft { box-shadow: 0 30px 80px rgba(15, 23, 42, 0.08); }
-        .feature-card:hover { transform: translateY(-6px); }
-        .transition-smooth { transition: all 0.25s ease; }
+        /* ── Variables ─────────────────────────────────────── */
+        :root {
+            --teal:        #2B93A6;
+            --teal-light:  #38BDF8;
+            --teal-glow:   rgba(43,147,166,0.38);
+            --bg:          #060D1A;
+            --bg-card:     rgba(255,255,255,0.04);
+            --border-card: rgba(255,255,255,0.08);
+        }
+
+        /* ── Base ──────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: #cbd5e1; overflow-x: hidden; }
+        h1,h2,h3,h4 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #060D1A; }
+        ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+        :focus-visible { outline: 2px solid var(--teal-light); outline-offset: 3px; }
+
+        /* ── Background grid ───────────────────────────────── */
+        .hero-grid {
+            background-image:
+                linear-gradient(rgba(43,147,166,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(43,147,166,0.05) 1px, transparent 1px);
+            background-size: 52px 52px;
+        }
+
+        /* ── Glow orbs ─────────────────────────────────────── */
+        .glow-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            will-change: opacity;
+        }
+
+        /* ── Glassmorphism ─────────────────────────────────── */
+        .glass {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .glass-bright {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.11);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        /* ── CTA Buttons ───────────────────────────────────── */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+            box-shadow: 0 0 28px var(--teal-glow);
+            transition: box-shadow .25s ease, transform .2s ease;
+        }
+        .btn-primary:hover  { box-shadow: 0 0 52px rgba(56,189,248,.55); transform: translateY(-2px); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-secondary {
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(8px);
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(43,147,166,.5); }
+
+        /* ── Gradient text ─────────────────────────────────── */
+        .text-gradient {
+            background: linear-gradient(130deg, #fff 0%, var(--teal-light) 55%, var(--teal) 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ── Section divider ───────────────────────────────── */
+        .divider { background: linear-gradient(90deg,transparent,rgba(43,147,166,.25),transparent); height:1px; }
+
+        /* ── Card hover ────────────────────────────────────── */
+        .card-lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .card-lift:hover { transform: translateY(-5px); border-color: rgba(43,147,166,.4) !important; box-shadow: 0 20px 56px rgba(43,147,166,.14); }
+
+        /* ── Scroll reveal ─────────────────────────────────── */
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+        }
+        .reveal.visible { opacity:1; transform:translateY(0); }
+        .rd1 { transition-delay:.08s; }
+        .rd2 { transition-delay:.18s; }
+        .rd3 { transition-delay:.28s; }
+        .rd4 { transition-delay:.38s; }
+
+        /* ── Hero entry keyframes ──────────────────────────── */
+        @keyframes heroUp {
+            from { opacity:0; transform:translateY(22px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .h-enter   { animation: heroUp .85s cubic-bezier(.16,1,.3,1) both; }
+        .h-enter-1 { animation: heroUp .85s .12s cubic-bezier(.16,1,.3,1) both; }
+        .h-enter-2 { animation: heroUp .85s .26s cubic-bezier(.16,1,.3,1) both; }
+        .h-enter-3 { animation: heroUp .85s .42s cubic-bezier(.16,1,.3,1) both; }
+        .h-enter-4 { animation: heroUp .85s .58s cubic-bezier(.16,1,.3,1) both; }
+        .h-enter-5 { animation: heroUp .85s .78s cubic-bezier(.16,1,.3,1) both; }
+
+        /* ── Float animation ───────────────────────────────── */
+        @keyframes floatY {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-13px); }
+        }
+        .float      { animation: floatY 7s ease-in-out infinite; will-change: transform; }
+        .float-a    { animation: floatY 10s 1s ease-in-out infinite; will-change: transform; }
+        .float-b    { animation: floatY 9s 2.5s ease-in-out infinite; will-change: transform; }
+
+        /* ── Live pulse dot ────────────────────────────────── */
+        @keyframes pRing { 0%{transform:scale(1);opacity:.7} 100%{transform:scale(2.3);opacity:0} }
+        .pulse-ring { animation: pRing 1.8s ease-out infinite; }
+
+        /* ── Mockup glow shadow ────────────────────────────── */
+        .mockup-shadow {
+            box-shadow:
+                0 0 0 1px rgba(43,147,166,.18),
+                0 36px 90px rgba(0,0,0,.55),
+                0 0 90px rgba(43,147,166,.13);
+        }
+
+        /* ── Stat glow ─────────────────────────────────────── */
+        .stat-glow { text-shadow: 0 0 36px rgba(56,189,248,.5); }
+
+        /* ── Ticker ────────────────────────────────────────── */
+        @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+        .ticker-wrap { overflow: hidden; }
+        .ticker-inner { animation: ticker 30s linear infinite; white-space: nowrap; will-change: transform; }
+
+        /* ── Navbar scroll ─────────────────────────────────── */
+        .nav-glass {
+            background: rgba(6,13,26,.88) !important;
+            border-bottom: 1px solid rgba(255,255,255,.07);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        /* ── Pricing highlight ─────────────────────────────── */
+        .plan-featured {
+            background: linear-gradient(145deg, rgba(43,147,166,.14) 0%, rgba(56,189,248,.04) 100%);
+            border-color: rgba(43,147,166,.45) !important;
+        }
+
+        /* ── Arrow CTA micro ───────────────────────────────── */
+        .arrow-cta i { transition: transform .2s ease; }
+        .arrow-cta:hover i { transform: translateX(4px); }
+
+        /* ── Progress bar fill ─────────────────────────────── */
+        @keyframes barFill { from{width:0} to{width:var(--w)} }
+        .bar-fill { animation: barFill 1.4s .3s ease both; }
     </style>
 </head>
-<body class="bg-node text-slate-900 antialiased">
-    <div class="min-h-screen">
-        <header class="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-200">
-            <div class="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div class="flex items-center gap-3">
-                    <img src="../assets/logo.png" alt="NODE TECH" class="h-11 w-auto">
-                    <div>
-                        <p class="text-lg font-bold text-slate-900">NODE TECH</p>
-                        <p class="text-sm text-slate-500">Automatización inteligente para negocios</p>
-                    </div>
-                </div>
-                <nav class="hidden items-center gap-8 text-sm font-medium text-slate-600 lg:flex">
-                    <a href="#product" class="hover:text-node-teal">Producto</a>
-                    <a href="#benefits" class="hover:text-node-teal">Beneficios</a>
-                    <a href="#pricing" class="hover:text-node-teal">Precios</a>
-                    <a href="#testimonials" class="hover:text-node-teal">Clientes</a>
-                </nav>
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <a href="sign_up.html" class="inline-flex items-center justify-center rounded-full bg-node-teal px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-node-teal/15 hover:bg-[#23849b] transition">Solicitar demo</a>
-                    <a href="sign_up.html" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 transition">Entrar</a>
-                </div>
-            </div>
-        </header>
+<body class="antialiased">
 
-        <main>
-            <section class="relative overflow-hidden bg-node-bg py-20">
-                <div class="absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-node-teal/10 blur-3xl"></div>
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] items-center">
-                        <div class="space-y-8">
-                            <div class="inline-flex items-center gap-3 rounded-full bg-node-teal/10 px-4 py-2 text-sm font-semibold text-node-teal">Software completo para pymes</div>
-                            <h1 class="text-5xl font-extrabold tracking-tight text-slate-950 sm:text-6xl">Gestiona tu empresa con un solo panel de control.</h1>
-                            <p class="max-w-2xl text-lg leading-8 text-slate-600">NODE TECH reúne finanzas, CRM, facturación, proyectos y recursos humanos en una plataforma moderna y fácil de usar.</p>
-                            <div class="flex flex-col gap-4 sm:flex-row">
-                                <a href="sign_up.html" class="inline-flex items-center justify-center rounded-full bg-node-teal px-6 py-4 text-sm font-semibold text-white shadow-lg shadow-node-teal/15 hover:bg-[#23849b] transition">Comenzar gratis</a>
-                                <a href="#product" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Ver funciones</a>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
-                                    <p class="text-3xl font-bold text-slate-900">+120</p>
-                                    <p class="mt-2 text-sm text-slate-500">Clientes activos</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
-                                    <p class="text-3xl font-bold text-slate-900">95%</p>
-                                    <p class="mt-2 text-sm text-slate-500">Ahorro de tiempo</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
-                                    <p class="text-3xl font-bold text-slate-900">24/7</p>
-                                    <p class="mt-2 text-sm text-slate-500">Soporte dedicado</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-5 shadow-soft text-center">
-                                    <p class="text-3xl font-bold text-slate-900">100%</p>
-                                    <p class="mt-2 text-sm text-slate-500">Remoto y seguro</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="relative">
-                            <div class="relative overflow-hidden rounded-[2rem] bg-white p-8 shadow-soft">
-                                <div class="absolute -right-16 top-8 h-44 w-44 rounded-full bg-node-teal/10 blur-3xl"></div>
-                                <div class="relative z-10 space-y-6">
-                                    <div class="inline-flex items-center gap-3 rounded-full bg-node-teal/10 px-4 py-2 text-sm font-semibold text-node-teal">Panel de cliente</div>
-                                    <div class="grid gap-4 sm:grid-cols-2">
-                                        <div class="rounded-3xl border border-slate-200 p-5">
-                                            <p class="text-sm text-slate-500">Facturación</p>
-                                            <p class="mt-3 text-2xl font-bold text-slate-900">210</p>
-                                            <p class="mt-2 text-sm text-slate-500">Documentos generados</p>
-                                        </div>
-                                        <div class="rounded-3xl border border-slate-200 p-5">
-                                            <p class="text-sm text-slate-500">Ventas</p>
-                                            <p class="mt-3 text-2xl font-bold text-slate-900">8,4k</p>
-                                            <p class="mt-2 text-sm text-slate-500">Leads gestionados</p>
-                                        </div>
-                                    </div>
-                                    <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                                        <p class="text-sm font-semibold text-slate-900">Automatización</p>
-                                        <p class="mt-3 text-sm text-slate-600">Recordatorios, cobros y flujos de aprobaciones sincronizados con tu equipo.</p>
-                                    </div>
-                                    <div class="rounded-3xl border border-slate-200 p-5 bg-node-teal/5">
-                                        <p class="text-sm uppercase tracking-[0.25em] text-node-teal">Previsualización</p>
-                                        <div class="mt-4 h-60 rounded-3xl bg-[radial-gradient(circle_at_top,_rgba(43,147,166,0.12),_transparent_40%)] p-5">
-                                            <div class="h-full rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                                                <div class="flex items-center justify-between mb-4">
-                                                    <span class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"><i class="fas fa-check text-xs text-node-teal"></i> Facturas</span>
-                                                    <span class="text-xs text-slate-500">Actualizado</span>
-                                                </div>
-                                                <div class="space-y-3">
-                                                    <div class="h-4 w-3/5 rounded-full bg-slate-200"></div>
-                                                    <div class="h-4 w-2/3 rounded-full bg-slate-200"></div>
-                                                    <div class="h-4 w-1/2 rounded-full bg-slate-200"></div>
-                                                    <div class="grid gap-3 grid-cols-3 pt-4">
-                                                        <span class="h-3 rounded-full bg-slate-200"></span>
-                                                        <span class="h-3 rounded-full bg-slate-200"></span>
-                                                        <span class="h-3 rounded-full bg-slate-200"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+<!-- ═══════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════ -->
+<header id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <div class="mx-auto max-w-7xl px-5 sm:px-8 py-4 flex items-center justify-between">
 
-            <section id="product" class="bg-white py-24">
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="mx-auto max-w-2xl text-center">
-                        <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Funcionalidades</p>
-                        <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Todo lo que necesitas para digitalizar tu gestión</h2>
-                        <p class="mt-6 text-lg leading-8 text-slate-600">NODE integra módulos de facturación, CRM, contabilidad, inventario y equipo para trabajar desde una misma plataforma.</p>
-                    </div>
-                    <div class="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Facturación inteligente</h3>
-                            <p class="mt-3 text-slate-600">Crea facturas, presupuestos y pedidos con plantillas adaptadas a tu marca.</p>
-                        </article>
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-hand-holding-dollar"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Contabilidad automática</h3>
-                            <p class="mt-3 text-slate-600">Registra gastos, controla IVA y genera informes contables al instante.</p>
-                        </article>
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-users"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">CRM y ventas</h3>
-                            <p class="mt-3 text-slate-600">Sigue oportunidades, clientes y tareas en un embudo sencillo y poderoso.</p>
-                        </article>
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-project-diagram"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Proyectos y tareas</h3>
-                            <p class="mt-3 text-slate-600">Planifica entregas, asigna responsables y controla avances en tiempo real.</p>
-                        </article>
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-people-carry-box"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Inventario y compras</h3>
-                            <p class="mt-3 text-slate-600">Mantén productos, stock y proveedores sincronizados con tus ventas.</p>
-                        </article>
-                        <article class="feature-card rounded-[2rem] border border-slate-200 bg-node-bg p-8 transition-smooth shadow-soft hover:border-node-teal/20">
-                            <div class="inline-flex h-12 w-12 items-center justify-center rounded-3xl bg-node-teal/10 text-node-teal text-xl"><i class="fas fa-calendar-check"></i></div>
-                            <h3 class="mt-6 text-xl font-semibold text-slate-900">Equipo y recursos</h3>
-                            <p class="mt-3 text-slate-600">Organiza turnos, permisos y horas facturables con control centralizado.</p>
-                        </article>
-                    </div>
-                </div>
-            </section>
+        <a href="#" class="flex items-center gap-3 group" aria-label="NODE TECH inicio">
+            <div class="h-9 w-9 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-lg transition"
+                 style="background:linear-gradient(135deg,#2B93A6,#38BDF8);box-shadow:0 0 20px rgba(43,147,166,.4)">N</div>
+            <span class="font-display font-bold text-white text-lg tracking-tight">NODE <span class="text-gradient">TECH</span></span>
+        </a>
 
-            <section id="benefits" class="bg-node-bg py-24">
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
-                        <div class="space-y-6">
-                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Ventajas</p>
-                            <h2 class="text-4xl font-extrabold text-slate-950">Simplifica tu operación y toma decisiones con datos reales.</h2>
-                            <p class="text-lg leading-8 text-slate-600">NODE te permite automatizar tareas repetitivas, reducir errores humanos y tener una visión clara de todo el negocio en un solo lugar.</p>
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                <div class="rounded-3xl bg-white p-6 shadow-soft">
-                                    <p class="text-sm font-semibold text-node-teal">Automatiza cobros</p>
-                                    <p class="mt-3 text-slate-600">Envía facturas periódicas, recuerda pagos y reduce impagos automáticamente.</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-6 shadow-soft">
-                                    <p class="text-sm font-semibold text-node-teal">Control total</p>
-                                    <p class="mt-3 text-slate-600">Accede a informes financieros, dashboard de ventas y KPI clave al instante.</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-6 shadow-soft">
-                                    <p class="text-sm font-semibold text-node-teal">Trabajo en equipo</p>
-                                    <p class="mt-3 text-slate-600">Colabora en proyectos, asigna tareas y comparte notas en un solo ecosistema.</p>
-                                </div>
-                                <div class="rounded-3xl bg-white p-6 shadow-soft">
-                                    <p class="text-sm font-semibold text-node-teal">Escala sin esfuerzo</p>
-                                    <p class="mt-3 text-slate-600">Desde autónomos hasta equipos de 50+ personas, NODE crece contigo.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="relative rounded-[2rem] bg-gradient-to-br from-node-teal/15 via-white to-slate-50 p-8 shadow-soft">
-                            <div class="absolute inset-0 rounded-[2rem] border border-white/50"></div>
-                            <div class="relative z-10 grid gap-6">
-                                <div class="rounded-[2rem] bg-white p-6 shadow-sm">
-                                    <div class="flex items-center justify-between">
-                                        <span class="font-semibold text-slate-900">Resumen mensual</span>
-                                        <span class="text-xs text-slate-500">Actualizado</span>
-                                    </div>
-                                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                                        <div class="rounded-3xl bg-slate-50 p-4">
-                                            <p class="text-sm text-slate-500">Ingresos</p>
-                                            <p class="mt-2 text-2xl font-bold text-slate-900">€24.8K</p>
-                                        </div>
-                                        <div class="rounded-3xl bg-slate-50 p-4">
-                                            <p class="text-sm text-slate-500">Nuevos clientes</p>
-                                            <p class="mt-2 text-2xl font-bold text-slate-900">98</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rounded-[2rem] bg-node-teal text-white p-6">
-                                    <p class="text-sm uppercase tracking-[0.35em] text-slate-200">Flujo de trabajo</p>
-                                    <h3 class="mt-4 text-2xl font-bold">Tus ventas al día en menos de 2 minutos</h3>
-                                    <p class="mt-3 text-slate-200">Controla ofertas, facturas y pagos desde una misma vista sin cambiar de herramienta.</p>
-                                </div>
-                                <div class="rounded-[2rem] bg-white p-6 shadow-sm">
-                                    <div class="flex items-center justify-between text-slate-500 text-sm">
-                                        <span>Proyectos activos</span>
-                                        <span>12</span>
-                                    </div>
-                                    <div class="mt-4 h-2 rounded-full bg-slate-100">
-                                        <div class="h-2 w-2/3 rounded-full bg-node-teal"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+        <nav class="hidden lg:flex items-center gap-8 text-sm text-slate-400" aria-label="Navegación principal">
+            <a href="#como-funciona" class="hover:text-white transition">Producto</a>
+            <a href="#beneficios"    class="hover:text-white transition">Beneficios</a>
+            <a href="#precios"       class="hover:text-white transition">Precios</a>
+            <a href="#testimonios"   class="hover:text-white transition">Clientes</a>
+        </nav>
 
-            <section id="pricing" class="bg-white py-24">
-                <div class="mx-auto max-w-7xl px-6 lg:px-8 text-center">
-                    <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Precios</p>
-                    <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Planes claros para todos los equipos</h2>
-                    <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">Elige el plan que mejor se adapta a tu empresa y comienza a gestionar con menos esfuerzo.</p>
-                    <div class="mt-16 grid gap-6 lg:grid-cols-3">
-                        <article class="rounded-[2rem] border border-slate-200 bg-node-bg p-8 shadow-soft">
-                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">Startup</p>
-                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€29<span class="text-lg font-medium">/mes</span></p>
-                            <p class="mt-4 text-slate-600">Gestión básica para autónomos y pequeños equipos.</p>
-                            <ul class="mt-8 space-y-4 text-slate-600">
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Facturación</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> CRM básico</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Soporte email</li>
-                            </ul>
-                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-node-teal px-5 py-3 text-sm font-semibold text-white hover:bg-[#23849b] transition">Seleccionar</a>
-                        </article>
-                        <article class="rounded-[2rem] border border-node-teal bg-node-teal/5 p-8 shadow-soft">
-                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Growth</p>
-                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€59<span class="text-lg font-medium">/mes</span></p>
-                            <p class="mt-4 text-slate-600">La opción ideal para empresas que quieren crecer rápido.</p>
-                            <ul class="mt-8 space-y-4 text-slate-600">
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Todo el paquete Startup</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Gestión de inventario</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Informes avanzados</li>
-                            </ul>
-                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition">Más vendido</a>
-                        </article>
-                        <article class="rounded-[2rem] border border-slate-200 bg-node-bg p-8 shadow-soft">
-                            <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">Premium</p>
-                            <p class="mt-6 text-5xl font-extrabold text-slate-950">€99<span class="text-lg font-medium">/mes</span></p>
-                            <p class="mt-4 text-slate-600">Soporte dedicado y personalización para organizaciones grandes.</p>
-                            <ul class="mt-8 space-y-4 text-slate-600">
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Todo el paquete Growth</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Integraciones API</li>
-                                <li class="flex items-center gap-3"><i class="fas fa-check text-node-teal"></i> Soporte prioritario</li>
-                            </ul>
-                            <a href="#" class="mt-8 inline-flex w-full items-center justify-center rounded-full bg-white border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition">Contactar</a>
-                        </article>
-                    </div>
-                </div>
-            </section>
+        <div class="hidden lg:flex items-center gap-3">
+            <a href="sign_up.html" class="btn-secondary rounded-full px-5 py-2.5 text-sm font-medium text-white">Entrar</a>
+            <a href="sign_up.html" class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold text-white arrow-cta">
+                Empezar gratis <i class="fas fa-arrow-right text-xs ml-1"></i>
+            </a>
+        </div>
 
-            <section id="testimonials" class="bg-node-bg py-24">
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="text-center">
-                        <p class="text-sm font-semibold uppercase tracking-[0.35em] text-node-teal">Testimonios</p>
-                        <h2 class="mt-4 text-4xl font-extrabold text-slate-950 sm:text-5xl">Empresas que ya confían en NODE</h2>
-                    </div>
-                    <div class="mt-16 grid gap-6 lg:grid-cols-3">
-                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
-                            <p class="text-slate-600">"NODE nos permitió centralizar la facturación y el CRM en una sola app. Ahora nuestro equipo gana tiempo y evita errores de comunicación."</p>
-                            <div class="mt-6 flex items-center gap-4">
-                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-user-tie"></i></div>
-                                <div>
-                                    <p class="font-semibold text-slate-900">Laura Gómez</p>
-                                    <p class="text-sm text-slate-500">CFO en Nova Consulting</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
-                            <p class="text-slate-600">"La integración entre ventas y contabilidad es impresionante. Tenemos todo bajo control y podemos escalar sin aumentar costes."</p>
-                            <div class="mt-6 flex items-center gap-4">
-                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-briefcase"></i></div>
-                                <div>
-                                    <p class="font-semibold text-slate-900">Raúl Pedraza</p>
-                                    <p class="text-sm text-slate-500">CEO en SmartCommerce</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="rounded-[2rem] bg-white p-8 shadow-soft">
-                            <p class="text-slate-600">"El panel de informes es muy claro y nuestros procesos internos son más rápidos. La adopción ha sido inmediata."</p>
-                            <div class="mt-6 flex items-center gap-4">
-                                <div class="h-12 w-12 rounded-full bg-node-teal/10 flex items-center justify-center text-node-teal"><i class="fas fa-chart-line"></i></div>
-                                <div>
-                                    <p class="font-semibold text-slate-900">Marta Ruiz</p>
-                                    <p class="text-sm text-slate-500">Directora operativa en BitMarket</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="demo" class="bg-white py-24">
-                <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div class="rounded-[2rem] bg-node-teal text-white p-12 shadow-soft">
-                        <div class="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-                            <div>
-                                <p class="text-sm font-semibold uppercase tracking-[0.35em] text-slate-200">¿Listo para empezar?</p>
-                                <h2 class="mt-4 text-4xl font-extrabold">Solicita una demo personalizada y descubre cómo NODE puede impulsar tu gestión.</h2>
-                                <p class="mt-6 max-w-xl text-lg leading-8 text-slate-200">Nuestro equipo te acompañará en la configuración inicial, migración de datos y puesta en marcha.</p>
-                                <a href="#" class="mt-8 inline-flex items-center justify-center rounded-full bg-white px-6 py-4 text-sm font-semibold text-node-teal shadow-lg shadow-white/10 hover:bg-slate-100 transition">Pedir demo gratuita</a>
-                            </div>
-                            <div class="grid gap-4 rounded-[2rem] bg-white p-8 text-slate-900 shadow-sm">
-                                <div class="inline-flex items-center gap-3 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700"><i class="fas fa-check text-node-teal"></i> Soporte en español</div>
-                                <div class="rounded-3xl bg-node-teal/5 p-5">
-                                    <p class="text-lg font-semibold">Onboarding rápido</p>
-                                    <p class="mt-2 text-slate-600">Configura tu cuenta en menos de 24 horas.</p>
-                                </div>
-                                <div class="rounded-3xl bg-node-teal/5 p-5">
-                                    <p class="text-lg font-semibold">Datos seguros</p>
-                                    <p class="mt-2 text-slate-600">Cifrado y control de permisos por usuario.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="bg-slate-950 text-slate-300">
-            <div class="mx-auto max-w-7xl px-6 py-16 lg:px-8">
-                <div class="grid gap-10 lg:grid-cols-3">
-                    <div>
-                        <p class="text-2xl font-bold text-white">NODE</p>
-                        <p class="mt-4 max-w-md text-sm leading-7 text-slate-400">Software de gestión empresarial para equipos que buscan un crecimiento ordenado y más automatización.</p>
-                    </div>
-                    <div class="grid gap-4 text-sm text-slate-400">
-                        <p class="font-semibold text-white">Enlaces</p>
-                        <a href="#product" class="hover:text-white">Producto</a>
-                        <a href="#benefits" class="hover:text-white">Beneficios</a>
-                        <a href="#pricing" class="hover:text-white">Precios</a>
-                        <a href="#demo" class="hover:text-white">Demo</a>
-                    </div>
-                    <div class="grid gap-4 text-sm text-slate-400">
-                        <p class="font-semibold text-white">Contacto</p>
-                        <p>hola@node.com</p>
-                        <p>+34 912 345 678</p>
-                    </div>
-                </div>
-                <div class="mt-12 border-t border-slate-800 pt-8 text-sm text-slate-500">© 2026 NODE. Todos los derechos reservados.</div>
-            </div>
-        </footer>
+        <button id="mobile-btn" class="lg:hidden text-slate-300 hover:text-white p-2 rounded-lg" aria-label="Abrir menú" aria-expanded="false">
+            <i class="fas fa-bars text-lg" id="mobile-icon"></i>
+        </button>
     </div>
 
-    <script type="module" src="../logic/navigation.js"></script>
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="lg:hidden hidden glass border-t px-5 py-5 space-y-3" style="border-color:rgba(255,255,255,.07)">
+        <a href="#como-funciona" class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Producto</a>
+        <a href="#beneficios"    class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Beneficios</a>
+        <a href="#precios"       class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Precios</a>
+        <a href="#testimonios"   class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Clientes</a>
+        <div class="grid gap-3 pt-3" style="border-top:1px solid rgba(255,255,255,.07)">
+            <a href="sign_up.html" class="btn-secondary rounded-full px-5 py-3 text-sm font-medium text-white text-center">Entrar</a>
+            <a href="sign_up.html" class="btn-primary rounded-full px-5 py-3 text-sm font-semibold text-white text-center">Empezar gratis</a>
+        </div>
+    </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════ -->
+<section class="relative min-h-screen flex items-center pt-24 pb-20 hero-grid overflow-x-hidden" aria-label="Bienvenida">
+    <!-- Glow background orbs -->
+    <div class="glow-orb w-[580px] h-[580px]" style="top:-160px;left:-120px;background:rgba(43,147,166,.16)"></div>
+    <div class="glow-orb w-[420px] h-[420px]" style="bottom:-60px;right:-80px;background:rgba(56,189,248,.1)"></div>
+    <div class="glow-orb w-[260px] h-[260px]" style="top:45%;left:42%;background:rgba(43,147,166,.07)"></div>
+
+    <div class="relative z-10 mx-auto max-w-7xl px-5 sm:px-8 w-full">
+        <div class="grid gap-14 lg:grid-cols-2 items-center">
+
+            <!-- Copy -->
+            <div class="space-y-8">
+                <div class="h-enter">
+                    <span class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-xs font-semibold" style="color:#38BDF8;border-color:rgba(56,189,248,.25)">
+                        <span class="relative flex h-2 w-2">
+                            <span class="pulse-ring absolute inset-0 rounded-full" style="background:rgba(56,189,248,.55)"></span>
+                            <span class="relative rounded-full h-2 w-2" style="background:#38BDF8"></span>
+                        </span>
+                        Software para pymes · 100 % digital y seguro
+                    </span>
+                </div>
+
+                <h1 class="h-enter-1 text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.06] text-white">
+                    Gestiona tu<br>
+                    <span class="text-gradient">empresa</span><br>
+                    desde un solo<br>
+                    <span class="text-gradient">lugar.</span>
+                </h1>
+
+                <p class="h-enter-2 text-lg text-slate-400 max-w-lg leading-relaxed">
+                    NODE reúne facturación, CRM, agenda, contabilidad y equipo en una sola plataforma diseñada para autónomos y pymes que quieren crecer sin caos.
+                </p>
+
+                <div class="h-enter-3 flex flex-col sm:flex-row gap-4">
+                    <a href="sign_up.html" class="btn-primary arrow-cta rounded-full px-7 py-4 text-sm font-semibold text-white inline-flex items-center justify-center gap-2">
+                        Empezar gratis <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                    <a href="#como-funciona" class="btn-secondary rounded-full px-7 py-4 text-sm font-medium text-slate-200 inline-flex items-center justify-center gap-2">
+                        <i class="fas fa-play text-xs" style="color:#38BDF8"></i> Ver cómo funciona
+                    </a>
+                </div>
+
+                <!-- Hero stats -->
+                <div class="h-enter-4 grid grid-cols-3 gap-3">
+                    <div class="glass rounded-2xl p-3 text-center">
+                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="120" data-suffix="+">0+</p>
+                        <p class="text-xs text-slate-500 mt-1">Clientes activos</p>
+                    </div>
+                    <div class="glass rounded-2xl p-3 text-center">
+                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="95" data-suffix="%">0%</p>
+                        <p class="text-xs text-slate-500 mt-1">Ahorro de tiempo</p>
+                    </div>
+                    <div class="glass rounded-2xl p-3 text-center">
+                        <p class="text-2xl font-bold text-white" style="text-shadow:0 0 32px rgba(56,189,248,.5)">24/7</p>
+                        <p class="text-xs text-slate-500 mt-1">Soporte incluido</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App mockup -->
+            <div class="h-enter-5 relative flex justify-center lg:justify-end px-6 lg:px-0">
+                <div class="float relative w-full max-w-md">
+
+                    <!-- Main dashboard card -->
+                    <div class="glass-bright rounded-3xl p-5 mockup-shadow space-y-4">
+                        <!-- Window chrome -->
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="h-2.5 w-2.5 rounded-full" style="background:rgba(239,68,68,.55)"></span>
+                            <span class="h-2.5 w-2.5 rounded-full" style="background:rgba(234,179,8,.55)"></span>
+                            <span class="h-2.5 w-2.5 rounded-full" style="background:rgba(34,197,94,.55)"></span>
+                            <span class="ml-3 flex-1 rounded-full h-5 text-[10px] text-slate-500 flex items-center px-3" style="background:rgba(255,255,255,.05)">
+                                app.nodetech.es
+                            </span>
+                        </div>
+
+                        <!-- User header -->
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Panel principal</p>
+                                <p class="text-white font-semibold text-sm mt-0.5">Buenos días, Sergio 👋</p>
+                            </div>
+                            <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                                 style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">S</div>
+                        </div>
+
+                        <!-- KPIs -->
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="glass rounded-xl p-3">
+                                <p class="text-[10px] text-slate-500">Ingresos</p>
+                                <p class="text-white font-bold text-sm mt-1">€24.8K</p>
+                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +12%</p>
+                            </div>
+                            <div class="glass rounded-xl p-3">
+                                <p class="text-[10px] text-slate-500">Clientes</p>
+                                <p class="text-white font-bold text-sm mt-1">128</p>
+                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +3 hoy</p>
+                            </div>
+                            <div class="glass rounded-xl p-3">
+                                <p class="text-[10px] text-slate-500">Tareas</p>
+                                <p class="text-white font-bold text-sm mt-1">92%</p>
+                                <p class="text-[10px] mt-0.5" style="color:#38BDF8">completadas</p>
+                            </div>
+                        </div>
+
+                        <!-- Mini chart -->
+                        <div class="glass rounded-xl p-3">
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[11px] text-slate-400 font-medium">Facturación — 2026</p>
+                                <span class="text-[10px] glass rounded-full px-2 py-0.5" style="color:#38BDF8">● En vivo</span>
+                            </div>
+                            <div class="flex items-end gap-1 h-12">
+                                <div class="flex-1 rounded-t" style="height:42%;background:rgba(43,147,166,.32)"></div>
+                                <div class="flex-1 rounded-t" style="height:58%;background:rgba(43,147,166,.42)"></div>
+                                <div class="flex-1 rounded-t" style="height:48%;background:rgba(43,147,166,.32)"></div>
+                                <div class="flex-1 rounded-t" style="height:72%;background:rgba(43,147,166,.42)"></div>
+                                <div class="flex-1 rounded-t" style="height:62%;background:rgba(43,147,166,.32)"></div>
+                                <div class="flex-1 rounded-t" style="height:85%;background:rgba(56,189,248,.72)"></div>
+                                <div class="flex-1 rounded-t" style="height:68%;background:rgba(43,147,166,.32)"></div>
+                                <div class="flex-1 rounded-t" style="height:95%;background:rgba(56,189,248,.9)"></div>
+                            </div>
+                        </div>
+
+                        <!-- Module quick links -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
+                                <i class="fas fa-file-invoice-dollar text-sm" style="color:#38BDF8"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">Facturas</p>
+                            </button>
+                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
+                                <i class="fas fa-users text-blue-400 text-sm"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">CRM</p>
+                            </button>
+                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
+                                <i class="fas fa-calendar-alt text-purple-400 text-sm"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">Agenda</p>
+                            </button>
+                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
+                                <i class="fas fa-robot text-emerald-400 text-sm"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">IA</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Floating notification -->
+                    <div class="float-a absolute -top-5 -right-4 glass rounded-2xl p-3 z-10" style="border-color:rgba(52,211,153,.25);min-width:168px">
+                        <div class="flex items-center gap-2">
+                            <div class="h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(52,211,153,.18)">
+                                <i class="fas fa-check text-xs" style="color:#34d399"></i>
+                            </div>
+                            <div>
+                                <p class="text-white text-[11px] font-medium">Factura cobrada</p>
+                                <p class="text-slate-500 text-[10px]">€1.240 · hace 2 min</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Floating task card -->
+                    <div class="float-b absolute -bottom-5 -left-5 glass rounded-2xl p-3 z-10" style="border-color:rgba(139,92,246,.2);min-width:172px">
+                        <p class="text-[10px] text-slate-500 mb-2">Tareas pendientes</p>
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-check-circle text-xs" style="color:#38BDF8"></i>
+                                <span class="text-[11px] text-slate-300">Revisar factura #42</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-check-circle text-xs" style="color:#38BDF8"></i>
+                                <span class="text-[11px] text-slate-300">Cita con Cliente A</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="far fa-circle text-xs text-slate-600"></i>
+                                <span class="text-[11px] text-slate-500">Informe mensual</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom fade to next section -->
+    <div class="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+         style="background:linear-gradient(transparent,#060D1A)"></div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     TICKER — Social proof strip
+════════════════════════════════════════════════════ -->
+<div class="py-9 ticker-wrap" style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05)">
+    <p class="text-center text-[10px] text-slate-600 uppercase tracking-[.25em] mb-5">Empresas que ya usan NODE</p>
+    <div class="ticker-inner inline-flex gap-14 text-slate-600 text-sm font-semibold">
+        <span>Nova Consulting</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>SmartCommerce</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>BitMarket</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>FlexWork</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>TechSolutions</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>GrowthLab</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Nexus Studios</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <!-- duplicate for seamless loop -->
+        <span>Nova Consulting</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>SmartCommerce</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>BitMarket</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>FlexWork</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>TechSolutions</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>GrowthLab</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Nexus Studios</span>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     HOW IT WORKS — 3 Steps
+════════════════════════════════════════════════════ -->
+<section id="como-funciona" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+
+        <div class="text-center space-y-4 mb-20 reveal">
+            <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Cómo funciona</span>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Tres pasos para digitalizar<br>tu negocio.</h2>
+            <p class="text-slate-400 max-w-lg mx-auto">Sin configuración complicada, sin migración dolorosa. Estarás operativo en menos de 24 horas.</p>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-3">
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd1">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-6"
+                     style="background:rgba(43,147,166,.14);border:1px solid rgba(43,147,166,.3)">
+                    <i class="fas fa-user-plus" style="color:#38BDF8"></i>
+                </div>
+                <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">01</p>
+                <h3 class="text-xl font-bold text-white mb-3">Crea tu cuenta</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Regístrate con email o Google en segundos. Sin tarjeta de crédito. Acceso inmediato a todos los módulos.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd2">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-6"
+                     style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)">
+                    <i class="fas fa-sliders text-blue-300"></i>
+                </div>
+                <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">02</p>
+                <h3 class="text-xl font-bold text-white mb-3">Configura tu empresa</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Añade clientes, productos y equipo. El asistente IA te guía paso a paso para no perderte nada.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd3">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-6"
+                     style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.22)">
+                    <i class="fas fa-rocket text-emerald-400"></i>
+                </div>
+                <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">03</p>
+                <h3 class="text-xl font-bold text-white mb-3">Gestiona y escala</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Factura, gestiona citas, controla gastos y consulta informes. Todo desde un único panel, en cualquier dispositivo.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     MODULES — Feature grid
+════════════════════════════════════════════════════ -->
+<section id="modulos" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+
+        <div class="text-center space-y-4 mb-20 reveal">
+            <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Módulos</span>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Todo conectado.<br>Nada que instalar.</h2>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- Facturación — wide on sm -->
+            <div class="glass rounded-3xl p-7 card-lift reveal rd1 sm:col-span-2 xl:col-span-1">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(43,147,166,.18)">
+                    <i class="fas fa-file-invoice-dollar" style="color:#38BDF8"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Facturación inteligente</h3>
+                <p class="text-slate-400 text-sm mb-5">Crea y envía facturas profesionales en segundos. Plantillas, recordatorios y cobros automáticos.</p>
+                <div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1.5"><span>Facturas emitidas este mes</span><span style="color:#38BDF8">87%</span></div>
+                    <div class="h-1.5 rounded-full" style="background:rgba(255,255,255,.07)">
+                        <div class="h-1.5 rounded-full bar-fill" style="--w:87%;background:linear-gradient(90deg,#2B93A6,#38BDF8)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-7 card-lift reveal rd2">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(139,92,246,.14)">
+                    <i class="fas fa-calendar-alt text-purple-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Agenda y citas</h3>
+                <p class="text-slate-400 text-sm">Gestiona citas, asigna empleados y recibe recordatorios automáticos sin esfuerzo.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-7 card-lift reveal rd3">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(59,130,246,.14)">
+                    <i class="fas fa-users text-blue-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">CRM y ventas</h3>
+                <p class="text-slate-400 text-sm">Pipeline de oportunidades, seguimiento de clientes y tareas de ventas en embudo visual.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-7 card-lift reveal rd1">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(52,211,153,.11)">
+                    <i class="fas fa-chart-line text-emerald-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Contabilidad</h3>
+                <p class="text-slate-400 text-sm">Registra gastos, controla IVA y genera informes contables al instante.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-7 card-lift reveal rd2">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(251,146,60,.11)">
+                    <i class="fas fa-people-carry-box text-orange-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Inventario y compras</h3>
+                <p class="text-slate-400 text-sm">Stock sincronizado con ventas, alertas de reposición y proveedores centralizados.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-7 card-lift reveal rd3">
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(56,189,248,.1)">
+                    <i class="fas fa-robot" style="color:#38BDF8"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">Asistente IA</h3>
+                <p class="text-slate-400 text-sm">Consulta datos, genera documentos y obtén recomendaciones en lenguaje natural.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     BENEFITS + METRICS
+════════════════════════════════════════════════════ -->
+<section id="beneficios" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+        <div class="grid gap-16 lg:grid-cols-2 items-center">
+
+            <!-- Metrics -->
+            <div class="space-y-8 reveal">
+                <div>
+                    <span class="inline-block text-xs font-semibold uppercase tracking-[.25em] mb-4" style="color:#38BDF8">Resultados reales</span>
+                    <h2 class="text-4xl sm:text-5xl font-bold text-white">Ahorra tiempo.<br>Elimina errores.<br>Crece más rápido.</h2>
+                    <p class="mt-4 text-slate-400 leading-relaxed max-w-md">Nuestros clientes reportan mejoras medibles en las primeras dos semanas de uso real.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass rounded-2xl p-6">
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="80" data-suffix="%">0%</p>
+                        <p class="text-slate-400 text-sm mt-2">Reducción en tareas manuales</p>
+                    </div>
+                    <div class="glass rounded-2xl p-6">
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="3" data-suffix="x">0x</p>
+                        <p class="text-slate-400 text-sm mt-2">Más velocidad en facturación</p>
+                    </div>
+                    <div class="glass rounded-2xl p-6">
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="95" data-suffix="%">0%</p>
+                        <p class="text-slate-400 text-sm mt-2">Satisfacción de clientes</p>
+                    </div>
+                    <div class="glass rounded-2xl p-6">
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="24" data-suffix="h">0h</p>
+                        <p class="text-slate-400 text-sm mt-2">Para estar operativo</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features list -->
+            <div class="space-y-4 reveal rd2">
+
+                <div class="glass rounded-3xl p-6 card-lift">
+                    <div class="flex items-start gap-4">
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(43,147,166,.18)">
+                            <i class="fas fa-bolt text-sm" style="color:#38BDF8"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Automatización de cobros</h4>
+                            <p class="text-slate-400 text-sm">Envía facturas periódicas, recuerda pagos y reduce impagos sin intervención manual.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-6 card-lift">
+                    <div class="flex items-start gap-4">
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(59,130,246,.18)">
+                            <i class="fas fa-chart-pie text-blue-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Dashboard de decisión</h4>
+                            <p class="text-slate-400 text-sm">KPIs financieros, ventas y estado del equipo en tiempo real, sin hojas de cálculo.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-6 card-lift">
+                    <div class="flex items-start gap-4">
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(52,211,153,.14)">
+                            <i class="fas fa-shield-halved text-emerald-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Datos seguros y privados</h4>
+                            <p class="text-slate-400 text-sm">Cifrado, control de permisos por usuario y backups automáticos en la nube.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-6 card-lift">
+                    <div class="flex items-start gap-4">
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(251,146,60,.14)">
+                            <i class="fas fa-users-gear text-orange-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Colaboración en equipo</h4>
+                            <p class="text-slate-400 text-sm">Asigna tareas, define roles y trabaja en tiempo real con tu equipo desde cualquier lugar.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════════════════ -->
+<section id="testimonios" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+
+        <div class="text-center space-y-4 mb-16 reveal">
+            <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Testimonios</span>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Empresas reales.<br>Resultados reales.</h2>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-3">
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd1 flex flex-col">
+                <div class="flex gap-0.5 mb-5">
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"NODE nos permitió centralizar la facturación y el CRM en una sola app. Nuestro equipo gana tiempo y evita errores de comunicación."</p>
+                <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
+                    <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                         style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">L</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm">Laura Gómez</p>
+                        <p class="text-slate-500 text-xs">CFO · Nova Consulting</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd2 flex flex-col" style="border-color:rgba(43,147,166,.28)">
+                <div class="flex gap-0.5 mb-5">
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"La integración entre ventas y contabilidad es impresionante. Tenemos todo bajo control y podemos escalar sin aumentar costes."</p>
+                <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
+                    <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                         style="background:linear-gradient(135deg,#1D4ED8,#2B93A6)">R</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm">Raúl Pedraza</p>
+                        <p class="text-slate-500 text-xs">CEO · SmartCommerce</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd3 flex flex-col">
+                <div class="flex gap-0.5 mb-5">
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
+                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                </div>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"El panel de informes es clarísimo. Los procesos internos son más rápidos y la adopción del equipo fue inmediata desde el primer día."</p>
+                <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
+                    <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                         style="background:linear-gradient(135deg,#7C3AED,#2B93A6)">M</div>
+                    <div>
+                        <p class="font-semibold text-white text-sm">Marta Ruiz</p>
+                        <p class="text-slate-500 text-xs">Directora operativa · BitMarket</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     PRICING
+════════════════════════════════════════════════════ -->
+<section id="precios" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+
+        <div class="text-center space-y-4 mb-16 reveal">
+            <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Precios</span>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Planes claros.<br>Sin sorpresas.</h2>
+            <p class="text-slate-400">14 días de prueba gratuita en todos los planes. Sin tarjeta de crédito.</p>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-3">
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd1">
+                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Startup</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€29</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">Gestión básica para autónomos y pequeños equipos.</p>
+                <ul class="space-y-3 text-sm text-slate-300 mb-8">
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Facturación</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> CRM básico</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Agenda</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Soporte email</li>
+                </ul>
+                <a href="sign_up.html" class="btn-secondary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Empezar gratis</a>
+            </div>
+
+            <div class="plan-featured rounded-3xl p-8 card-lift reveal rd2 relative overflow-hidden">
+                <div class="absolute top-4 right-4 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+                     style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">Más popular</div>
+                <p class="text-xs font-semibold uppercase tracking-[.2em] mb-6" style="color:#38BDF8">Growth</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€59</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">La opción ideal para empresas que quieren crecer rápido.</p>
+                <ul class="space-y-3 text-sm text-slate-300 mb-8">
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Startup</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Contabilidad avanzada</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Gestión de inventario</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Asistente IA</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Informes avanzados</li>
+                </ul>
+                <a href="sign_up.html" class="btn-primary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Empezar gratis</a>
+            </div>
+
+            <div class="glass rounded-3xl p-8 card-lift reveal rd3">
+                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Premium</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€99</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">Soporte dedicado y personalización para organizaciones grandes.</p>
+                <ul class="space-y-3 text-sm text-slate-300 mb-8">
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Growth</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Integraciones API</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Onboarding dedicado</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Soporte prioritario</li>
+                </ul>
+                <a href="sign_up.html" class="btn-secondary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Contactar</a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     FINAL CTA
+════════════════════════════════════════════════════ -->
+<section class="py-24 px-5 sm:px-8">
+    <div class="mx-auto max-w-4xl reveal">
+        <div class="glass rounded-[2.5rem] p-10 sm:p-16 text-center relative overflow-hidden"
+             style="border-color:rgba(43,147,166,.28)">
+            <!-- Glow center -->
+            <div class="glow-orb w-80 h-80" style="top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(43,147,166,.1)"></div>
+            <div class="relative z-10 space-y-6">
+                <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">¿Listo para empezar?</span>
+                <h2 class="text-4xl sm:text-5xl font-bold text-white">Tu empresa merece una<br>gestión de primer nivel.</h2>
+                <p class="text-slate-400 max-w-md mx-auto leading-relaxed">Únete a más de 120 pymes que ya automatizan su gestión con NODE. Empieza gratis hoy mismo.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                    <a href="sign_up.html" class="btn-primary arrow-cta rounded-full px-8 py-4 text-sm font-semibold text-white inline-flex items-center justify-center gap-2">
+                        Empezar gratis ahora <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                    <a href="sign_up.html" class="btn-secondary rounded-full px-8 py-4 text-sm font-medium text-slate-200 inline-flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-check text-xs" style="color:#38BDF8"></i>
+                        Pedir demo personalizada
+                    </a>
+                </div>
+                <p class="text-slate-600 text-xs">Sin tarjeta de crédito · 14 días gratis · Cancela cuando quieras</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer style="border-top:1px solid rgba(255,255,255,.06)">
+    <div class="mx-auto max-w-7xl px-5 sm:px-8 py-14">
+        <div class="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+
+            <div class="sm:col-span-2">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="h-8 w-8 rounded-lg flex items-center justify-center font-bold text-white text-sm"
+                         style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">N</div>
+                    <span class="font-bold text-white">NODE TECH</span>
+                </div>
+                <p class="text-slate-500 text-sm leading-relaxed max-w-xs">Software de gestión empresarial para equipos que buscan un crecimiento ordenado y más automatización.</p>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold text-sm mb-4">Producto</p>
+                <ul class="space-y-2 text-slate-500 text-sm">
+                    <li><a href="#modulos"       class="hover:text-slate-300 transition">Módulos</a></li>
+                    <li><a href="#precios"        class="hover:text-slate-300 transition">Precios</a></li>
+                    <li><a href="#testimonios"    class="hover:text-slate-300 transition">Clientes</a></li>
+                    <li><a href="sign_up.html"    class="hover:text-slate-300 transition">Demo gratuita</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold text-sm mb-4">Contacto</p>
+                <ul class="space-y-2 text-slate-500 text-sm">
+                    <li>hola@nodetech.es</li>
+                    <li>+34 912 345 678</li>
+                    <li class="pt-2">
+                        <a href="sign_up.html" class="font-medium transition" style="color:#38BDF8">Acceder a la app →</a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3" style="border-top:1px solid rgba(255,255,255,.06)">
+            <p class="text-slate-600 text-sm">© 2026 NODE TECH. Todos los derechos reservados.</p>
+            <div class="flex gap-5 text-slate-600 text-sm">
+                <a href="#" class="hover:text-slate-400 transition">Privacidad</a>
+                <a href="#" class="hover:text-slate-400 transition">Términos</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════ -->
+<script type="module" src="../logic/navigation.js"></script>
+<script>
+    // ── Navbar glassmorphism on scroll ─────────────────────
+    const navbar = document.getElementById('navbar');
+    const onScroll = () => navbar.classList.toggle('nav-glass', window.scrollY > 36);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // ── Mobile menu toggle ──────────────────────────────────
+    const mobileBtn  = document.getElementById('mobile-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileIcon = document.getElementById('mobile-icon');
+
+    mobileBtn.addEventListener('click', () => {
+        const open = !mobileMenu.classList.contains('hidden');
+        mobileMenu.classList.toggle('hidden', open);
+        mobileIcon.className = open ? 'fas fa-bars text-lg' : 'fas fa-times text-lg';
+        mobileBtn.setAttribute('aria-expanded', String(!open));
+    });
+
+    document.querySelectorAll('.mobile-close').forEach(el =>
+        el.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+            mobileIcon.className = 'fas fa-bars text-lg';
+            mobileBtn.setAttribute('aria-expanded', 'false');
+        })
+    );
+
+    // ── Scroll reveal (IntersectionObserver) ───────────────
+    const revealObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+    // ── Animated counter ────────────────────────────────────
+    function runCounter(el) {
+        const target   = parseInt(el.dataset.target, 10);
+        const suffix   = el.dataset.suffix || '';
+        const duration = 1500;
+        const t0       = performance.now();
+        const tick = (now) => {
+            const p = Math.min((now - t0) / duration, 1);
+            const v = Math.floor((1 - Math.pow(1 - p, 3)) * target); // ease-out cubic
+            el.textContent = v + suffix;
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = target + suffix;
+        };
+        requestAnimationFrame(tick);
+    }
+
+    // Counters in hero — fire after entry animation
+    setTimeout(() => {
+        document.querySelectorAll('.h-enter-4 .counter').forEach(runCounter);
+    }, 1100);
+
+    // Counters in benefits section — fire on scroll into view
+    const counterObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) { runCounter(e.target); counterObs.unobserve(e.target); }
+        });
+    }, { threshold: 0.6 });
+
+    document.querySelectorAll('#beneficios .counter').forEach(el => counterObs.observe(el));
+
+    // ── Smooth scroll for in-page anchors ──────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', e => {
+            const sel = link.getAttribute('href');
+            if (sel === '#') return;
+            const target = document.querySelector(sel);
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                mobileMenu.classList.add('hidden');
+                mobileIcon.className = 'fas fa-bars text-lg';
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

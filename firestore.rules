@@ -59,6 +59,24 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ── Subcolecciones por usuario: clientes, empleados, finanzas ─────────────
+    // Cada usuario solo accede a sus propios datos.
+    match /users/{userId}/clientes/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/empleados/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/finanzas/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/facturas/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // ── Colección: appointments (preparado para migración desde localStorage) ──
     // Descomenta cuando chatbot.js / agenda.js migren a Firestore.
     //

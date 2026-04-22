@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <style id="auth-loading">body{visibility:hidden!important}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NODE TECH</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -197,8 +198,8 @@
                     <i class="fas fa-user text-white text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-sm font-semibold text-white truncate">Diego G.</p>
-                    <p class="text-xs text-blue-100">Propietario</p>
+                    <p class="text-sm font-semibold text-white truncate sidebar-user-name">Usuario</p>
+                    <p class="text-xs text-blue-100 sidebar-user-role">Propietario</p>
                 </div>
             </div>
             
@@ -265,8 +266,8 @@
                     <button type="submit" class="flex-1 bg-node-teal text-white font-semibold py-1.5 rounded-md hover:bg-blue-600 transition text-sm shadow-sm">Guardar</button>
                     <button type="button" id="btn-cancelar-modal" class="flex-1 border border-gray-300 text-gray-600 font-semibold py-1.5 rounded-md hover:bg-gray-50 transition text-sm">Cancelar</button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 
     <!-- Modal close button handler -->
@@ -286,5 +287,7 @@
     <script src="../logic/finanzas.js"></script>
     <script src="../logic/chatbot.js"></script>
     <script src="../logic/navigation.js"></script>
+    <script src="../logic/inicio.js"></script>
+    <script type="module" src="../logic/auth-guard.js"></script>
 </body>
 </html>

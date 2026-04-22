@@ -1,6 +1,5 @@
-// inicio.js - Lógica de inicialización para el dashboard
-document.addEventListener('DOMContentLoaded', () => {
-    // Crear instancia del NavigationManager cuando el DOM está listo
+// inicio.js - Inicialización del SPA: espera a que auth-guard.js confirme auth
+document.addEventListener('appReady', () => {
     if (typeof NavigationManager !== 'undefined') {
         window.navManager = new NavigationManager();
     }

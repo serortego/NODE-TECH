@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <style id="auth-loading">body{visibility:hidden!important}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NODE TECH | Agenda</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -68,9 +69,9 @@
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body data-default-view="agenda" class="min-h-screen">
     <!-- Main Content -->
-    <main class="min-h-screen bg-gray-50 p-4" id="agenda-container">
+    <main class="min-h-screen bg-gray-50 p-4" id="content-area">
         <!-- Se genera con JavaScript -->
     </main>
 
@@ -128,6 +129,8 @@
         </div>
     </div>
 
+    <!-- Auth guard - Firebase authentication -->
+    <script type="module" src="../logic/auth-guard.js"></script>
     <!-- Load all managers before navigation -->
     <script src="../logic/agenda.js"></script>
     <script src="../logic/empleados.js"></script>
@@ -135,5 +138,7 @@
     <script src="../logic/finanzas.js"></script>
     <script src="../logic/chatbot.js"></script>
     <script src="../logic/navigation.js"></script>
+    <script src="../logic/inicio.js"></script>
 </body>
 </html>
+

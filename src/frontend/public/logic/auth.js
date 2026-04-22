@@ -21,7 +21,8 @@ import {
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
-  getAdditionalUserInfo
+  getAdditionalUserInfo,
+  fetchSignInMethodsForEmail
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
 
 import {
@@ -43,9 +44,29 @@ export async function registerWithEmail(email, password, displayName = null) {
 
 // Inicia sesión con email y contraseña. No crea perfil (debe existir previamente).
 export async function loginWithEmail(email, password) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  await _updateLastLogin(credential.user.uid);
-  return credential.user;
+  try {
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    await _updateLastLogin(credential.user.uid);
+    return credential.user;
+  } catch (err) {
+    if (
+      err.code === 'auth/invalid-credential' ||
+      err.code === 'auth/wrong-password' ||
+      err.code === 'auth/user-not-found'
+    ) {
+      try {
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+        if (methods.includes('google.com') && !methods.includes('password')) {
+          const googleErr = new Error('google-only-account');
+          googleErr.code = 'auth/google-only-account';
+          throw googleErr;
+        }
+      } catch (innerErr) {
+        if (innerErr.code === 'auth/google-only-account') throw innerErr;
+      }
+    }
+    throw err;
+  }
 }
 
 // Inicia sesión con Google. Crea perfil si es la primera vez.

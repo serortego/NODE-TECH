@@ -1,4 +1,4 @@
-// chatbot.js - Gestor del Asistente (Chatbot) integrado en el CRM
+﻿// chatbot.js - Gestor del Asistente (Chatbot) integrado en el CRM
 
 class ChatbotManager {
     constructor(navigationManager) {

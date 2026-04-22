@@ -25,7 +25,10 @@ class NavigationManager {
 
     init() {
         this.setupNavigation();
-        this.loadView('dashboard');
+        const hash = window.location.hash.replace('#', '');
+        const defaultView = hash || document.body.dataset.defaultView || 'dashboard';
+        if (hash) history.replaceState(null, '', window.location.pathname);
+        this.loadView(defaultView);
     }
 
     setupNavigation() {
@@ -39,15 +42,6 @@ class NavigationManager {
                 }
             });
         });
-    }
-
-    setActiveNav(clickedItem) {
-        this.navItems.forEach(item => {
-            item.classList.remove('active', 'bg-node-teal', 'text-white');
-            item.classList.add('text-gray-700');
-        });
-        clickedItem.classList.add('active', 'bg-node-teal', 'text-white');
-        clickedItem.classList.remove('text-gray-700');
     }
 
     setActiveNav(clickedItem) {
@@ -443,9 +437,13 @@ class NavigationManager {
 
     logout() {
         if (confirm('¿Deseas cerrar sesión?')) {
-            localStorage.removeItem('user-session');
-            sessionStorage.clear();
-            this.navigateTo('sign_up.html');
+            const doLogout = async () => {
+                try {
+                    if (window.firebaseSignOut) await window.firebaseSignOut();
+                } catch { /* ignorar errores de signOut */ }
+                window.location.replace('sign_up.html');
+            };
+            doLogout();
         }
     }
 
