@@ -550,7 +550,7 @@ window._cont = {
 };
 
 // ─── Inicialización tras autenticación ───────────────────────────────────────
-document.addEventListener('nodeUserReady', async ({ detail }) => {
+document.addEventListener('appReady', async ({ detail }) => {
   uid = detail.user.uid;
 
   const name     = detail.profile?.displayName || detail.profile?.email || '?';

@@ -95,6 +95,11 @@ class NavigationManager {
                 content = this.currentManager.render();
                 setTimeout(() => this.currentManager.setupListeners(), 0);
                 break;
+            case 'contabilidad':
+                this.currentManager = new ContabilidadManager(this);
+                content = this.currentManager.render();
+                setTimeout(() => this.currentManager.setupListeners(), 0);
+                break;
             default:
                 content = '<div class="text-center py-12"><p class="text-gray-500">Contenido no encontrado</p></div>';
         }
