@@ -4,6 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "node-tech-a2a88",
     "public": "src/frontend/public",
     "redirects": [
       {
@@ -33,7 +34,7 @@
       },
       {
         "source": "/login.html",
-        "destination": "/index.html",
+        "destination": "/visual/sign_up.html",
         "type": 301
       }
     ],
