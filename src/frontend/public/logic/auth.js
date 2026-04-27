@@ -35,6 +35,9 @@ import {
 
 import { auth, db } from './firebase-config.js';
 
+// ✨ IMPORTAR DATAMANAGER (nuevo)
+import { dataManager } from './DataManager.js';
+
 export { auth, onAuthStateChanged };
 
 const googleProvider = new GoogleAuthProvider();
@@ -167,9 +170,18 @@ if (!window.location.pathname.endsWith('sign_up.html')) {
     if (authStyle) authStyle.remove();
     document.body.style.visibility = '';
 
+    // ✨ INICIALIZAR DATAMANAGER (nuevo - sincroniza con Firestore)
+    try {
+      await dataManager.init(user);
+      console.log('✅ DataManager inicializado - Sincronización con Firestore activa');
+      window.dataManager = dataManager; // Exponer globalmente
+    } catch (error) {
+      console.error('❌ Error inicializando DataManager:', error);
+    }
+
     // Notificar a los módulos que la app está lista
     document.dispatchEvent(new CustomEvent('appReady', {
-      detail: { user, profile, db }
+      detail: { user, profile, db, dataManager } // ✨ Agregar dataManager aquí
     }));
   });
 }

@@ -5,7 +5,9 @@ class AgendaManager {
         this.navManager = navigationManager;
         this.agendaView = 'day'; // 'day', 'week', 'month'
         this.selectedDate = new Date();
-        this.recursos = ['María García', 'Juan López', 'Pedro Sánchez']; // Trabajadores
+        this.recursos = (window.dataManager?.cache?.empleados?.map(e => e.nombre).filter(Boolean)) 
+                        || this.navManager.recursos
+                        || ['Sin empleados'];
         this.tiempoGranularidad = 15; // minutos (15 o 30)
         this.sidebarVisible = true;
         this.citaStates = {
@@ -24,27 +26,27 @@ class AgendaManager {
         return `
             <div class="space-y-2">
                 <!-- Header COMPACTO - Una sola línea -->
-                <div class="flex items-center justify-between gap-4 pb-2 border-b border-gray-200">
+                <div class="flex items-center justify-between gap-4 pb-2 border-b border-[rgba(255,255,255,0.08)]">
                     <!-- Título izquierda -->
                     <div class="flex items-center gap-2 min-w-fit">
-                        <i class="fas fa-calendar-alt text-node-teal text-lg"></i>
-                        <h2 class="text-xl font-bold text-gray-900">Agenda</h2>
+                        <i class="fas fa-calendar-alt text-[#2B93A6] text-lg"></i>
+                        <h2 class="text-xl font-bold text-white">Agenda</h2>
                     </div>
 
                     <!-- Vistas + Navegación centro -->
                     <div class="flex items-center gap-3 flex-1">
-                        <div class="flex gap-1 bg-gray-100 p-1 rounded-lg">
-                            <button class="agenda-view-btn px-2.5 py-1 bg-white text-gray-900 rounded text-xs font-semibold active" data-view="day">Día</button>
-                            <button class="agenda-view-btn px-2.5 py-1 text-gray-600 text-xs font-semibold hover:bg-white/50" data-view="week">Semana</button>
-                            <button class="agenda-view-btn px-2.5 py-1 text-gray-600 text-xs font-semibold hover:bg-white/50" data-view="month">Mes</button>
+                        <div class="flex gap-1 bg-[rgba(255,255,255,0.06)] p-1 rounded-lg">
+                            <button class="agenda-view-btn px-2.5 py-1 bg-[#2B93A6] text-white rounded text-xs font-semibold active" data-view="day">Día</button>
+                            <button class="agenda-view-btn px-2.5 py-1 text-slate-400 text-xs font-semibold hover:bg-[rgba(255,255,255,0.08)]" data-view="week">Semana</button>
+                            <button class="agenda-view-btn px-2.5 py-1 text-slate-400 text-xs font-semibold hover:bg-[rgba(255,255,255,0.08)]" data-view="month">Mes</button>
                         </div>
                         
                         <div class="flex items-center gap-1">
-                            <button id="agenda-prev-btn" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition">
+                            <button id="agenda-prev-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition">
                                 <i class="fas fa-chevron-left text-xs"></i>
                             </button>
-                            <input type="date" id="agenda-date-input" value="${this.selectedDate.toISOString().split('T')[0]}" class="px-2 py-1 border border-gray-300 rounded text-xs w-28">
-                            <button id="agenda-next-btn" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition">
+                            <input type="date" id="agenda-date-input" value="${this.selectedDate.toISOString().split('T')[0]}" class="px-2 py-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded text-xs w-28 focus:outline-none focus:ring-1 focus:ring-[#2B93A6]">
+                            <button id="agenda-next-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition">
                                 <i class="fas fa-chevron-right text-xs"></i>
                             </button>
                         </div>
@@ -52,10 +54,10 @@ class AgendaManager {
 
                     <!-- Botones derecha -->
                     <div class="flex gap-2 min-w-fit">
-                        <button id="btn-toggle-sidebar" class="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold text-xs" title="Expandir/Contraer panel">
+                        <button id="btn-toggle-sidebar" class="px-2.5 py-1.5 bg-[rgba(255,255,255,0.06)] text-slate-400 rounded-lg hover:bg-[rgba(255,255,255,0.1)] transition font-semibold text-xs" title="Expandir/Contraer panel">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <button id="btn-nueva-cita" class="inline-flex items-center gap-1 rounded-lg bg-node-teal px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:shadow-lg hover:bg-blue-600 transition">
+                        <button id="btn-nueva-cita" class="btn-primary inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs">
                             <i class="fas fa-plus"></i> Cita
                         </button>
                     </div>
@@ -63,15 +65,15 @@ class AgendaManager {
 
                 <!-- Métricas rápidas del día -->
                 <div class="flex gap-2 text-xs px-1">
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded font-semibold">
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(43,147,166,0.15)] text-[#38BDF8] rounded font-semibold">
                         <i class="fas fa-calendar-check"></i>
                         <span>${citasHoy} citas</span>
                     </div>
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-700 rounded font-semibold">
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(251,146,60,0.12)] text-orange-300 rounded font-semibold">
                         <i class="fas fa-clock"></i>
                         <span>2 pendientes</span>
                     </div>
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded font-semibold">
+                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(52,211,153,0.12)] text-emerald-300 rounded font-semibold">
                         <i class="fas fa-euro-sign"></i>
                         <span>350€ est.</span>
                     </div>
@@ -80,16 +82,16 @@ class AgendaManager {
                 <!-- Contenido Principal -->
                 <div class="flex gap-4">
                     <!-- Timeline/Calendario (flex-1) -->
-                    <div id="agenda-content" class="flex-1 bg-white border border-gray-200 rounded-lg shadow-sm overflow-y-auto relative">
+                    <div id="agenda-content" class="flex-1 glass border border-[rgba(255,255,255,0.08)] rounded-lg overflow-y-auto relative">
                         ${this.renderContent()}
                     </div>
 
                     <!-- Sidebar (derecho) -->
                     <div id="agenda-sidebar" class="w-64 space-y-4 transition-all duration-300">
                         <!-- Calendario Mini -->
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
                             <div class="text-center mb-3">
-                                <h4 class="font-bold text-gray-900 text-sm">Calendario</h4>
+                                <h4 class="font-bold text-white text-sm">Calendario</h4>
                             </div>
                             <div id="calendar-mini">
                                 ${this.renderCalendarMini()}
@@ -97,42 +99,42 @@ class AgendaManager {
                         </div>
 
                         <!-- Próximas Citas -->
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-                            <h4 class="font-bold text-gray-900 text-sm mb-3">Próximas citas</h4>
+                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
+                            <h4 class="font-bold text-white text-sm mb-3">Próximas citas</h4>
                             ${proximasCitas.length > 0 ? `
                                 <div id="proximas-citas-container" class="space-y-2 max-h-80 overflow-y-auto">
                                     ${proximasCitas.slice(0, 5).map(cita => `
-                                        <div class="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition cursor-pointer text-xs" data-cita-id="${cita.id}">
-                                            <p class="font-bold text-gray-900 truncate">${cita.cliente}</p>
-                                            <p class="text-gray-600 text-xs truncate">${cita.servicio}</p>
-                                            <p class="text-gray-500 text-xs mt-1">${cita.hora}</p>
+                                        <div class="p-2 border border-[rgba(255,255,255,0.08)] rounded-lg hover:bg-[rgba(43,147,166,0.08)] transition cursor-pointer text-xs" data-cita-id="${cita.id}">
+                                            <p class="font-bold text-white truncate">${cita.cliente}</p>
+                                            <p class="text-slate-400 text-xs truncate">${cita.servicio}</p>
+                                            <p class="text-slate-500 text-xs mt-1">${cita.hora}</p>
                                         </div>
                                     `).join('')}
                                 </div>
                             ` : `
-                                <p class="text-xs text-gray-500 text-center py-4">Sin citas próximas</p>
+                                <p class="text-xs text-slate-500 text-center py-4">Sin citas próximas</p>
                             `}
                         </div>
 
                         <!-- Leyenda -->
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
-                            <h4 class="font-bold text-gray-900 text-sm mb-2">Estado</h4>
+                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
+                            <h4 class="font-bold text-white text-sm mb-2">Estado</h4>
                             <div class="space-y-1 text-xs">
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-3 rounded" style="background-color: #9CA3AF;"></div>
-                                    <span class="text-gray-600">No presentado</span>
+                                    <span class="text-slate-400">No presentado</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-3 rounded" style="background-color: #FBBF24;"></div>
-                                    <span class="text-gray-600">Esperando</span>
+                                    <span class="text-slate-400">Esperando</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-3 rounded" style="background-color: #3B82F6;"></div>
-                                    <span class="text-gray-600">En atención</span>
+                                    <span class="text-slate-400">En atención</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-3 rounded" style="background-color: #22C55E;"></div>
-                                    <span class="text-gray-600">Completado</span>
+                                    <span class="text-slate-400">Completado</span>
                                 </div>
                             </div>
                         </div>
@@ -178,9 +180,9 @@ class AgendaManager {
         html += `<div class="grid" style="grid-template-columns: 70px repeat(${this.recursos.length}, 1fr); gap: 0;">`;
         
         // ===== HEADER CON NOMBRES DE RECURSOS =====
-        html += '<div class="bg-gray-100 border-b-2 border-gray-300 p-3 font-bold text-xs text-gray-600 sticky top-0 z-10"></div>';
+        html += '<div class="bg-[rgba(255,255,255,0.04)] border-b-2 border-[rgba(255,255,255,0.1)] p-3 font-bold text-xs text-slate-500 sticky top-0 z-10"></div>';
         this.recursos.forEach((recurso, idx) => {
-            html += `<div class="bg-gray-50 hover:bg-gray-100 transition border-b-2 border-gray-300 p-3 font-bold text-xs text-gray-900 sticky top-0 z-10 ${idx > 0 ? 'border-l border-gray-300' : ''} text-center shadow-sm">${recurso}</div>`;
+            html += `<div class="bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.07)] transition border-b-2 border-[rgba(255,255,255,0.1)] p-3 font-bold text-xs text-white sticky top-0 z-10 ${idx > 0 ? 'border-l border-[rgba(255,255,255,0.06)]' : ''} text-center">${recurso}</div>`;
         });
 
         // ===== TIMELINE CON GRANULARIDAD =====
@@ -195,15 +197,15 @@ class AgendaManager {
 
                 // Celda de hora (solo en el primer slot)
                 if (slot === 0) {
-                    html += `<div class="bg-gray-50 border-r border-gray-200 p-1 font-bold text-xs text-gray-600 text-right pr-2" style="grid-row: span ${slotsPerHora}; border-bottom: 1px solid #E5E7EB;">${horaStr}:00</div>`;
+                    html += `<div class="bg-[rgba(255,255,255,0.02)] border-r border-[rgba(255,255,255,0.06)] p-1 font-bold text-xs text-slate-500 text-right pr-2" style="grid-row: span ${slotsPerHora}; border-bottom: 1px solid rgba(255,255,255,0.06);">${horaStr}:00</div>`;
                 }
 
                 // Celdas de recursos para este slot - AISLADAS CON position: relative
                 this.recursos.forEach((recurso) => {
-                    const borderStyle = isMediaHora ? '1px dashed #E5E7EB' : '1px solid #E5E7EB';
-                    const bgStyle = isMediaHora ? 'bg-gray-50' : 'bg-white';
+                    const borderStyle = isMediaHora ? '1px dashed rgba(255,255,255,0.04)' : '1px solid rgba(255,255,255,0.06)';
+                    const bgStyle = isMediaHora ? 'bg-[rgba(255,255,255,0.02)]' : '';
                     
-                    html += `<div class="relative p-0.5 border-r ${bgStyle} cursor-pointer hover:bg-blue-50 transition text-center text-xs border-l" 
+                    html += `<div class="relative p-0.5 border-r ${bgStyle} cursor-pointer hover:bg-[rgba(43,147,166,0.08)] transition text-center text-xs border-l border-[rgba(255,255,255,0.04)]" 
                              style="border-bottom: ${borderStyle}; min-height: ${pixelsPorSlot}px; position: relative;" 
                              data-recurso="${recurso}" 
                              data-tiempo="${tiempoStr}" 
@@ -327,23 +329,23 @@ class AgendaManager {
         let html = '<div class="overflow-x-auto"><div class="grid" style="grid-template-columns: 60px repeat(7, 1fr); gap: 0;">';
         
         // Header días
-        html += '<div class="bg-gray-50 border-b border-gray-200"></div>';
+        html += '<div class="bg-[rgba(255,255,255,0.04)] border-b border-[rgba(255,255,255,0.08)]"></div>';
         dias.forEach(dia => {
             const diaNombre = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'][dia.getDay()];
             const isToday = dia.toDateString() === new Date().toDateString();
-            html += `<div class="p-2 border-b border-gray-200 text-center font-bold text-xs ${isToday ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-900'}">${diaNombre} ${dia.getDate()}</div>`;
+            html += `<div class="p-2 border-b border-[rgba(255,255,255,0.08)] text-center font-bold text-xs ${isToday ? 'bg-[rgba(43,147,166,0.15)] text-[#38BDF8]' : 'bg-[rgba(255,255,255,0.04)] text-white'}">${diaNombre} ${dia.getDate()}</div>`;
         });
 
         // Horas y citas
         horas.forEach(hora => {
             const horaStr = String(hora).padStart(2, '0') + ':00';
-            html += `<div class="bg-gray-50 border-r border-gray-200 border-b text-xs font-semibold text-center text-gray-600 p-1">${horaStr}</div>`;
+            html += `<div class="bg-[rgba(255,255,255,0.02)] border-r border-[rgba(255,255,255,0.06)] border-b border-[rgba(255,255,255,0.04)] text-xs font-semibold text-center text-slate-500 p-1">${horaStr}</div>`;
             
             dias.forEach(dia => {
                 const fechaStr = dia.toISOString().split('T')[0];
                 const citasHora = this.navManager.citas.filter(c => c.hora === horaStr && c.fecha === fechaStr);
                 
-                html += `<div class="border-r border-b border-gray-200 p-1 h-20 overflow-y-auto text-xs space-y-0.5">`;
+                html += `<div class="border-r border-b border-[rgba(255,255,255,0.06)] p-1 h-20 overflow-y-auto text-xs space-y-0.5 hover:bg-[rgba(43,147,166,0.04)] transition">`;
                 citasHora.forEach(cita => {
                     const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
                     html += `
@@ -373,20 +375,20 @@ class AgendaManager {
 
         let html = `
             <div class="p-4">
-                <h3 class="text-base font-bold text-gray-900 mb-3 text-center">${meses[month]} ${year}</h3>
+                <h3 class="text-base font-bold text-white mb-3 text-center">${meses[month]} ${year}</h3>
                 <div class="grid grid-cols-7 gap-1">
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">L</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">M</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">X</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">J</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">V</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">S</div>
-                    <div class="text-xs font-bold text-gray-500 p-2 text-center">D</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">L</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">M</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">X</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">J</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">V</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">S</div>
+                    <div class="text-xs font-bold text-slate-500 p-2 text-center">D</div>
         `;
 
         // Días vacíos
         for (let i = 0; i < startingDayOfWeek; i++) {
-            html += '<div class="p-2 bg-gray-50 rounded"></div>';
+            html += '<div class="p-2 bg-[rgba(255,255,255,0.02)] rounded"></div>';
         }
 
         // Días del mes
@@ -396,9 +398,9 @@ class AgendaManager {
             const isToday = day === new Date().getDate() && month === new Date().getMonth();
 
             html += `
-                <div class="p-2 border rounded-lg cursor-pointer hover:shadow-md transition min-h-14 text-xs ${isToday ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200'}" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">
-                    <p class="text-xs font-bold text-gray-600 mb-1">${day}</p>
-                    ${citasDay.length > 0 ? `<p class="font-semibold text-blue-600 text-xs">${citasDay.length} cita${citasDay.length > 1 ? 's' : ''}</p>` : ''}
+                <div class="p-2 border rounded-lg cursor-pointer hover:shadow-md transition min-h-14 text-xs ${isToday ? 'bg-[rgba(43,147,166,0.2)] border-[#2B93A6]' : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)]'} hover:border-[rgba(43,147,166,0.4)]" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">
+                    <p class="text-xs font-bold ${isToday ? 'text-[#38BDF8]' : 'text-slate-400'} mb-1">${day}</p>
+                    ${citasDay.length > 0 ? `<p class="font-semibold text-[#38BDF8] text-xs">${citasDay.length} cita${citasDay.length > 1 ? 's' : ''}</p>` : ''}
                 </div>
             `;
         }
@@ -420,16 +422,16 @@ class AgendaManager {
 
         let html = `
             <div class="text-center mb-2">
-                <p class="text-xs font-bold text-gray-900">${meses[month]} ${year}</p>
+                <p class="text-xs font-bold text-white">${meses[month]} ${year}</p>
             </div>
             <div class="grid grid-cols-7 gap-1 text-center mb-2">
-                <div class="text-xs font-bold text-gray-500">L</div>
-                <div class="text-xs font-bold text-gray-500">M</div>
-                <div class="text-xs font-bold text-gray-500">X</div>
-                <div class="text-xs font-bold text-gray-500">J</div>
-                <div class="text-xs font-bold text-gray-500">V</div>
-                <div class="text-xs font-bold text-gray-500">S</div>
-                <div class="text-xs font-bold text-gray-500">D</div>
+                <div class="text-xs font-bold text-slate-500">L</div>
+                <div class="text-xs font-bold text-slate-500">M</div>
+                <div class="text-xs font-bold text-slate-500">X</div>
+                <div class="text-xs font-bold text-slate-500">J</div>
+                <div class="text-xs font-bold text-slate-500">V</div>
+                <div class="text-xs font-bold text-slate-500">S</div>
+                <div class="text-xs font-bold text-slate-500">D</div>
         `;
 
         // Días vacíos
@@ -445,13 +447,13 @@ class AgendaManager {
             const isSelected = day === this.selectedDate.getDate() && month === this.selectedDate.getMonth() && year === this.selectedDate.getFullYear();
 
             if (isToday) {
-                html += `<div class="h-8 w-8 mx-auto rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-blue-700" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto rounded-full bg-[#2B93A6] text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-[#38BDF8]" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else if (isSelected) {
-                html += `<div class="h-8 w-8 mx-auto rounded text-xs font-bold text-blue-600 flex items-center justify-center border-2 border-blue-600 cursor-pointer" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto rounded text-xs font-bold text-[#38BDF8] flex items-center justify-center border-2 border-[#2B93A6] cursor-pointer" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else if (hasCita) {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-blue-600 flex items-center justify-center cursor-pointer font-bold hover:bg-blue-50 rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto text-xs text-[#38BDF8] flex items-center justify-center cursor-pointer font-bold hover:bg-[rgba(43,147,166,0.15)] rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             } else {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-gray-600 flex items-center justify-center cursor-pointer hover:bg-gray-100 rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
+                html += `<div class="h-8 w-8 mx-auto text-xs text-slate-500 flex items-center justify-center cursor-pointer hover:bg-[rgba(255,255,255,0.08)] rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
             }
         }
 
@@ -1104,6 +1106,7 @@ class AgendaManager {
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (!el.date) return;
     state.monthCursor = startOfMonth(new Date());
     loadAppointments();
     el.date.value = state.selectedDate;

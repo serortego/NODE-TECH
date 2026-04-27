@@ -7,18 +7,20 @@
     <title>NODE TECH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'Inter', 'sans-serif'],
                     },
                     colors: {
                         node: {
-                            dark: '#374151',
-                            teal: '#3B82F6',
+                            dark: '#060D1A',
+                            teal: '#2B93A6',
+                            tealLight: '#38BDF8',
                         }
                     },
                 }
@@ -26,129 +28,142 @@
         }
     </script>
     <style>
+        /* ── Variables ─────────────────────────────────────── */
+        :root {
+            --teal:        #2B93A6;
+            --teal-light:  #38BDF8;
+            --teal-glow:   rgba(43,147,166,0.38);
+            --bg:          #060D1A;
+            --bg-card:     rgba(255,255,255,0.04);
+            --border-card: rgba(255,255,255,0.08);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
+
+        body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #F9FAFB; 
-            color: #1F2937;
+            background: #060D1A;
+            color: #cbd5e1;
             letter-spacing: -0.3px;
         }
-        
-        .text-node { color: #1F2937; }
-        .bg-node-dark { background: #1F2937; }
-        .bg-node-teal { background: #3B82F6; }
-        .border-subtle { border-color: #E5E7EB; }
-        .shadow-soft { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06); }
-        
-        .nav-item { 
-            transition: all 0.2s ease; 
-            cursor: pointer; 
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #060D1A; }
+        ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+        :focus-visible { outline: 2px solid var(--teal-light); outline-offset: 3px; }
+
+        /* ── Glassmorphism ──────────────────────────────────── */
+        .glass {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .glass-bright {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.11);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        /* ── Buttons ────────────────────────────────────────── */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+            box-shadow: 0 0 28px var(--teal-glow);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            transition: box-shadow .25s ease, transform .2s ease;
+        }
+        .btn-primary:hover  { box-shadow: 0 0 52px rgba(56,189,248,.55); transform: translateY(-2px); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-secondary {
+            border: 1px solid rgba(255,255,255,0.13);
+            background: rgba(255,255,255,0.04);
+            color: #cbd5e1;
+            font-weight: 600;
+            font-size: 14px;
+            backdrop-filter: blur(8px);
+            transition: background .2s ease, border-color .2s ease;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.09); border-color: rgba(43,147,166,.5); }
+
+        /* ── Card lift hover ────────────────────────────────── */
+        .card-lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .card-lift:hover { transform: translateY(-5px); border-color: rgba(43,147,166,.4) !important; box-shadow: 0 20px 56px rgba(43,147,166,.14); }
+
+        /* ── Navigation ─────────────────────────────────────── */
+        .nav-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
             font-weight: 500;
             font-size: 14px;
-            color: #ffffff !important;
+            color: #94a3b8;
             padding-left: 16px;
             border-left: 3px solid transparent;
             position: relative;
         }
-        .nav-item:hover { 
-            background: rgba(255, 255, 255, 0.15);
-            color: #ffffff !important;
-            border-left: 3px solid #ffffff;
+        .nav-item:hover {
+            background: rgba(43,147,166,0.12);
+            color: #fff;
+            border-left: 3px solid rgba(43,147,166,0.5);
         }
-        .nav-item.active { 
-            background: rgba(255, 255, 255, 0.25);
-            color: #ffffff !important;
-            border-left: 3px solid #ffffff;
+        .nav-item.active {
+            background: rgba(43,147,166,0.2);
+            color: #fff;
+            border-left: 3px solid #2B93A6;
             font-weight: 600;
         }
-        
-        .stat-card { 
+
+        /* ── Legacy compat ──────────────────────────────────── */
+        .stat-card {
             transition: all 0.3s ease;
-            border: 1px solid #E5E7EB;
-            background: white;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(14px);
         }
-        .stat-card:hover { 
+        .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.08);
-            border-color: #D1D5DB;
+            box-shadow: 0 10px 25px rgba(43,147,166,0.14);
+            border-color: rgba(43,147,166,0.3);
         }
-        
         .view-content { display: none; }
         .view-content.active { display: block; }
-        
-        button {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        input, select, textarea {
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
+        button { font-weight: 600; font-size: 14px; }
+        input, select, textarea { font-size: 14px; font-weight: 500; }
         h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
         h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
         h3 { font-size: 16px; font-weight: 700; }
-        
-        .card { 
-            background: white; 
-            border-radius: 8px; 
-            border: 1px solid #E5E7EB;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        .card {
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
-        
-        .card:hover {
-            border-color: #D1D5DB;
-        }
-        
         .kpi-card {
-            background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
-            border: 1px solid #E5E7EB;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
             border-radius: 8px;
             padding: 1rem;
             transition: all 0.3s ease;
         }
-        
         .kpi-card:hover {
-            border-color: #3B82F6;
-            box-shadow: 0 12px 32px rgba(43, 147, 166, 0.12);
+            border-color: rgba(43,147,166,0.4);
+            box-shadow: 0 12px 32px rgba(43,147,166,0.12);
             transform: translateY(-2px);
         }
-        
-        .table-row:hover {
-            background: #F9FAFB;
-        }
+        .table-row:hover { background: rgba(255,255,255,0.04); }
+        .bg-node-teal { background: #2B93A6; }
     </style>
 </head>
 <body class="min-h-screen">
     <!-- Sidebar Fijo -->
-    <aside class="fixed left-0 top-0 h-screen w-60 bg-[#3B82F6] border-r border-blue-400 flex flex-col z-40">
+    <aside class="fixed left-0 top-0 h-screen w-60 bg-[#0B1628] border-r border-[rgba(43,147,166,0.2)] flex flex-col z-40">
         <!-- Logo Section -->
-        <div class="flex items-center gap-3 px-4 py-6 border-b border-blue-300">
-                <svg class="w-8 h-8 flex-shrink-0" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="24" y="24" width="16" height="16" fill="#FFFFFF" rx="2"/>
-                    <line x1="32" y1="8" x2="32" y2="24" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="32" y1="40" x2="32" y2="56" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="8" y1="32" x2="24" y2="32" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="40" y1="32" x2="56" y2="32" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="13.1" y1="13.1" x2="22" y2="22" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="42" y1="42" x2="50.9" y2="50.9" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="50.9" y1="13.1" x2="42" y2="22" stroke="#FFFFFF" stroke-width="2"/>
-                    <line x1="22" y1="42" x2="13.1" y2="50.9" stroke="#FFFFFF" stroke-width="2"/>
-                    <circle cx="32" cy="8" r="3" fill="#FFFFFF"/>
-                    <circle cx="32" cy="56" r="3" fill="#FFFFFF"/>
-                    <circle cx="8" cy="32" r="3" fill="#FFFFFF"/>
-                    <circle cx="56" cy="32" r="3" fill="#FFFFFF"/>
-                    <circle cx="13.1" cy="13.1" r="3" fill="#FFFFFF"/>
-                    <circle cx="50.9" cy="50.9" r="3" fill="#FFFFFF"/>
-                    <circle cx="50.9" cy="13.1" r="3" fill="#FFFFFF"/>
-                    <circle cx="13.1" cy="50.9" r="3" fill="#FFFFFF"/>
-                </svg>
-            <div>
-                <p class="text-sm font-bold text-white leading-none">NODE</p>
-                <p class="text-sm font-normal text-blue-100 leading-none">TECH</p>
-            </div>
+        <div class="px-3 py-4 border-b border-[rgba(255,255,255,0.08)]">
+            <img src="../assets/logonodetech_inicio.png" alt="NODE TECH" class="h-20 w-auto">
         </div>
 
         <!-- Navigation -->
@@ -175,8 +190,8 @@
             </div>
             
             <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="empleados">
-                <i class="fas fa-box w-5 text-center"></i>
-                <span>Inventario</span>
+                <i class="fas fa-users w-5 text-center"></i>
+                <span>Empleados</span>
             </div>
 
             <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="contabilidad">
@@ -185,7 +200,7 @@
             </div>
             
             <!-- SEPARATOR -->
-            <div class="my-4 pt-4 border-t border-gray-700">
+            <div class="my-4 pt-4 border-t border-[rgba(255,255,255,0.08)]">
                 <p class="text-xs font-semibold text-white/70 uppercase tracking-wider px-4 pb-3">🤖 IA & Automatización</p>
                 
                 <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="asistente">
@@ -196,7 +211,7 @@
         </nav>
 
         <!-- Footer: Profile & Settings -->
-        <div class="p-4 border-t border-gray-700 space-y-3">
+        <div class="p-4 border-t border-[rgba(255,255,255,0.08)] space-y-3">
             <!-- Mini Profile -->
             <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -223,16 +238,16 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="ml-60 min-h-screen overflow-y-auto bg-slate-50 p-6">
+    <main class="ml-60 min-h-screen overflow-y-auto bg-[#060D1A] p-6">
         <div id="content-area"></div>
     </main>
 
     <!-- Modal: Crear/Editar Cita -->
     <div id="modal-cita" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg shadow-2xl max-w-sm w-full mx-4 p-5">
+        <div class="bg-[#0f1e35] border border-[rgba(255,255,255,0.08)] rounded-xl shadow-2xl max-w-sm w-full mx-4 p-5">
             <div class="flex items-center justify-between mb-4">
-                <h2 id="modal-title" class="text-lg font-bold text-gray-900">Nueva Cita</h2>
-                <button id="close-modal" class="text-gray-400 hover:text-gray-600 transition">
+                <h2 id="modal-title" class="text-lg font-bold text-white">Nueva Cita</h2>
+                <button id="close-modal" class="text-slate-400 hover:text-slate-200 transition">
                     <i class="fas fa-times text-sm"></i>
                 </button>
             </div>
@@ -241,45 +256,47 @@
                 <input type="hidden" id="cita-id">
                 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Cliente</label>
-                    <input type="text" id="cita-cliente" placeholder="Nombre del cliente" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-node-teal focus:border-transparent transition text-sm" required>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Cliente</label>
+                    <input type="text" id="cita-cliente" placeholder="Nombre del cliente" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                 </div>
                 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Servicio</label>
-                    <select id="cita-servicio" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-node-teal focus:border-transparent transition text-sm" required>
-                        <option value="">Selecciona un servicio</option>
-                        <option value="Corte">Corte</option>
-                        <option value="Coloracion">Coloracion</option>
-                        <option value="Peinado">Peinado</option>
-                        <option value="Tratamiento Capilar">Tratamiento Capilar</option>
-                        <option value="Reunion">Reunión</option>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Servicio</label>
+                    <select id="cita-servicio" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
+                        <option value="" class="bg-[#0f1e35]">Selecciona un servicio</option>
+                        <option value="Corte" class="bg-[#0f1e35]">Corte</option>
+                        <option value="Coloracion" class="bg-[#0f1e35]">Coloracion</option>
+                        <option value="Peinado" class="bg-[#0f1e35]">Peinado</option>
+                        <option value="Tratamiento Capilar" class="bg-[#0f1e35]">Tratamiento Capilar</option>
+                        <option value="Reunion" class="bg-[#0f1e35]">Reunión</option>
                     </select>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
-                        <input type="date" id="cita-fecha" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-node-teal focus:border-transparent transition text-sm" required>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
+                        <input type="date" id="cita-fecha" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Hora</label>
-                        <input type="time" id="cita-hora" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-node-teal focus:border-transparent transition text-sm" required>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Hora</label>
+                        <input type="time" id="cita-hora" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                     </div>
                 </div>
                 
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Precio (EUR)</label>
-                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-node-teal focus:border-transparent transition text-sm" step="0.01">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Precio (EUR)</label>
+                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" step="0.01">
                 </div>
                 
                 <div class="flex gap-2 pt-2">
-                    <button type="submit" class="flex-1 bg-node-teal text-white font-semibold py-1.5 rounded-md hover:bg-blue-600 transition text-sm shadow-sm">Guardar</button>
-                    <button type="button" id="btn-cancelar-modal" class="flex-1 border border-gray-300 text-gray-600 font-semibold py-1.5 rounded-md hover:bg-gray-50 transition text-sm">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1 py-1.5 rounded-md transition text-sm">Guardar</button>
+                    <button type="button" id="btn-cancelar-modal" class="btn-secondary flex-1 py-1.5 rounded-md transition text-sm">Cancelar</button>
                 </div>
-            </div>
-        </main>
+            </form>
+        </div>
     </div>
+
+    </main>
 
     <!-- Modal close button handler -->
     <script>
@@ -293,6 +310,8 @@
 
     <!-- jsPDF for contabilidad PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Load DataManager first (required by all modules) -->
     <!-- Load all managers before navigation -->
     <script src="../logic/agenda.js"></script>
     <script src="../logic/empleados.js"></script>

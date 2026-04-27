@@ -17,10 +17,33 @@ class NavigationManager {
         // Estado global compartido
         this.citas = [];
         this.usuario = null;
-        this.recursos = ['María García', 'Juan López', 'Pedro Sánchez']; // Trabajadores disponibles
+        this.recursos = []; // Se cargan desde Firebase vía DataManager
         
         this.loadCitas();
         this.init();
+        this._syncRecursosDesdeFirebase();
+    }
+
+    _syncRecursosDesdeFirebase() {
+        const actualizar = (empleados) => {
+            if (empleados && empleados.length > 0) {
+                this.recursos = empleados.map(e => e.nombre).filter(Boolean);
+            }
+        };
+
+        // Cargar inmediatamente si DataManager ya tiene datos
+        if (window.dataManager) {
+            actualizar(window.dataManager.cache.empleados);
+            window.dataManager.suscribirse('empleados', actualizar);
+        } else {
+            // Esperar a que DataManager esté listo
+            document.addEventListener('appReady', () => {
+                if (window.dataManager) {
+                    actualizar(window.dataManager.cache.empleados);
+                    window.dataManager.suscribirse('empleados', actualizar);
+                }
+            });
+        }
     }
 
     init() {
@@ -46,12 +69,10 @@ class NavigationManager {
 
     setActiveNav(clickedItem) {
         this.navItems.forEach(item => {
-            item.classList.remove('active', 'bg-node-teal', 'text-white');
-            item.classList.add('text-gray-700');
+            item.classList.remove('active');
         });
         if (clickedItem) {
-            clickedItem.classList.add('active', 'bg-node-teal', 'text-white');
-            clickedItem.classList.remove('text-gray-700');
+            clickedItem.classList.add('active');
         }
     }
 
@@ -146,45 +167,72 @@ class NavigationManager {
             });
         }
 
-        // Cobro Rápido
-        const btnCobroRapido = Array.from(document.querySelectorAll('button')).find(btn => 
-            btn.innerHTML.includes('Cobro Rápido')
-        );
-        if (btnCobroRapido) {
-            btnCobroRapido.addEventListener('click', () => {
-                this.showNotification('💳 TPV Rápido - En desarrollo', 'info');
-            });
-        }
-
-        // Nuevo Cliente
-        const btnNuevoCliente = Array.from(document.querySelectorAll('button')).find(btn => 
-            btn.innerHTML.includes('Nuevo Cliente')
-        );
-        if (btnNuevoCliente) {
-            btnNuevoCliente.addEventListener('click', () => {
-                this.showNotification('👤 Alta de cliente - En desarrollo', 'info');
-            });
-        }
-
-        // Botones de Cobrar y Ver Ficha en próximas citas
+        // Botones de Cobrar en próximas citas → registrar en finanzas
         document.querySelectorAll('button[title="Cobrar"]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.showNotification('💰 Cobro registrado', 'success');
+            btn.addEventListener('click', async () => {
+                const precio = parseFloat(btn.dataset.citaPrecio || 0);
+                const cliente = btn.dataset.citaCliente || 'Cliente';
+                const citaId = btn.dataset.citaId;
+
+                if (precio <= 0) {
+                    // Sin precio: abrir modal de cobro rápido con campo de importe
+                    this._mostrarModalCobroRapido(cliente, citaId);
+                    return;
+                }
+
+                // Registrar cobro en Firestore via DataManager
+                if (window.dataManager) {
+                    try {
+                        await window.dataManager.crearIngreso({
+                            concepto: `Servicio a ${cliente}`,
+                            tipo: 'ingreso',
+                            importe: precio,
+                            fecha: new Date().toISOString().split('T')[0],
+                            categoria: 'Servicios',
+                            cita: citaId
+                        });
+                        this.showNotification(`✅ Cobro de €${precio} registrado para ${cliente}`, 'success');
+                        // Actualizar caja
+                        const cajaEl = document.querySelector('.text-emerald-900.font-black');
+                        if (cajaEl) {
+                            const actual = parseInt(cajaEl.textContent.replace('€','')) || 0;
+                            cajaEl.textContent = '€' + (actual + precio);
+                        }
+                    } catch (err) {
+                        this.showNotification('❌ Error al registrar cobro: ' + err.message, 'error');
+                    }
+                } else {
+                    this.showNotification(`✅ Cobro de €${precio} anotado para ${cliente}`, 'success');
+                }
             });
         });
 
         document.querySelectorAll('button[title="Ver ficha"]').forEach(btn => {
             btn.addEventListener('click', () => {
-                this.showNotification('📋 Abriendo ficha del cliente...', 'info');
+                const cliente = btn.dataset.citaCliente;
+                if (cliente) {
+                    this.setActiveNav(document.querySelector('[data-view="clientes"]'));
+                    this.loadView('clientes');
+                    this.showNotification(`🔍 Buscando ficha de ${cliente}...`, 'info');
+                }
             });
         });
 
-        // Botón de Alertas
-        const btnAlertas = document.querySelector('button[title="3 críticas"] ') || 
-                          document.querySelectorAll('button')[2];
-        if (btnAlertas) {
-            btnAlertas.addEventListener('click', () => {
-                this.showNotification('🚨 Panel de alertas - En desarrollo', 'warning');
+        // Botón cobro rápido de la botonera
+        const btnCobroRapido = document.getElementById('btn-cobro-rapido');
+        if (btnCobroRapido) {
+            btnCobroRapido.addEventListener('click', () => {
+                this._mostrarModalCobroRapido();
+            });
+        }
+
+        // Botón nuevo cliente de la botonera
+        const btnNuevoClienteDash = document.getElementById('btn-nuevo-cliente-dash');
+        if (btnNuevoClienteDash) {
+            btnNuevoClienteDash.addEventListener('click', () => {
+                this.setActiveNav(document.querySelector('[data-view="clientes"]'));
+                this.loadView('clientes');
+                setTimeout(() => document.getElementById('btn-nuevo-cliente')?.click(), 300);
             });
         }
     }
@@ -196,8 +244,10 @@ class NavigationManager {
         
         // ===== CALCULAR MÉTRICAS =====
         const totalCajaHoy = citasHoy.reduce((sum, c) => sum + parseInt(c.precio || 0), 0);
-        const citasCompletadas = Math.floor(Math.random() * (citasHoy.length + 1));
-        const alertasCount = 3; // Simuladas
+        const citasCompletadas = citasHoy.filter(c => c.estado === 'completada').length;
+        // Alertas reales: citas de hoy sin precio asignado
+        const citasSinPrecio = citasHoy.filter(c => !c.precio || parseInt(c.precio) === 0).length;
+        const alertasCount = citasSinPrecio;
         
         // Placeholder dinámico para el buscador
         const placeholders = [
@@ -216,17 +266,17 @@ class NavigationManager {
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- 1. CENTRO DE MANDOS - ASISTENTE IA        -->
                 <!-- ═══════════════════════════════════════════ -->
-                <div class="flex items-center gap-2 bg-white rounded-lg border border-gray-200 shadow-sm mb-3">
+                <div class="flex items-center gap-2 glass rounded-lg border-[rgba(255,255,255,0.08)] mb-3">
                     <input 
                         type="text" 
                         id="asistente-input" 
                         placeholder="${placeholderActual}"
-                        class="flex-1 px-4 py-3 bg-white text-gray-900 text-sm font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] rounded-lg placeholder-gray-400"
+                        class="flex-1 px-4 py-3 bg-transparent text-white text-sm font-medium border-0 focus:outline-none focus:ring-2 focus:ring-[#2B93A6] rounded-lg placeholder-slate-500"
                     >
-                    <button id="btn-voice" class="p-2 bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg transition" title="Entrada por voz">
+                    <button id="btn-voice" class="p-2 bg-[#2B93A6] hover:bg-[#38BDF8] text-white rounded-lg transition" title="Entrada por voz">
                         <i class="fas fa-microphone text-sm"></i>
                     </button>
-                    <button id="btn-enviar-asistente" class="p-2 mr-1 bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg transition" title="Enviar comando">
+                    <button id="btn-enviar-asistente" class="p-2 mr-1 bg-[#2B93A6] hover:bg-[#38BDF8] text-white rounded-lg transition" title="Enviar comando">
                         <i class="fas fa-arrow-right text-sm"></i>
                     </button>
                 </div>
@@ -237,39 +287,39 @@ class NavigationManager {
                 <div class="grid grid-cols-3 gap-1">
                     
                     <!-- CAJA DE HOY -->
-                    <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-200 shadow-sm">
-                        <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">💰 Caja</div>
-                        <div class="text-2xl font-black text-emerald-900 mt-1">€${totalCajaHoy}</div>
-                        <div class="text-xs text-emerald-600 mt-1">+15%</div>
+                    <div class="glass rounded-lg p-3 border border-[rgba(43,147,166,0.25)] shadow-sm card-lift">
+                        <div class="text-xs font-bold text-[#38BDF8] uppercase tracking-wider">💰 Caja</div>
+                        <div class="text-2xl font-black text-white mt-1">€${totalCajaHoy}</div>
+                        <div class="text-xs text-[#2B93A6] mt-1">+15%</div>
                     </div>
 
                     <!-- TRÁFICO DE CLIENTES -->
-                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3 border border-blue-200 shadow-sm">
-                        <div class="text-xs font-bold text-blue-700 uppercase tracking-wider">👥 Tráfico</div>
-                        <div class="text-2xl font-black text-blue-900 mt-1">${citasCompletadas}/${citasHoy.length}</div>
-                        <div class="text-xs text-blue-600 mt-1">completadas</div>
+                    <div class="glass rounded-lg p-3 border border-[rgba(255,255,255,0.08)] shadow-sm card-lift">
+                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider">👥 Tráfico</div>
+                        <div class="text-2xl font-black text-white mt-1">${citasCompletadas}/${citasHoy.length}</div>
+                        <div class="text-xs text-slate-400 mt-1">completadas</div>
                     </div>
 
                     <!-- ALERTAS -->
-                    <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg p-3 border border-red-200 shadow-sm hover:shadow-md transition cursor-pointer">
-                        <div class="text-xs font-bold text-red-700 uppercase tracking-wider">⚠️ Alertas</div>
-                        <div class="text-2xl font-black text-red-900 mt-1">${alertasCount}</div>
-                        <div class="text-xs text-red-600 mt-1">críticas</div>
+                    <div class="glass rounded-lg p-3 border ${alertasCount > 0 ? 'border-red-500/30' : 'border-[rgba(255,255,255,0.08)]'} shadow-sm card-lift">
+                        <div class="text-xs font-bold ${alertasCount > 0 ? 'text-red-400' : 'text-slate-400'} uppercase tracking-wider">⚠️ Alertas</div>
+                        <div class="text-2xl font-black ${alertasCount > 0 ? 'text-red-300' : 'text-slate-500'} mt-1">${alertasCount}</div>
+                        <div class="text-xs ${alertasCount > 0 ? 'text-red-400' : 'text-slate-500'} mt-1">${alertasCount > 0 ? 'citas sin precio' : 'todo en orden'}</div>
                     </div>
                 </div>
 
                 <!-- ═══════════════════════════════════════════ -->
                 <!-- 3. LO QUE VIENE AHORA - EL RADAR           -->
                 <!-- ═══════════════════════════════════════════ -->
-                <div class="bg-white rounded-xl border-2 border-gray-300 shadow-lg overflow-hidden">
-                    <div class="bg-[#3B82F6]/10 px-3 py-2 border-b border-[#3B82F6]/30">
-                        <div class="text-xs font-bold text-[#3B82F6] flex items-center gap-2">
-                            <i class="fas fa-radar text-[#3B82F6] text-sm"></i>
+                <div class="glass rounded-xl border border-[rgba(255,255,255,0.08)] shadow-lg overflow-hidden">
+                    <div class="bg-[rgba(43,147,166,0.12)] px-3 py-2 border-b border-[rgba(43,147,166,0.2)]">
+                        <div class="text-xs font-bold text-[#38BDF8] flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-[#2B93A6] text-sm"></i>
                             Próximas Citas
                         </div>
                     </div>
 
-                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    <div class="divide-y divide-[rgba(255,255,255,0.06)] max-h-96 overflow-y-auto">
                         ${proximasCitas.length > 0 ? proximasCitas.map((cita, idx) => {
                             const horaInicio = cita.hora;
                             const [h, m] = horaInicio.split(':');
@@ -277,25 +327,26 @@ class NavigationManager {
                             const citaTime = new Date();
                             citaTime.setHours(parseInt(h), parseInt(m));
                             const minutosFalta = Math.max(0, Math.floor((citaTime - ahora) / 60000));
-                            const urgencia = minutosFalta < 15 ? 'text-red-600 font-bold' : minutosFalta < 30 ? 'text-orange-600 font-semibold' : 'text-gray-600';
+                            const urgencia = minutosFalta < 15 ? 'text-red-400 font-bold' : minutosFalta < 30 ? 'text-orange-400 font-semibold' : 'text-slate-400';
                             
-                            return `
-                                <div class="p-3 hover:bg-blue-50 transition flex items-center justify-between gap-2">
+            return `
+                                <div class="p-3 hover:bg-[rgba(43,147,166,0.08)] transition flex items-center justify-between gap-2">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-baseline gap-2 mb-1">
-                                            <div class="text-sm font-bold text-gray-900">${horaInicio}</div>
+                                            <div class="text-sm font-bold text-white">${horaInicio}</div>
                                             <div class="text-xs font-bold ${urgencia}">
                                                 ${minutosFalta < 60 ? minutosFalta + ' min' : '⏰ HOY'}
                                             </div>
+                                            ${cita.recurso ? `<div class="text-xs text-[#2B93A6] font-medium truncate">· ${cita.recurso.split(' ')[0]}</div>` : ''}
                                         </div>
-                                        <div class="font-semibold text-sm text-gray-900 truncate">${cita.cliente}</div>
-                                        <div class="text-xs text-gray-500 truncate">${cita.servicio}${cita.horaFin ? ' • ' + cita.horaFin : ''}</div>
+                                        <div class="font-semibold text-sm text-white truncate">${cita.cliente}</div>
+                                        <div class="text-xs text-slate-400 truncate">${cita.servicio}${cita.horaFin ? ' · ' + cita.horaFin : ''}${cita.precio && parseInt(cita.precio) > 0 ? ' · <span class="font-bold text-emerald-400">€' + parseInt(cita.precio) + '</span>' : ''}</div>
                                     </div>
                                     <div class="flex gap-1">
-                                        <button class="bg-emerald-500 hover:bg-emerald-600 text-white rounded px-3 py-1 font-semibold text-xs transition" title="Cobrar">
-                                            <i class="fas fa-credit-card"></i>
+                                        <button class="bg-emerald-500 hover:bg-emerald-400 text-white rounded px-2 py-1 font-semibold text-xs transition whitespace-nowrap" title="Cobrar" data-cita-id="${cita.id}" data-cita-precio="${cita.precio || 0}" data-cita-cliente="${cita.cliente}">
+                                            <i class="fas fa-euro-sign mr-1"></i>${cita.precio && parseInt(cita.precio) > 0 ? parseInt(cita.precio) + '€' : 'Cobrar'}
                                         </button>
-                                        <button class="bg-blue-500 hover:bg-blue-600 text-white rounded px-3 py-1 font-semibold text-xs transition" title="Ver ficha">
+                                        <button class="bg-[#2B93A6] hover:bg-[#38BDF8] text-white rounded px-2 py-1 font-semibold text-xs transition" title="Ver ficha" data-cita-cliente="${cita.cliente}">
                                             <i class="fas fa-user-circle"></i>
                                         </button>
                                     </div>
@@ -303,8 +354,8 @@ class NavigationManager {
                             `;
                         }).join('') : `
                             <div class="p-6 text-center">
-                                <i class="fas fa-calendar-check text-3xl text-gray-300 mb-2"></i>
-                                <p class="text-gray-500 text-sm font-medium">Sin citas próximas</p>
+                                <i class="fas fa-calendar-check text-3xl text-slate-600 mb-2"></i>
+                                <p class="text-slate-500 text-sm font-medium">Sin citas próximas</p>
                             </div>
                         `}
                     </div>
@@ -314,19 +365,19 @@ class NavigationManager {
                 <!-- 4. BOTONERA ANALÓGICA - PLAN B             -->
                 <!-- ═══════════════════════════════════════════ -->
                 <div class="grid grid-cols-3 gap-2 mt-2">
-                    <button class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                    <button id="btn-cobro-rapido" class="btn-primary rounded-lg px-3 py-3 text-xs shadow-sm transition flex items-center justify-center gap-1 h-14">
                         <i class="fas fa-credit-card"></i>
-                        <span class="hidden sm:inline">Cobro</span>
+                        <span>Cobro rápido</span>
                     </button>
 
-                    <button id="btn-nueva-cita-dash" class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                    <button id="btn-nueva-cita-dash" class="btn-primary rounded-lg px-3 py-3 text-xs shadow-sm transition flex items-center justify-center gap-1 h-14">
                         <i class="fas fa-calendar-plus"></i>
-                        <span class="hidden sm:inline">Cita</span>
+                        <span>Nueva cita</span>
                     </button>
 
-                    <button class="bg-[#3B82F6] hover:bg-[#1e40af] text-white rounded-lg px-3 py-3 font-semibold text-xs shadow-sm hover:shadow-md transition flex items-center justify-center gap-1 h-14">
+                    <button id="btn-nuevo-cliente-dash" class="btn-primary rounded-lg px-3 py-3 text-xs shadow-sm transition flex items-center justify-center gap-1 h-14">
                         <i class="fas fa-user-plus"></i>
-                        <span class="hidden sm:inline">Cliente</span>
+                        <span>Nuevo cliente</span>
                     </button>
                 </div>
 
@@ -424,6 +475,20 @@ class NavigationManager {
 
     saveCitas() {
         localStorage.setItem('crm-appointments', JSON.stringify(this.citas));
+    }
+
+    saveCita(cita) {
+        // Persistir en Firestore a través de DataManager si está disponible
+        if (window.dataManager && cita.id) {
+            window.dataManager.actualizarCita(cita.id, { hora: cita.hora, fecha: cita.fecha })
+                .catch(err => console.error('❌ Error guardando cita en Firestore:', err));
+        }
+        // Actualizar caché local
+        const idx = this.citas.findIndex(c => c.id === cita.id);
+        if (idx > -1) {
+            this.citas[idx] = { ...this.citas[idx], ...cita };
+            this.saveCitas();
+        }
     }
 
     deleteCita(citaId) {
@@ -641,6 +706,83 @@ class NavigationManager {
         }
     }
 
+    _mostrarModalCobroRapido(clienteNombre = '', citaId = '') {
+        const modalId = 'modal-cobro-rapido';
+        document.getElementById(modalId)?.remove();
+        const html = `
+            <div id="${modalId}" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="dialog" aria-modal="true">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+                    <h2 class="text-lg font-bold text-gray-900 mb-4"><i class="fas fa-euro-sign text-emerald-600 mr-2"></i>Registrar cobro</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Cliente</label>
+                            <input type="text" id="cobro-rapido-cliente" value="${clienteNombre}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Nombre de la clienta">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Importe (€) *</label>
+                            <input type="number" id="cobro-rapido-importe" min="0" step="0.50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right" placeholder="0,00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Concepto</label>
+                            <input type="text" id="cobro-rapido-concepto" value="${clienteNombre ? 'Servicio a ' + clienteNombre : ''}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Corte, tinte, peinado...">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-5">
+                        <button id="cobro-rapido-cancelar"
+                            class="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm font-semibold hover:bg-gray-50 transition">
+                            Cancelar
+                        </button>
+                        <button id="cobro-rapido-confirmar"
+                            class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-2 text-sm font-semibold transition">
+                            <i class="fas fa-check mr-1"></i> Cobrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const cerrar = () => document.getElementById(modalId)?.remove();
+
+        document.getElementById('cobro-rapido-cancelar').addEventListener('click', cerrar);
+        document.getElementById(modalId).addEventListener('click', e => { if (e.target.id === modalId) cerrar(); });
+
+        document.getElementById('cobro-rapido-confirmar').addEventListener('click', async () => {
+            const importe = parseFloat(document.getElementById('cobro-rapido-importe').value);
+            const cliente = document.getElementById('cobro-rapido-cliente').value.trim();
+            const concepto = document.getElementById('cobro-rapido-concepto').value.trim() || `Servicio a ${cliente}`;
+
+            if (!importe || importe <= 0) {
+                document.getElementById('cobro-rapido-importe').focus();
+                document.getElementById('cobro-rapido-importe').classList.add('border-red-500');
+                return;
+            }
+
+            if (window.dataManager) {
+                try {
+                    await window.dataManager.crearIngreso({
+                        concepto,
+                        tipo: 'ingreso',
+                        importe,
+                        fecha: new Date().toISOString().split('T')[0],
+                        categoria: 'Servicios',
+                        ...(citaId && { cita: citaId })
+                    });
+                    cerrar();
+                    this.showNotification(`✅ Cobro de €${importe.toFixed(2)} registrado`, 'success');
+                } catch (err) {
+                    this.showNotification('❌ Error al guardar cobro', 'error');
+                }
+            } else {
+                cerrar();
+                this.showNotification(`✅ Cobro de €${importe.toFixed(2)} anotado`, 'success');
+            }
+        });
+    }
+
     showNotification(message, type = 'info') {
         const colors = {
             'success': 'bg-green-500 text-white',
@@ -693,6 +835,5 @@ class NavigationManager {
 // INICIALIZACIÓN
 // ══════════════════════════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
-    window.navigationManager = new NavigationManager();
-});
+// La inicialización de NavigationManager se realiza en inicio.js
+// tras la confirmación de autenticación (evento 'appReady').

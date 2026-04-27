@@ -1,253 +1,470 @@
-﻿// chatbot.js - Gestor del Asistente (Chatbot) integrado en el CRM
+/**
+ * ChatbotManager v2 - Integrado con DataManager
+ * 
+ * ✨ Funcionalidades:
+ * - Crear citas
+ * - Crear clientes
+ * - Buscar empleados, clientes
+ * - Ver resumen del día
+ * - Consultar información
+ * 
+ * 🧠 Inteligencia:
+ * - Solo pregunta información ESENCIAL
+ * - Mantiene contexto de conversación
+ * - Aprende del contexto del mensaje
+ */
 
 class ChatbotManager {
     constructor(navigationManager) {
         this.navManager = navigationManager;
-        this.chatHistory = null;
-        this.chatInput = null;
         this.chatForm = null;
+        this.chatInput = null;
+        this.chatHistory = null;
+        this.initialized = false;
+        
+        // 🧠 Contexto de conversación
+        this.contexto = {
+            accionPendiente: null,  // 'crearCliente', 'crearCita', etc.
+            datosCliente: {},
+            datoCita: {}
+        };
     }
 
     render() {
         return `
             <div class="space-y-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center justify-between gap-4 pb-2 border-b border-[rgba(255,255,255,0.08)]">
                     <div>
-                        <h2 class="text-3xl font-bold text-slate-900">🤖 Asistente NODE</h2>
-                        <p class="text-slate-600 mt-1">Tu asistente inteligente para gestión empresarial</p>
+                        <h2 class="text-2xl font-bold text-white">Asistente NODE</h2>
+                        <p class="text-slate-400 mt-0.5 text-sm">Tu asistente inteligente de gestión empresarial</p>
                     </div>
                 </div>
 
-                <!-- Chat Container -->
-                <div class="flex-1 bg-white rounded-2xl shadow-sm p-6 overflow-y-auto border border-slate-200 flex flex-col" style="height: 600px;">
-                    <div id="chat-history" class="space-y-4 flex flex-col flex-1 overflow-y-auto">
-                        <!-- Los mensajes se cargarán aquí -->
+                <div class="glass rounded-2xl p-4 flex flex-col border border-[rgba(255,255,255,0.08)]" style="height: 520px;">
+                    <div id="chat-history" class="space-y-4 flex flex-col flex-1 overflow-y-auto pr-1">
+                        <!-- Mensajes aquí -->
                     </div>
                 </div>
 
-                <!-- Chat Form -->
                 <form id="chat-form" class="flex gap-3">
                     <input 
                         id="chat-input" 
                         type="text" 
-                        placeholder="Escribe qué necesitas... (ej: Crea una cita para Cliente X mañana)"
-                        class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm"
+                        placeholder="Escribe qué necesitas... (ej: pon una cita a María mañana a las 11:00)"
+                        class="flex-1 px-4 py-3 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B93A6] text-sm"
                         autocomplete="off"
                     >
                     <button 
                         type="submit"
-                        class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2"
+                        class="btn-primary px-6 py-3 rounded-lg flex items-center gap-2"
                     >
                         <i class="fas fa-paper-plane"></i>
                         Enviar
                     </button>
                 </form>
 
-                <!-- Sugerencias Rápidas -->
                 <div id="sugerencias-rapidas" class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <!-- Se cargarán dinámicamente -->
+                    <!-- Sugerencias -->
                 </div>
             </div>
         `;
     }
 
-    setupListeners() {
-        console.log('📱 Inicializando Chatbot...');
-        
+    async setupListeners() {
+        if (this.initialized) return;
+        this.initialized = true;
+
         this.chatForm = document.getElementById('chat-form');
         this.chatHistory = document.getElementById('chat-history');
         this.chatInput = document.getElementById('chat-input');
 
         if (!this.chatForm || !this.chatHistory || !this.chatInput) {
-            console.error('❌ Elementos del chat no encontrados en el DOM');
+            console.error('❌ Elementos del chat no encontrados');
             return;
         }
 
-        console.log('✅ Elementos del chat encontrados');
+        console.log('🤖 Chatbot v2 inicializado con DataManager');
 
-        // Mensaje de bienvenida
-        this.mostrarMensajeBot('🤖 ¡Hola! Soy el Asistente NODE. Cuéntame qué necesitas y te ayudaré.', [
-            { texto: '💰 Crear factura', comando: 'crea una factura de 50' },
-            { texto: '📅 Agendar cita', comando: 'crea una cita para Cliente A mañana a las 10:00' },
-            { texto: '👤 Buscar cliente', comando: 'busca a un cliente' },
-            { texto: '📊 Resumen del día', comando: 'resumen de hoy' }
-        ]);
+        // Bienvenida
+        this.agregarMensajeBot(
+            '¡Hola! Soy tu asistente NODE.\n\n' +
+            'Puedo ayudarte con:\n' +
+            '📅 Citas: "Pon una cita a María mañana a las 11:00"\n' +
+            '👤 Clientas: "Nueva clienta: Rosa Pérez"\n' +
+            '👧 Equipo: "¿Cuántas empleadas tengo?"\n' +
+            '💰 Caja: "¿Cuánto he ganado hoy?"\n' +
+            '🔍 Buscar: "Busca a María García"'
+        );
 
-        // Manejar envío de mensaje
+        // Listener del formulario
         this.chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const texto = this.chatInput.value.trim();
+            if (!texto) return;
+
+            this.agregarMensajeUsuario(texto);
+            this.chatInput.value = '';
+
             try {
-                e.preventDefault();
-                const text = this.chatInput.value.trim();
-                if (!text) return;
-
-                console.log('💬 Mensaje usuario:', text);
-
-                // Mostrar mensaje del usuario
-                this.mostrarMensajeUsuario(text);
-                this.chatInput.value = '';
-                this.chatInput.focus();
-
-                // Procesar mensaje después de un delay
-                setTimeout(async () => {
-                    try {
-                        console.log('🔄 Procesando comando...');
-                        const respuesta = this.procesarMensaje(text);
-                        console.log('✅ Respuesta recibida:', respuesta);
-                        
-                        // Mostrar respuesta del asistente
-                        this.mostrarMensajeBot(respuesta.mensaje, respuesta.sugerencias || []);
-                    } catch (processError) {
-                        console.error('❌ Error procesando comando:', processError);
-                        this.mostrarMensajeBot('❌ Error: ' + (processError.message || 'No se pudo procesar tu mensaje'), []);
-                    }
-                }, 600);
+                const respuesta = await this.procesarMensaje(texto);
+                this.agregarMensajeBot(respuesta);
             } catch (error) {
-                console.error('❌ Error en el manejador del formulario:', error);
+                console.error('❌ Error:', error);
+                this.agregarMensajeBot('❌ Error: ' + error.message);
             }
         });
 
-        // Cargar sugerencias iniciales
         this.cargarSugerenciasRapidas();
-        console.log('✅ Chatbot inicializado correctamente');
     }
 
-    procesarMensaje(texto) {
+    /**
+     * PROCESAR MENSAJE - Detecta intención y ejecuta acción
+     */
+    async procesarMensaje(texto) {
         const lower = texto.toLowerCase();
         
-        // Detectar intención
-        if (lower.includes('cita') || lower.includes('agendar') || lower.includes('crea una cita')) {
-            return this.manejarCreacionCita(texto);
-        } else if (lower.includes('cliente')) {
-            return { mensaje: '👥 He revisado datos del cliente y preparado la ficha en CRM.', sugerencias: [] };
-        } else if (lower.includes('factura')) {
-            return { mensaje: '🧾 He comenzado la creación de la factura. Revisa Finanzas.', sugerencias: [] };
-        } else if (lower.includes('reporte') || lower.includes('resumen')) {
-            return { mensaje: '📊 Generando reporte. Mira el Dashboard para el resumen.', sugerencias: [] };
-        } else if (lower.includes('ayuda') || lower.includes('help')) {
-            return this.getHelpMessage();
-        } else {
-            return { mensaje: '✅ Acción preparada. Revisa el módulo correspondiente para continuar.', sugerencias: [] };
+        // 🧠 Si hay una acción pendiente, continuar con el contexto
+        if (this.contexto.accionPendiente) {
+            return await this.continuarAccion(texto);
         }
+
+        // ─── Detección de intención ampliada para lenguaje natural de peluquería ───
+
+        // Crear cita: acepta pon/apunta/añade/agrega/mete/crear/agendar/quiero
+        const intentCita = (lower.includes('cita') || lower.includes('cita')) &&
+            (lower.match(/\b(pon|apunta|añade|agrega|mete|crea|agendar|quiero|necesito|ponme|apúntame)\b/));
+        if (intentCita) {
+            return await this.crearCita(texto);
+        }
+
+        // Nuevo cliente: "nuevo cliente", "añade una clienta", "alta de cliente"
+        if (lower.match(/\b(nuevo|nueva|añade|alta)\b/) && lower.match(/\b(cliente|clienta)\b/)) {
+            return await this.crearCliente(texto);
+        }
+
+        // Empleados
+        if (lower.includes('empleado') || lower.match(/\bcuántas? (chica|persona|empleada)s?\b/)) {
+            return await this.verEmpleados();
+        }
+
+        // Resumen / finanzas del día
+        if (lower.match(/\b(resumen|hoy|gané|ganado|facturé|facturado|ingresos?|cuánto he)\b/)) {
+            return await this.verResumen();
+        }
+
+        // Buscar cliente: "busca", "busca a", "dónde está", "info de"
+        if (lower.match(/\b(busca|encuentra|dónde está|info de|ficha de)\b/) && lower.match(/\b(cliente|clienta|a )\b/)) {
+            return await this.buscarCliente(texto);
+        }
+        
+        return '😕 No entiendo bien. Puedes decirme, por ejemplo:\n'
+             + '📅 "Pon una cita a María mañana a las 11:00"\n'
+             + '👤 "Nueva clienta: Rosa Pérez"\n'
+             + '👥 "¿Cuántas empleadas tengo?"\n'
+             + '💰 "¿Cuánto he ganado hoy?"';
     }
 
-    manejarCreacionCita(texto) {
-        // Parsear cita del mensaje
-        const clienteMatch = texto.match(/(?:para|cliente|cita para)\s+(.+?)(?:\s+(?:mañana|hoy|el|a las?))/i);
-        const fechaMatch = texto.match(/(?:mañana|hoy|ayer|el|a)?\s+(.+?)(?:\s+a las?)?/i);
-        const horaMatch = texto.match(/(?:a las?)\s+(\d{1,2}:\d{2})/i);
-        const servicioMatch = texto.match(/(?:de|para|servicio|para un)\s+(.+?)(?:\s+(?:mañana|hoy|ayer|el))?/i);
+    /**
+     * 🧠 CONTINUAR ACCIÓN - Retoma lo que estaba haciendo
+     */
+    async continuarAccion(texto) {
+        const accion = this.contexto.accionPendiente;
+        this.contexto.accionPendiente = null;
 
-        if (clienteMatch) {
-            const cliente = clienteMatch[1].trim();
-            const horaInicio = horaMatch ? horaMatch[1] : '09:00';
+        if (accion === 'crearCliente_nombre') {
+            const nombre = texto.trim();
+            if (!nombre) return '❓ Necesito un nombre válido. ¿Cómo se llama?';
             
-            // Calcular hora de fin (por defecto 1 hora después)
-            const [h, m] = horaInicio.split(':').map(Number);
-            const horaFin = String((h + 1) % 24).padStart(2, '0') + ':' + String(m).padStart(2, '0');
-            
-            const fecha = this.parsearFecha(fechaMatch ? fechaMatch[1] : 'mañana');
-            const servicio = servicioMatch ? servicioMatch[1].trim() : 'Reunión';
+            try {
+                const cliente = await window.dataManager.crearCliente({
+                    nombre,
+                    email: '',
+                    telefono: ''
+                });
+                return `✅ Cliente creado: ${cliente.nombre}`;
+            } catch (error) {
+                return '❌ Error: ' + error.message;
+            }
+        }
 
-            // Crear cita usando el sistema centralizado
-            const nuevaCita = {
-                id: String(Math.max(...this.navManager.citas.map(c => parseInt(c.id) || 0), 0) + 1),
-                cliente: cliente,
-                servicio: servicio,
-                fecha: fecha,
-                hora: horaInicio,
-                horaFin: horaFin,
-                precio: '0',
-                recurso: this.navManager.recursos?.[0] || 'Auto-asignado',
-                notas: 'Creada desde Chatbot',
-                estado: 'esperando'
-            };
+        if (accion === 'crearCita_cliente') {
+            this.contexto.datoCita.cliente = texto.trim();
+            return await this.pedirDatoCita_Fecha();
+        }
 
-            this.navManager.createNewCita(nuevaCita);
+        if (accion === 'crearCita_fecha') {
+            this.contexto.datoCita.fecha = texto.trim();
+            return await this.pedirDatoCita_Hora();
+        }
 
-            return {
-                mensaje: `📅 ✅ Cita creada para ${cliente} el ${fecha} de ${horaInicio} a ${horaFin}. ¡Se agregó a tu agenda!`,
-                sugerencias: [
-                    { texto: '📅 Ver agenda', comando: 'Ver mis citas' },
-                    { texto: '➕ Otra cita', comando: 'Crea otra cita' }
-                ]
-            };
+        if (accion === 'crearCita_hora') {
+            this.contexto.datoCita.hora = texto.trim();
+            return await this.ejecutarCrearCita();
+        }
+
+        return '❌ Error al procesar. Intenta de nuevo.';
+    }
+
+    /**
+     * CREAR CITA - Modo conversacional e inteligente
+     */
+    async crearCita(texto) {
+        if (!window.dataManager) return '❌ DataManager no inicializado';
+
+        try {
+            // Extraer datos del texto
+            const clienteMatch = texto.match(/(?:para|a)\s+([a-záéíóúñ\s]+?)(?:\s+mañana|\s+hoy|\s+a las|\s+el\s+|\s*$)/i);
+            const horaMatch = texto.match(/(\d{1,2}):(\d{2})/);
+            const fechaIndicador = texto.includes('mañana') ? 'mañana' : 
+                                 texto.includes('hoy') ? 'hoy' : null;
+
+            let cliente = null;
+            let horaInicio = null;
+            let fecha = null;
+
+            // Buscar cliente si se especificó
+            if (clienteMatch) {
+                const nombreCliente = clienteMatch[1].trim();
+                const clientes = await window.dataManager.obtenerClientes();
+                cliente = clientes.find(c => c.nombre.toLowerCase().includes(nombreCliente.toLowerCase()));
+                
+                if (!cliente) {
+                    cliente = await window.dataManager.crearCliente({
+                        nombre: nombreCliente,
+                        email: '',
+                        telefono: ''
+                    });
+                }
+                this.contexto.datoCita.cliente = cliente.nombre;
+            }
+
+            // Si hay hora
+            if (horaMatch) {
+                horaInicio = `${horaMatch[1].padStart(2, '0')}:${horaMatch[2]}`;
+                this.contexto.datoCita.hora = horaInicio;
+            }
+
+            // Si hay fecha
+            if (fechaIndicador) {
+                fecha = fechaIndicador === 'mañana' 
+                    ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
+                    : new Date().toISOString().split('T')[0];
+                this.contexto.datoCita.fecha = fecha;
+            }
+
+            // ✅ Tenemos todo lo necesario
+            if (cliente && horaInicio && fecha) {
+                return await this.ejecutarCrearCita();
+            }
+
+            // ❓ Falta cliente
+            if (!cliente) {
+                this.contexto.accionPendiente = 'crearCita_cliente';
+                return '👤 ¿Para quién es la cita? (nombre del cliente)';
+            }
+
+            // ❓ Falta fecha
+            if (!fecha) {
+                this.contexto.accionPendiente = 'crearCita_fecha';
+                return '📅 ¿Cuándo? (ej: mañana, hoy)';
+            }
+
+            // ❓ Falta hora
+            if (!horaInicio) {
+                this.contexto.accionPendiente = 'crearCita_hora';
+                return '🕐 ¿A qué hora? (ej: 10:00)';
+            }
+
+        } catch (error) {
+            console.error('❌ Error:', error);
+            return '❌ Error: ' + error.message;
+        }
+    }
+
+    /**
+     * CREAR CLIENTE - Modo conversacional
+     */
+    async crearCliente(texto) {
+        if (!window.dataManager) return '❌ DataManager no inicializado';
+
+        // Extraer nombre si está en el mensaje
+        const nombreMatch = texto.match(/cliente:\s*([a-záéíóú\s]+?)(?:\s*$|[\.\,\?])/i);
+        
+        if (nombreMatch) {
+            // ✅ Tenemos nombre, crear directamente
+            const nombre = nombreMatch[1].trim();
+            try {
+                const cliente = await window.dataManager.crearCliente({
+                    nombre,
+                    email: '',
+                    telefono: ''
+                });
+                return `✅ Cliente creado: ${cliente.nombre}`;
+            } catch (error) {
+                return '❌ Error: ' + error.message;
+            }
         } else {
-            return {
-                mensaje: 'Para crear una cita, di algo como: "Crea una cita para Cliente X mañana a las 10:00".',
-                sugerencias: []
-            };
+            // ❓ No tenemos nombre, preguntar
+            this.contexto.accionPendiente = 'crearCliente_nombre';
+            return '👤 ¿Cuál es el nombre del cliente?';
         }
     }
 
-    parsearFecha(fechaStr) {
-        if (fechaStr.includes('mañana')) {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return tomorrow.toISOString().split('T')[0];
-        } else if (fechaStr.includes('hoy')) {
-            return new Date().toISOString().split('T')[0];
-        } else if (fechaStr.includes('ayer')) {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            return yesterday.toISOString().split('T')[0];
-        } else if (fechaStr.includes('/')) {
-            const parts = fechaStr.split('/');
-            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    /**
+     * 🧠 Helper: Pedir fecha de cita
+     */
+    async pedirDatoCita_Fecha() {
+        this.contexto.accionPendiente = 'crearCita_fecha';
+        return `📅 ¿Cuándo quieres la cita? (ej: mañana, hoy)`;
+    }
+
+    /**
+     * 🧠 Helper: Pedir hora de cita
+     */
+    async pedirDatoCita_Hora() {
+        this.contexto.accionPendiente = 'crearCita_hora';
+        return `🕐 ¿A qué hora? (ej: 10:00)`;
+    }
+
+    /**
+     * ✅ EJECUTAR CREACIÓN DE CITA
+     */
+    async ejecutarCrearCita() {
+        try {
+            const datos = this.contexto.datoCita;
+            
+            if (!datos.cliente || !datos.fecha || !datos.hora) {
+                throw new Error('Faltan datos de la cita');
+            }
+
+            // Buscar cliente por nombre
+            const clientes = await window.dataManager.obtenerClientes();
+            const cliente = clientes.find(c => c.nombre.toLowerCase().includes(datos.cliente.toLowerCase()));
+
+            if (!cliente) throw new Error('Cliente no encontrado');
+
+            // Obtener empleado disponible
+            const empleados = await window.dataManager.obtenerEmpleados();
+            if (empleados.length === 0) throw new Error('No hay empleados disponibles');
+
+            // Obtener servicio
+            const servicios = await window.dataManager.obtenerServicios();
+            const servicio = servicios.length > 0 ? servicios[0] : { id: 'default', nombre: 'Servicio', precio: 0 };
+
+            // Crear cita
+            const cita = await window.dataManager.crearCita({
+                clienteId: cliente.id,
+                empleadoId: empleados[0].id,
+                servicioId: servicio.id,
+                fecha: datos.fecha,
+                hora: datos.hora,
+                duracion: 30,
+                precio: servicio.precio || 0
+            });
+
+            // Limpiar contexto
+            this.contexto.datoCita = {};
+            this.contexto.accionPendiente = null;
+
+            return `✅ ¡Cita creada!\n📅 ${cliente.nombre}\n🕐 ${datos.fecha} a las ${datos.hora}\n💼 ${empleados[0].nombre}`;
+        } catch (error) {
+            this.contexto.datoCita = {};
+            this.contexto.accionPendiente = null;
+            return '❌ Error: ' + error.message;
         }
-        return new Date().toISOString().split('T')[0];
     }
 
-    getHelpMessage() {
-        return {
-            mensaje: `🤖 Puedo ayudarte con:
-• Crear citas: "Crea una cita para Cliente X mañana a las 10:00"
-• Ver clientes: "Mostrar información de Cliente Y"
-• Generar facturas: "Crear factura para Cliente Z"
-• Ver reportes: "Mostrar reporte de ventas"
-• Más acciones en los módulos correspondientes.`,
-            sugerencias: []
-        };
+    /**
+     * VER EMPLEADOS
+     */
+    async verEmpleados() {
+        if (!window.dataManager) return '❌ DataManager no inicializado';
+
+        try {
+            const empleados = await window.dataManager.obtenerEmpleados();
+            if (empleados.length === 0) return '📭 No hay empleados registrados';
+
+            const listado = empleados
+                .slice(0, 5)
+                .map(e => `👤 ${e.nombre}${e.rol ? ` (${e.rol})` : ''}`)
+                .join('\n');
+
+            return `👥 EMPLEADOS (${empleados.length}):\n${listado}`;
+        } catch (error) {
+            return '❌ Error: ' + error.message;
+        }
     }
 
-    mostrarMensajeUsuario(texto) {
+    /**
+     * VER RESUMEN DEL DÍA
+     */
+    async verResumen() {
+        if (!window.dataManager) return '❌ DataManager no inicializado';
+
+        try {
+            const hoy = new Date().toISOString().split('T')[0];
+            const resumen = await window.dataManager.obtenerResumenDia(hoy);
+
+            if (!resumen) return '❌ No se pudo obtener el resumen';
+
+            return `📊 RESUMEN DEL DÍA
+━━━━━━━━━━━━━━━━━
+📅 Citas: ${resumen.citasTotal} (✅ ${resumen.citasCompletadas} completadas)
+💰 Ingresos: €${resumen.totalIngresos}
+👥 Empleados: ${resumen.empleadosTrabajando}`;
+        } catch (error) {
+            return '❌ Error: ' + error.message;
+        }
+    }
+
+    /**
+     * BUSCAR CLIENTE
+     */
+    async buscarCliente(texto) {
+        if (!window.dataManager) return '❌ DataManager no inicializado';
+
+        try {
+            const nombreMatch = texto.match(/busca.*?(?:cliente|a)\s+([a-záéíóú\s]+?)(?:\s*$|[\.\,\?])/i);
+            if (!nombreMatch) {
+                const clientes = await window.dataManager.obtenerClientes();
+                return `📋 CLIENTES (${clientes.length}):\n${clientes.slice(0, 5).map(c => `👤 ${c.nombre}`).join('\n')}`;
+            }
+
+            const nombre = nombreMatch[1].trim();
+            const resultados = await window.dataManager.buscarCliente(nombre);
+
+            if (resultados.length === 0) return `❌ No encontré cliente "${nombre}"`;
+
+            const cliente = resultados[0];
+            return `👤 ${cliente.nombre}\n📧 ${cliente.email || '—'}\n📱 ${cliente.telefono || '—'}`;
+        } catch (error) {
+            return '❌ Error: ' + error.message;
+        }
+    }
+
+    // ==================== UI ====================
+
+    agregarMensajeUsuario(texto) {
         const html = `
-            <div class="flex justify-end">
-                <div class="bg-blue-600 text-white p-3 rounded-2xl max-w-[85%] shadow-sm text-sm rounded-br-none">
+            <div class="flex justify-end mb-4">
+                <div class="bg-[#2B93A6] text-white p-3 rounded-lg max-w-[70%] text-sm rounded-br-none shadow-sm">
                     ${this.escapeHtml(texto)}
                 </div>
-            </div>`;
+            </div>
+        `;
         this.chatHistory.insertAdjacentHTML('beforeend', html);
         this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
     }
 
-    mostrarMensajeBot(texto, sugerencias = []) {
+    agregarMensajeBot(texto) {
         const html = `
-            <div class="flex justify-start">
-                <div class="bg-slate-100 text-slate-900 p-4 rounded-2xl max-w-[85%] shadow-sm rounded-bl-none">
-                    <p class="text-sm whitespace-pre-wrap">${this.escapeHtml(texto)}</p>
-                    ${sugerencias.length > 0 ? `
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            ${sugerencias.map(s => `
-                                <button class="suggestion-btn bg-blue-600 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-700 transition" data-comando="${this.escapeHtml(s.comando)}">
-                                    ${this.escapeHtml(s.texto)}
-                                </button>
-                            `).join('')}
-                        </div>
-                    ` : ''}
+            <div class="flex justify-start mb-4">
+                <div class="bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.08)] text-slate-200 p-3 rounded-lg max-w-[70%] text-sm rounded-bl-none">
+                    <p class="whitespace-pre-wrap">${this.escapeHtml(texto)}</p>
                 </div>
-            </div>`;
-        
+            </div>
+        `;
         this.chatHistory.insertAdjacentHTML('beforeend', html);
-        
-        // Agregar event listeners a los botones de sugerencia
-        document.querySelectorAll('.suggestion-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.chatInput.value = btn.dataset.comando;
-                this.chatInput.focus();
-            });
-        });
-        
         this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
     }
 
@@ -256,22 +473,19 @@ class ChatbotManager {
         if (!container) return;
 
         const sugerencias = [
-            { icono: '💰', texto: 'Factura 50€', comando: 'crea una factura de 50 euros' },
-            { icono: '💰', texto: 'Factura 100€', comando: 'crea una factura de 100 euros' },
-            { icono: '📅', texto: 'Agendar cita', comando: 'crea una cita para Cliente A mañana a las 10:00' },
-            { icono: '👤', texto: 'Buscar cliente', comando: 'busca a un cliente' },
-            { icono: '📊', texto: 'Ver resumen', comando: 'resumen de hoy' },
-            { icono: '❓', texto: 'Ayuda', comando: 'ayuda' },
+            { icono: '📅', texto: 'Nueva cita', comando: 'Pon una cita a María mañana a las 11:00' },
+            { icono: '👤', texto: 'Nueva clienta', comando: 'nueva clienta: Rosa Pérez' },
+            { icono: '👧', texto: 'Mis empleadas', comando: '¿Cuántas empleadas tengo?' },
+            { icono: '💰', texto: 'Ingresos hoy', comando: '¿Cuánto he ganado hoy?' },
         ];
 
         container.innerHTML = sugerencias.map(s => `
-            <button class="sugerencia-rapida bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 text-slate-900 border border-blue-200 px-4 py-2 rounded-lg text-xs font-medium transition transform hover:scale-105 active:scale-95">
-                <span class="text-lg">${s.icono}</span><br>
-                <span class="text-xs">${s.texto}</span>
+            <button class="sugerencia-rapida glass hover:bg-[rgba(43,147,166,0.15)] border border-[rgba(43,147,166,0.3)] text-slate-300 hover:text-white px-4 py-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1">
+                <div class="text-lg">${s.icono}</div>
+                <div>${s.texto}</div>
             </button>
         `).join('');
 
-        // Agregar event listeners
         document.querySelectorAll('.sugerencia-rapida').forEach((btn, idx) => {
             btn.addEventListener('click', () => {
                 this.chatInput.value = sugerencias[idx].comando;

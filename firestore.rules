@@ -1,21 +1,35 @@
 rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// NODE — Reglas de seguridad de Firestore
+// NODE TECH — Reglas de seguridad de Firestore (v2)
+//
+// ESTRUCTURA SEGURA:
+//   usuarios/{uid}/
+//   ├── perfil/
+//   ├── empleados/
+//   ├── clientes/
+//   ├── servicios/
+//   ├── citas/           ← Nexo central
+//   ├── finanzas/        ← Se alimenta automáticamente
+//   ├── chatbot/
+//   └── inventario/
 //
 // MODELO DE ACCESO:
-//   • Cada usuario solo puede leer/escribir su propio perfil.
-//   • Un usuario no puede cambiarse el role ni el status a sí mismo.
-//   • El rol "admin" puede leer y modificar cualquier documento de usuario.
+//   • Cada usuario SOLO puede leer/escribir en su propia carpeta usuarios/{uid}/*
+//   • Un usuario NO puede acceder a usuarios/{otro_uid}/*
+//   • El rol "admin" puede leer y modificar cualquier documento (futuro)
 //   • Todo lo que no esté explícitamente permitido queda bloqueado.
 //
-// CÓMO ASIGNAR ADMIN:
-//   Firebase Console → Firestore → users → {uid} → editar campo role = "admin"
+// VALIDACIÓN DE SEGURIDAD:
+//   Frontend: DataManager valida (this.userId)
+//   Firestore: Reglas validan (request.auth.uid == userId)
+//   Backend: Cloud Functions validan (futura expansión)
 //
-// NOTA SOBRE isAdmin():
-//   Usa get() para leer el documento del usuario en cada operación admin.
-//   Para alta escala, migrar a Firebase Custom Claims (Admin SDK) es más eficiente.
-//   Referencia: https://firebase.google.com/docs/auth/admin/custom-claims
+// EJEMPLO DE DENEGACIÓN:
+//   Juan (uid: juan123) intenta acceder a clientes de María (maria456):
+//   - collection(db, 'usuarios', 'maria456', 'clientes')
+//   - Regla: request.auth.uid ('juan123') != userId ('maria456')
+//   - Resultado: ❌ ACCESO DENEGADO
 // ═══════════════════════════════════════════════════════════════════════════
 
 service cloud.firestore {
@@ -35,32 +49,81 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // ── Colección: users ───────────────────────────────────────────────────
+    // ── Colección: usuarios (NUEVA ESTRUCTURA) ─────────────────────────────
+    // Cada usuario propietario solo accede a su carpeta
+    match /usuarios/{userId}/{document=**} {
+      // ✅ Permitir leer/escribir SOLO si eres el propietario
+      allow read, write: if isOwner(userId);
+    }
+
+    // ── Subcolecciones específicas (para mayor seguridad futura) ─────────────
+    // Perfil del usuario
+    match /usuarios/{userId}/perfil/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Empleados del negocio
+    match /usuarios/{userId}/empleados/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Clientes del negocio
+    match /usuarios/{userId}/clientes/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Servicios ofrecidos
+    match /usuarios/{userId}/servicios/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Citas (El nexo central)
+    match /usuarios/{userId}/citas/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Finanzas (Ingresos/Gastos)
+    match /usuarios/{userId}/finanzas/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Historial del Chatbot
+    match /usuarios/{userId}/chatbot/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Inventario de productos
+    match /usuarios/{userId}/inventario/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ── Colección LEGADA: users (backwards compatibility) ─────────────────
     match /users/{userId} {
-
-      // Leer: propio perfil o admin
       allow read: if isOwner(userId) || isAdmin();
-
-      // Crear: solo el propio usuario, y únicamente con role:'user' y status:'active'
-      // (impide que alguien se auto-asigne rol de admin al registrarse)
       allow create: if isOwner(userId)
         && request.resource.data.role   == 'user'
         && request.resource.data.status == 'active'
         && request.resource.data.uid    == userId;
-
-      // Actualizar: el usuario puede editar su perfil pero NO cambiar role ni status.
-      //             El admin puede cambiar cualquier campo.
       allow update: if (isOwner(userId)
           && request.resource.data.role   == resource.data.role
           && request.resource.data.status == resource.data.status)
         || isAdmin();
-
-      // Eliminar: solo admin
       allow delete: if isAdmin();
     }
 
-    // ── Subcolecciones por usuario: clientes, empleados, finanzas ─────────────
-    // Cada usuario solo accede a sus propios datos.
+    // Subcolecciones del sistema legado
+    match /users/{userId}/citas/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/servicios/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/inventario/{docId} {
+      allow read, write: if isOwner(userId);
+    }
+
     match /users/{userId}/clientes/{docId} {
       allow read, write: if isOwner(userId);
     }
@@ -77,8 +140,8 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
-    // ── Colección: appointments (preparado para migración desde localStorage) ──
-    // Descomenta cuando chatbot.js / agenda.js migren a Firestore.
+    // ── Colección LEGADA: appointments ─────────────────────────────────────
+    // Descomenta si migras desde localStorage. Se recomienda usar usuarios/{uid}/citas en su lugar.
     //
     // match /appointments/{appointmentId} {
     //   allow read:   if isSignedIn() && resource.data.userId == request.auth.uid;
