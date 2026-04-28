@@ -1110,11 +1110,9 @@ class NavigationManager {
     _updateChatChips(container) {
         if (!container) return;
         const commands = [
-            { label: '⚡ Cita express',  cmd: 'cita express' },
-            { label: '💰 Cobro rápido',  cmd: 'cobro rapido' },
-            { label: '🚨 Urgencia',       cmd: 'urgencia'     },
-            { label: '📅 Ver agenda',    cmd: 'agenda'        },
-            { label: '📊 Resumen hoy',   cmd: 'resumen hoy'  },
+            { label: '📅 Crear Cita',  cmd: 'Quiero crear una cita' },
+            { label: '👀 Ver Agenda',  cmd: 'Muéstrame las citas de hoy' },
+            { label: '❌ Cancelar',   cmd: 'Quiero cancelar una cita' },
         ];
         container.innerHTML = commands.map(c =>
             `<button type="button" class="chat-chip px-2 py-1 text-[11px] font-semibold text-slate-300
@@ -1130,50 +1128,27 @@ class NavigationManager {
         });
     }
 
-    _processChatCommand(text, msgs) {
-        const t        = text.toLowerCase();
-        const hoy      = new Date().toISOString().split('T')[0];
-        const citasHoy = this.citas.filter(c => c.fecha === hoy);
+    async _processChatCommand(text, msgs) {
+        // Inicializar la instancia del Chatbot para el widget flotante si no existe
+        if (!this.floatingChatbot) {
+            this.floatingChatbot = new ChatbotManager(this);
+            // Sobrescribimos los métodos de UI para que pinte en la burbuja con el estilo correcto
+            this.floatingChatbot.agregarMensajeBot = (texto) => {
+                this._addChatMessage('ai', texto, msgs);
+            };
+            this.floatingChatbot.agregarMensajeUsuario = (texto) => {
+                // No necesitamos que lo pinte porque handleSend ya lo hace, pero lo definimos por si acaso
+            };
+        }
 
-        const closeChat = () => {
-            document.getElementById('chat-widget-panel')?.classList.remove('open');
-            document.getElementById('chat-widget-btn')?.classList.remove('active');
-            const icon = document.getElementById('chat-widget-icon');
-            if (icon) icon.className = 'fas fa-robot text-white text-lg';
-        };
-
-        setTimeout(() => {
-            if (t.includes('cita express') || t.includes('nueva cita') || t.includes('cita para')) {
-                this._addChatMessage('ai', '¡Listo! Abriendo cita express...', msgs);
-                setTimeout(() => { closeChat(); this.showQuickCitaModal(); }, 450);
-            } else if (t.includes('cobro') || t.includes('pago') || t.includes('cobrar')) {
-                this._addChatMessage('ai', 'Abriendo cobro rápido...', msgs);
-                setTimeout(() => { closeChat(); this.showCobroModal(null); }, 450);
-            } else if (t.includes('agenda') || t.includes('calendario')) {
-                this._addChatMessage('ai', 'Abriendo agenda...', msgs);
-                setTimeout(() => { closeChat(); this.loadView('agenda'); }, 450);
-            } else if (t.includes('urgencia')) {
-                const hora = `${new Date().getHours().toString().padStart(2, '0')}:00`;
-                const urgServicio = window.BCONFIG?.servicios?.at(-1)?.items?.at(-1) || 'Urgencia';
-                this._guardarCitaFirebase({ id: 'u' + Date.now(), cliente: '(Urgencia)', servicio: urgServicio,
-                    fecha: hoy, hora, precio: '50', estado: 'sala-espera' });
-                this._addChatMessage('ai', '🚨 Urgencia añadida al timeline de hoy a las ' + hora, msgs);
-                this.showNotification('🚨 Urgencia registrada', 'warning');
-                if (this.currentView === 'dashboard') this.loadView('dashboard');
-            } else if (t.includes('resumen') || t.includes('estadistica') || t.includes('cuantos') || t.includes('hoy')) {
-                const completadas = citasHoy.filter(c => c.estado === 'completado').length;
-                const facturado   = citasHoy.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
-                const pendientes  = citasHoy.filter(c => !c.estado || c.estado === 'pendiente').length;
-                this._addChatMessage('ai',
-                    `Hoy: ${citasHoy.length} citas · ${completadas} completadas · ${pendientes} pendientes · €${facturado} cobrados.`, msgs);
-            } else if (t.includes('paciente') || t.includes('cliente')) {
-                this._addChatMessage('ai', `Abriendo vista de ${window.BCONFIG?.clientePlural?.toLowerCase() || 'clientes'}...`, msgs);
-                setTimeout(() => { closeChat(); this.loadView('pacientes'); }, 450);
-            } else {
-                this._addChatMessage('ai',
-                    'Entendido. Por ahora puedo: abrir citas, cobros, urgencias, agenda y darte el resumen del día.', msgs);
-            }
-        }, 350);
+        try {
+            // Procesar el mensaje usando Ollama (igual que la pantalla principal)
+            const respuesta = await this.floatingChatbot.procesarMensaje(text);
+            this._addChatMessage('ai', respuesta, msgs);
+        } catch (error) {
+            console.error('Error en widget flotante:', error);
+            this._addChatMessage('ai', '❌ Error de conexión con el Asistente.', msgs);
+        }
     }
 
     showNotification(message, type = 'info') {

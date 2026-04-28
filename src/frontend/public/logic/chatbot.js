@@ -63,9 +63,6 @@ class ChatbotManager {
                     </button>
                 </form>
 
-                <div id="sugerencias-rapidas" class="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
-                    <!-- Sugerencias -->
-                </div>
             </div>
         `;
     }
@@ -85,16 +82,8 @@ class ChatbotManager {
 
         console.log('🤖 Chatbot v2 inicializado con DataManager');
 
-        // Bienvenida
-        this.agregarMensajeBot(
-            '¡Hola! Soy tu asistente NODE.\n\n' +
-            'Puedo ayudarte con:\n' +
-            '📅 Citas: "Pon una cita a María mañana a las 11:00"\n' +
-            '👤 Clientas: "Nueva clienta: Rosa Pérez"\n' +
-            '👧 Equipo: "¿Cuántas empleadas tengo?"\n' +
-            '💰 Caja: "¿Cuánto he ganado hoy?"\n' +
-            '🔍 Buscar: "Busca a María García"'
-        );
+        // Bienvenida simple
+        this.agregarMensajeBot('¡Hola! Soy tu asistente inteligente. ¿En qué puedo ayudarte hoy?');
 
         // Listener del formulario
         this.chatForm.addEventListener('submit', async (e) => {
@@ -113,332 +102,196 @@ class ChatbotManager {
                 this.agregarMensajeBot('❌ Error: ' + error.message);
             }
         });
-
-        this.cargarSugerenciasRapidas();
     }
 
     /**
-     * PROCESAR MENSAJE - Detecta intención y ejecuta acción
+     * PROCESAR MENSAJE - Detecta intención y ejecuta acción vía Ollama Local
      */
     async procesarMensaje(texto) {
-        const lower = texto.toLowerCase();
-        
-        // 🧠 Si hay una acción pendiente, continuar con el contexto
-        if (this.contexto.accionPendiente) {
-            return await this.continuarAccion(texto);
-        }
-
-        // ─── Detección de intención ampliada para lenguaje natural de peluquería ───
-
-        // Crear cita: acepta pon/apunta/añade/agrega/mete/crear/agendar/quiero
-        const intentCita = (lower.includes('cita') || lower.includes('cita')) &&
-            (lower.match(/\b(pon|apunta|añade|agrega|mete|crea|agendar|quiero|necesito|ponme|apúntame)\b/));
-        if (intentCita) {
-            return await this.crearCita(texto);
-        }
-
-        // Nuevo cliente: "nuevo cliente", "añade una clienta", "alta de cliente"
-        if (lower.match(/\b(nuevo|nueva|añade|alta)\b/) && lower.match(/\b(cliente|clienta)\b/)) {
-            return await this.crearCliente(texto);
-        }
-
-        // Empleados
-        if (lower.includes('empleado') || lower.match(/\bcuántas? (chica|persona|empleada)s?\b/)) {
-            return await this.verEmpleados();
-        }
-
-        // Resumen / finanzas del día
-        if (lower.match(/\b(resumen|hoy|gané|ganado|facturé|facturado|ingresos?|cuánto he)\b/)) {
-            return await this.verResumen();
-        }
-
-        // Buscar cliente: "busca", "busca a", "dónde está", "info de"
-        if (lower.match(/\b(busca|encuentra|dónde está|info de|ficha de)\b/) && lower.match(/\b(cliente|clienta|a )\b/)) {
-            return await this.buscarCliente(texto);
+        // Inicializar memoria si no existe
+        if (!this.chatHistoryMemory) {
+            this.chatHistoryMemory = [];
         }
         
-        return '😕 No entiendo bien. Puedes decirme, por ejemplo:\n'
-             + '📅 "Pon una cita a María mañana a las 11:00"\n'
-             + '👤 "Nueva clienta: Rosa Pérez"\n'
-             + '👥 "¿Cuántas empleadas tengo?"\n'
-             + '💰 "¿Cuánto he ganado hoy?"';
+        // Añadir mensaje del usuario a la memoria
+        this.chatHistoryMemory.push({ role: 'user', content: texto });
+        
+        return await this.enviarABackend();
     }
 
-    /**
-     * 🧠 CONTINUAR ACCIÓN - Retoma lo que estaba haciendo
-     */
-    async continuarAccion(texto) {
-        const accion = this.contexto.accionPendiente;
-        this.contexto.accionPendiente = null;
-
-        if (accion === 'crearCliente_nombre') {
-            const nombre = texto.trim();
-            if (!nombre) return '❓ Necesito un nombre válido. ¿Cómo se llama?';
-            
-            try {
-                const cliente = await window.dataManager.crearCliente({
-                    nombre,
-                    email: '',
-                    telefono: ''
-                });
-                return `✅ Cliente creado: ${cliente.nombre}`;
-            } catch (error) {
-                return '❌ Error: ' + error.message;
-            }
-        }
-
-        if (accion === 'crearCita_cliente') {
-            this.contexto.datoCita.cliente = texto.trim();
-            return await this.pedirDatoCita_Fecha();
-        }
-
-        if (accion === 'crearCita_fecha') {
-            this.contexto.datoCita.fecha = texto.trim();
-            return await this.pedirDatoCita_Hora();
-        }
-
-        if (accion === 'crearCita_hora') {
-            this.contexto.datoCita.hora = texto.trim();
-            return await this.ejecutarCrearCita();
-        }
-
-        return '❌ Error al procesar. Intenta de nuevo.';
-    }
-
-    /**
-     * CREAR CITA - Modo conversacional e inteligente
-     */
-    async crearCita(texto) {
-        if (!window.dataManager) return '❌ DataManager no inicializado';
-
+    async enviarABackend() {
         try {
-            // Extraer datos del texto
-            const clienteMatch = texto.match(/(?:para|a)\s+([a-záéíóúñ\s]+?)(?:\s+mañana|\s+hoy|\s+a las|\s+el\s+|\s*$)/i);
-            const horaMatch = texto.match(/(\d{1,2}):(\d{2})/);
-            const fechaIndicador = texto.includes('mañana') ? 'mañana' : 
-                                 texto.includes('hoy') ? 'hoy' : null;
-
-            let cliente = null;
-            let horaInicio = null;
-            let fecha = null;
-
-            // Buscar cliente si se especificó
-            if (clienteMatch) {
-                const nombreCliente = clienteMatch[1].trim();
-                const clientes = await window.dataManager.obtenerClientes();
-                cliente = clientes.find(c => c.nombre.toLowerCase().includes(nombreCliente.toLowerCase()));
-                
-                if (!cliente) {
-                    cliente = await window.dataManager.crearCliente({
-                        nombre: nombreCliente,
-                        email: '',
-                        telefono: ''
-                    });
-                }
-                this.contexto.datoCita.cliente = cliente.nombre;
-            }
-
-            // Si hay hora
-            if (horaMatch) {
-                horaInicio = `${horaMatch[1].padStart(2, '0')}:${horaMatch[2]}`;
-                this.contexto.datoCita.hora = horaInicio;
-            }
-
-            // Si hay fecha
-            if (fechaIndicador) {
-                fecha = fechaIndicador === 'mañana' 
-                    ? new Date(Date.now() + 86400000).toISOString().split('T')[0]
-                    : new Date().toISOString().split('T')[0];
-                this.contexto.datoCita.fecha = fecha;
-            }
-
-            // ✅ Tenemos todo lo necesario
-            if (cliente && horaInicio && fecha) {
-                return await this.ejecutarCrearCita();
-            }
-
-            // ❓ Falta cliente
-            if (!cliente) {
-                this.contexto.accionPendiente = 'crearCita_cliente';
-                return '👤 ¿Para quién es la cita? (nombre del cliente)';
-            }
-
-            // ❓ Falta fecha
-            if (!fecha) {
-                this.contexto.accionPendiente = 'crearCita_fecha';
-                return '📅 ¿Cuándo? (ej: mañana, hoy)';
-            }
-
-            // ❓ Falta hora
-            if (!horaInicio) {
-                this.contexto.accionPendiente = 'crearCita_hora';
-                return '🕐 ¿A qué hora? (ej: 10:00)';
-            }
-
-        } catch (error) {
-            console.error('❌ Error:', error);
-            return '❌ Error: ' + error.message;
-        }
-    }
-
-    /**
-     * CREAR CLIENTE - Modo conversacional
-     */
-    async crearCliente(texto) {
-        if (!window.dataManager) return '❌ DataManager no inicializado';
-
-        // Extraer nombre si está en el mensaje
-        const nombreMatch = texto.match(/cliente:\s*([a-záéíóú\s]+?)(?:\s*$|[\.\,\?])/i);
-        
-        if (nombreMatch) {
-            // ✅ Tenemos nombre, crear directamente
-            const nombre = nombreMatch[1].trim();
+            // Extraer contexto del usuario para personalizar la respuesta
+            let userContext = "";
             try {
-                const cliente = await window.dataManager.crearCliente({
-                    nombre,
-                    email: '',
-                    telefono: ''
-                });
-                return `✅ Cliente creado: ${cliente.nombre}`;
-            } catch (error) {
-                return '❌ Error: ' + error.message;
-            }
-        } else {
-            // ❓ No tenemos nombre, preguntar
-            this.contexto.accionPendiente = 'crearCliente_nombre';
-            return '👤 ¿Cuál es el nombre del cliente?';
-        }
-    }
+                const nombreDr = document.querySelector('.sidebar-user-name')?.textContent || 'Doctor/a';
+                const rolDr = document.querySelector('.sidebar-user-role')?.textContent || 'Profesional';
+                const clinica = window.BCONFIG?.empresa || 'la clínica';
+                userContext = `Te estás dirigiendo a ${nombreDr} (${rolDr}) de ${clinica}.`;
+            } catch(e) {}
 
-    /**
-     * 🧠 Helper: Pedir fecha de cita
-     */
-    async pedirDatoCita_Fecha() {
-        this.contexto.accionPendiente = 'crearCita_fecha';
-        return `📅 ¿Cuándo quieres la cita? (ej: mañana, hoy)`;
-    }
-
-    /**
-     * 🧠 Helper: Pedir hora de cita
-     */
-    async pedirDatoCita_Hora() {
-        this.contexto.accionPendiente = 'crearCita_hora';
-        return `🕐 ¿A qué hora? (ej: 10:00)`;
-    }
-
-    /**
-     * ✅ EJECUTAR CREACIÓN DE CITA
-     */
-    async ejecutarCrearCita() {
-        try {
-            const datos = this.contexto.datoCita;
-            
-            if (!datos.cliente || !datos.fecha || !datos.hora) {
-                throw new Error('Faltan datos de la cita');
-            }
-
-            // Buscar cliente por nombre
-            const clientes = await window.dataManager.obtenerClientes();
-            const cliente = clientes.find(c => c.nombre.toLowerCase().includes(datos.cliente.toLowerCase()));
-
-            if (!cliente) throw new Error('Cliente no encontrado');
-
-            // Obtener empleado disponible
-            const empleados = await window.dataManager.obtenerEmpleados();
-            if (empleados.length === 0) throw new Error('No hay empleados disponibles');
-
-            // Obtener servicio
-            const servicios = await window.dataManager.obtenerServicios();
-            const servicio = servicios.length > 0 ? servicios[0] : { id: 'default', nombre: 'Servicio', precio: 0 };
-
-            // Crear cita
-            const cita = await window.dataManager.crearCita({
-                clienteId: cliente.id,
-                empleadoId: empleados[0].id,
-                servicioId: servicio.id,
-                fecha: datos.fecha,
-                hora: datos.hora,
-                duracion: 30,
-                precio: servicio.precio || 0
+            const response = await fetch('http://localhost:8000/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    messages: this.chatHistoryMemory,
+                    user_context: userContext
+                })
             });
 
-            // Limpiar contexto
-            this.contexto.datoCita = {};
-            this.contexto.accionPendiente = null;
-
-            return `✅ ¡Cita creada!\n📅 ${cliente.nombre}\n🕐 ${datos.fecha} a las ${datos.hora}\n💼 ${empleados[0].nombre}`;
-        } catch (error) {
-            this.contexto.datoCita = {};
-            this.contexto.accionPendiente = null;
-            return '❌ Error: ' + error.message;
-        }
-    }
-
-    /**
-     * VER EMPLEADOS
-     */
-    async verEmpleados() {
-        if (!window.dataManager) return '❌ DataManager no inicializado';
-
-        try {
-            const empleados = await window.dataManager.obtenerEmpleados();
-            if (empleados.length === 0) return '📭 No hay empleados registrados';
-
-            const listado = empleados
-                .slice(0, 5)
-                .map(e => `👤 ${e.nombre}${e.rol ? ` (${e.rol})` : ''}`)
-                .join('\n');
-
-            return `👥 EMPLEADOS (${empleados.length}):\n${listado}`;
-        } catch (error) {
-            return '❌ Error: ' + error.message;
-        }
-    }
-
-    /**
-     * VER RESUMEN DEL DÍA
-     */
-    async verResumen() {
-        if (!window.dataManager) return '❌ DataManager no inicializado';
-
-        try {
-            const hoy = new Date().toISOString().split('T')[0];
-            const resumen = await window.dataManager.obtenerResumenDia(hoy);
-
-            if (!resumen) return '❌ No se pudo obtener el resumen';
-
-            return `📊 RESUMEN DEL DÍA
-━━━━━━━━━━━━━━━━━
-📅 Citas: ${resumen.citasTotal} (✅ ${resumen.citasCompletadas} completadas)
-💰 Ingresos: €${resumen.totalIngresos}
-👥 Empleados: ${resumen.empleadosTrabajando}`;
-        } catch (error) {
-            return '❌ Error: ' + error.message;
-        }
-    }
-
-    /**
-     * BUSCAR CLIENTE
-     */
-    async buscarCliente(texto) {
-        if (!window.dataManager) return '❌ DataManager no inicializado';
-
-        try {
-            const nombreMatch = texto.match(/busca.*?(?:cliente|a)\s+([a-záéíóú\s]+?)(?:\s*$|[\.\,\?])/i);
-            if (!nombreMatch) {
-                const clientes = await window.dataManager.obtenerClientes();
-                return `📋 CLIENTES (${clientes.length}):\n${clientes.slice(0, 5).map(c => `👤 ${c.nombre}`).join('\n')}`;
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            const nombre = nombreMatch[1].trim();
-            const resultados = await window.dataManager.buscarCliente(nombre);
+            const data = await response.json();
+            
+            if (data.error) throw new Error(data.error);
 
-            if (resultados.length === 0) return `❌ No encontré cliente "${nombre}"`;
+            // Añadir respuesta de Ollama a la memoria
+            this.chatHistoryMemory.push(data); 
 
-            const cliente = resultados[0];
-            return `👤 ${cliente.nombre}\n📧 ${cliente.email || '—'}\n📱 ${cliente.telefono || '—'}`;
+            // Si hay tool calls, ejecutar las acciones en el frontend
+            if (data.tool_calls && data.tool_calls.length > 0) {
+                // Notificar al usuario temporalmente
+                this.agregarMensajeBot('⏳ Ejecutando acción en el sistema...');
+
+                for (const tool of data.tool_calls) {
+                    const funcName = tool.function.name;
+                    const args = tool.function.arguments;
+                    const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+                    
+                    let result = '';
+                    try {
+                        result = await this.ejecutarTool(funcName, parsedArgs);
+                    } catch(err) {
+                        result = "Error al ejecutar: " + err.message;
+                    }
+
+                    // Enviar el resultado de vuelta a la memoria para Ollama
+                    this.chatHistoryMemory.push({
+                        role: 'tool',
+                        content: result,
+                        name: funcName
+                    });
+                }
+                
+                // Llamar de nuevo al backend con el resultado para que Ollama genere la respuesta final
+                return await this.enviarABackend();
+            }
+
+            return data.content || "Hecho.";
+
         } catch (error) {
-            return '❌ Error: ' + error.message;
+            console.error('Error enviando a backend:', error);
+            return '❌ Chatbot no disponible';
+        }
+    }
+
+    async ejecutarTool(nombre, args) {
+        if (!window.dataManager) return "DataManager no inicializado";
+
+        try {
+            switch(nombre) {
+                case 'crearCita': {
+                    if (!args.cliente || !args.fecha || !args.hora || !args.motivo || !args.duracion) {
+                        return "Error: Faltan datos obligatorios (cliente, fecha, hora, motivo o duración). Pide al usuario que los proporcione en lugar de inventarlos.";
+                    }
+                    const clientes = await window.dataManager.obtenerClientes();
+                    let cliente = clientes.find(c => c.nombre.toLowerCase().includes(args.cliente.toLowerCase()));
+                    if (!cliente) {
+                        cliente = await window.dataManager.crearCliente({nombre: args.cliente, email:'', telefono:''});
+                    }
+                    
+                    let empleados = await window.dataManager.obtenerEmpleados();
+                    if (empleados.length === 0) {
+                        await window.dataManager.crearEmpleado({nombre: 'Dr. Principal', rol: 'Odontólogo', email: '', telefono: ''});
+                        empleados = await window.dataManager.obtenerEmpleados();
+                    }
+                    
+                    // Helper para obtener fecha local correcta evitando desfases de huso horario
+                    const getLocalISODate = (daysOffset = 0) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + daysOffset);
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    };
+                    
+                    let fechaAUsar = args.fecha.toLowerCase().trim();
+                    if (fechaAUsar === 'hoy') fechaAUsar = getLocalISODate(0);
+                    else if (fechaAUsar === 'mañana' || fechaAUsar === 'manana') fechaAUsar = getLocalISODate(1);
+
+                    let horaAUsar = args.hora.trim();
+                    if (!horaAUsar.includes(':')) horaAUsar += ':00'; // normalizar "10" a "10:00"
+
+                    const cita = await window.dataManager.crearCita({
+                        clienteId: cliente.id,
+                        empleadoId: empleados[0].id,
+                        servicioId: 'custom',
+                        notas: `Motivo: ${args.motivo}`,
+                        fecha: fechaAUsar,
+                        hora: horaAUsar,
+                        duracion: parseInt(args.duracion) || 30,
+                        precio: 0
+                    });
+                    return `Cita creada con éxito para ${cliente.nombre} el día ${fechaAUsar} a las ${horaAUsar} con el empleado ${empleados[0].nombre}. Motivo: ${args.motivo}. Duración: ${args.duracion} min.`;
+                }
+
+                case 'verCitas': {
+                    if (!args.fecha) return "Error: Falta la fecha. Pregunta al usuario para qué día quiere ver las citas.";
+                    const citas = await window.dataManager.obtenerCitas();
+                    
+                    const getLocalISODate = (daysOffset = 0) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + daysOffset);
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    };
+                    
+                    let fechaBuscar = args.fecha.toLowerCase().trim();
+                    if (fechaBuscar === 'hoy') fechaBuscar = getLocalISODate(0);
+                    else if (fechaBuscar === 'mañana' || fechaBuscar === 'manana') fechaBuscar = getLocalISODate(1);
+                    
+                    const citasFecha = citas.filter(c => c.fecha === fechaBuscar);
+                    if (citasFecha.length === 0) return `No hay citas programadas para la fecha ${fechaBuscar}.`;
+                    
+                    const todosClientes = await window.dataManager.obtenerClientes();
+                    const resumenCitas = citasFecha.map(cita => {
+                        const cli = todosClientes.find(c => c.id === cita.clienteId);
+                        const nombreCli = cli ? cli.nombre : 'Cliente Desconocido';
+                        const estadoStr = cita.estado ? `(${cita.estado})` : '';
+                        return `- ${cita.hora}: ${nombreCli} ${estadoStr}`;
+                    }).join('\n');
+                    
+                    return `Citas encontradas para el ${fechaBuscar}:\n${resumenCitas}`;
+                }
+
+                case 'cancelarCita': {
+                    if (!args.cliente) return "Error: Falta el nombre del cliente. Pregunta al usuario de quién es la cita a cancelar.";
+                    const allCitas = await window.dataManager.obtenerCitas();
+                    const allClientes = await window.dataManager.obtenerClientes();
+                    
+                    const clienteTarget = allClientes.find(c => c.nombre.toLowerCase().includes(args.cliente.toLowerCase()));
+                    if (!clienteTarget) return `Error: No se encontró a ningún cliente llamado ${args.cliente} en la base de datos.`;
+                    
+                    const hoyStr = new Date().toISOString().split('T')[0];
+                    const citasCliente = allCitas.filter(c => c.clienteId === clienteTarget.id && c.fecha >= hoyStr && c.estado !== 'cancelada');
+                    
+                    if (citasCliente.length === 0) return `Error: El cliente ${clienteTarget.nombre} no tiene citas pendientes para cancelar desde hoy en adelante.`;
+                    
+                    await window.dataManager.cancelarCita(citasCliente[0].id);
+                    return `Se ha cancelado correctamente la cita de ${clienteTarget.nombre} que estaba programada para el ${citasCliente[0].fecha} a las ${citasCliente[0].hora}.`;
+                }
+
+                default:
+                    return `Error: La herramienta ${nombre} no existe.`;
+            }
+        } catch (error) {
+            console.error(`Error interno en tool ${nombre}:`, error);
+            return `Error interno al ejecutar la herramienta: ${error.message}`;
         }
     }
 
@@ -468,31 +321,6 @@ class ChatbotManager {
         this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
     }
 
-    cargarSugerenciasRapidas() {
-        const container = document.getElementById('sugerencias-rapidas');
-        if (!container) return;
-
-        const sugerencias = [
-            { icono: '📅', texto: 'Nueva cita', comando: 'Pon una cita a María mañana a las 11:00' },
-            { icono: '👤', texto: 'Nueva clienta', comando: 'nueva clienta: Rosa Pérez' },
-            { icono: '👧', texto: 'Mis empleadas', comando: '¿Cuántas empleadas tengo?' },
-            { icono: '💰', texto: 'Ingresos hoy', comando: '¿Cuánto he ganado hoy?' },
-        ];
-
-        container.innerHTML = sugerencias.map(s => `
-            <button class="sugerencia-rapida glass hover:bg-[rgba(43,147,166,0.15)] border border-[rgba(43,147,166,0.3)] text-slate-300 hover:text-white px-4 py-2 rounded-lg text-xs font-medium transition flex flex-col items-center gap-1">
-                <div class="text-lg">${s.icono}</div>
-                <div>${s.texto}</div>
-            </button>
-        `).join('');
-
-        document.querySelectorAll('.sugerencia-rapida').forEach((btn, idx) => {
-            btn.addEventListener('click', () => {
-                this.chatInput.value = sugerencias[idx].comando;
-                this.chatInput.focus();
-            });
-        });
-    }
 
     escapeHtml(texto) {
         const div = document.createElement('div');

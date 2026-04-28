@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>`n    <style id="auth-loading">body{visibility:hidden!important}</style>
     <meta charset="UTF-8">
@@ -65,15 +65,8 @@
                         <i class="fas fa-robot"></i> Inteligencia de negocio
                     </span>
                 </div>
-                <div class="mt-8 flex h-[520px] flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
-                    <div id="chat-messages" class="flex-1 space-y-4 overflow-y-auto p-5"></div>
-                    <form id="chat-form" class="border-t border-slate-200 bg-white p-4">
-                        <label class="sr-only" for="chat-input">Escribe tu mensaje</label>
-                        <div class="flex gap-3">
-                            <input id="chat-input" type="text" placeholder="Ej: Crear cita para Cliente X mañana a las 10:00" class="w-full rounded-full border border-slate-200 bg-slate-100 px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" />
-                            <button type="submit" class="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition">Enviar</button>
-                        </div>
-                    </form>
+                <div id="chatbot-container" class="mt-8 flex h-[520px] flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50">
+                    <!-- Aquí se inyectará el diseño dinámico del ChatbotManager -->
                 </div>
                 <div class="mt-6 grid gap-3 sm:grid-cols-3">
                     <button type="button" onclick="addQuick('Crear cita para Cliente A mañana a las 10:00 para revisión')" class="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Crear cita mañana</button>
@@ -86,17 +79,29 @@
 
         <script type="module" src="../logic/auth.js"></script>
     <script defer src="../logic/chatbot.js"></script>
-    <script>
-        // Función global para quick commands desde los botones del chatbot
-        function addQuick(texto) {
-            const input = document.getElementById('chat-input');
-            if (input) {
-                input.value = texto;
-                input.focus();
-            }
-        }
-    </script>
     <script defer src="../logic/navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Instanciar la nueva clase ChatbotManager de tu compañero
+            setTimeout(() => {
+                if (typeof ChatbotManager !== 'undefined') {
+                    const manager = new ChatbotManager(window.navManager);
+                    const container = document.getElementById('chatbot-container');
+                    container.innerHTML = manager.render();
+                    manager.setupListeners();
+                }
+            }, 100);
+            
+            // Función global para botones rápidos
+            window.addQuick = function(texto) {
+                const input = document.getElementById('chat-input');
+                if (input) {
+                    input.value = texto;
+                    input.focus();
+                }
+            };
+        });
+    </script>
 
 </body>
 </html>
