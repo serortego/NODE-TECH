@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NODE TECH | Automatización inteligente para negocios</title>
+    <title>NODE TECH | Software de gestión para negocios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -157,7 +157,7 @@
         /* ── Ticker ────────────────────────────────────────── */
         @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
         .ticker-wrap { overflow: hidden; }
-        .ticker-inner { animation: ticker 30s linear infinite; white-space: nowrap; will-change: transform; }
+        .ticker-inner { animation: ticker 34s linear infinite; white-space: nowrap; will-change: transform; }
 
         /* ── Navbar scroll ─────────────────────────────────── */
         .nav-glass {
@@ -180,9 +180,41 @@
         /* ── Progress bar fill ─────────────────────────────── */
         @keyframes barFill { from{width:0} to{width:var(--w)} }
         .bar-fill { animation: barFill 1.4s .3s ease both; }
+
+        /* ── Odontograma styles ────────────────────────────── */
+        .tooth {
+            width: 28px; height: 32px;
+            border-radius: 6px 6px 10px 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+            position: relative;
+        }
+        .tooth:hover { transform: scale(1.12); border-color: rgba(56,189,248,.6); }
+        .tooth-sano     { background: rgba(255,255,255,0.05); }
+        .tooth-tratado  { background: rgba(43,147,166,0.28);  border-color: rgba(43,147,166,.5) !important; }
+        .tooth-caries   { background: rgba(251,146,60,0.25);  border-color: rgba(251,146,60,.5) !important; }
+        .tooth-corona   { background: rgba(139,92,246,0.25);  border-color: rgba(139,92,246,.5) !important; }
+        .tooth-ausente  { background: rgba(239,68,68,0.15);   border-color: rgba(239,68,68,.35) !important; opacity: .55; }
+        .tooth-implante { background: rgba(52,211,153,0.22);  border-color: rgba(52,211,153,.5) !important; }
+        .tooth-inferior { border-radius: 10px 10px 6px 6px; }
+
+        /* ── Specialty card ────────────────────────────────── */
+        .spec-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+        }
+        .spec-card:hover { transform: translateY(-4px); border-color: rgba(43,147,166,.4); box-shadow: 0 16px 44px rgba(43,147,166,.12); }
+
     </style>
 </head>
 <body class="antialiased">
+
 
 <!-- ═══════════════════════════════════════════════════
      NAVBAR
@@ -195,16 +227,17 @@
         </a>
 
         <nav class="hidden lg:flex items-center gap-8 text-sm text-slate-400" aria-label="Navegación principal">
-            <a href="#como-funciona" class="hover:text-white transition">Producto</a>
-            <a href="#beneficios"    class="hover:text-white transition">Beneficios</a>
-            <a href="#precios"       class="hover:text-white transition">Precios</a>
-            <a href="#testimonios"   class="hover:text-white transition">Clientes</a>
+            <a href="#funcionalidades" class="hover:text-white transition">Funcionalidades</a>
+            <a href="#sectores"       class="hover:text-white transition">Sectores</a>
+            <a href="#beneficios"      class="hover:text-white transition">Beneficios</a>
+            <a href="#precios"         class="hover:text-white transition">Precios</a>
+            <a href="#clinicas"        class="hover:text-white transition">Testimonios</a>
         </nav>
 
         <div class="hidden lg:flex items-center gap-3">
             <a href="sign_up.html" class="btn-secondary rounded-full px-5 py-2.5 text-sm font-medium text-white">Entrar</a>
             <a href="sign_up.html" class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold text-white arrow-cta">
-                Empezar gratis <i class="fas fa-arrow-right text-xs ml-1"></i>
+                Prueba gratis <i class="fas fa-arrow-right text-xs ml-1"></i>
             </a>
         </div>
 
@@ -215,13 +248,14 @@
 
     <!-- Mobile menu -->
     <div id="mobile-menu" class="lg:hidden hidden glass border-t px-5 py-5 space-y-3" style="border-color:rgba(255,255,255,.07)">
-        <a href="#como-funciona" class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Producto</a>
-        <a href="#beneficios"    class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Beneficios</a>
-        <a href="#precios"       class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Precios</a>
-        <a href="#testimonios"   class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Clientes</a>
+        <a href="#funcionalidades" class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Funcionalidades</a>
+        <a href="#sectores"        class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Sectores</a>
+        <a href="#beneficios"      class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Beneficios</a>
+        <a href="#precios"         class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Precios</a>
+        <a href="#clinicas"        class="block text-slate-300 hover:text-white py-2 text-sm transition mobile-close">Testimonios</a>
         <div class="grid gap-3 pt-3" style="border-top:1px solid rgba(255,255,255,.07)">
             <a href="sign_up.html" class="btn-secondary rounded-full px-5 py-3 text-sm font-medium text-white text-center">Entrar</a>
-            <a href="sign_up.html" class="btn-primary rounded-full px-5 py-3 text-sm font-semibold text-white text-center">Empezar gratis</a>
+            <a href="sign_up.html" class="btn-primary rounded-full px-5 py-3 text-sm font-semibold text-white text-center">Prueba gratis</a>
         </div>
     </div>
 </header>
@@ -247,26 +281,26 @@
                             <span class="pulse-ring absolute inset-0 rounded-full" style="background:rgba(56,189,248,.55)"></span>
                             <span class="relative rounded-full h-2 w-2" style="background:#38BDF8"></span>
                         </span>
-                        Software para pymes · 100 % digital y seguro
+                        Software de gestión profesional · 100 % digital y seguro
                     </span>
                 </div>
 
                 <h1 class="h-enter-1 text-5xl sm:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.06] text-white">
                     Gestiona tu<br>
-                    <span class="text-gradient">empresa</span><br>
+                    <span class="text-gradient">negocio</span><br>
                     desde un solo<br>
                     <span class="text-gradient">lugar.</span>
                 </h1>
 
                 <p class="h-enter-2 text-lg text-slate-400 max-w-lg leading-relaxed">
-                    NODE reúne facturación, CRM, agenda, contabilidad y equipo en una sola plataforma diseñada para autónomos y pymes que quieren crecer sin caos.
+                    Agenda inteligente, ficha de clientes, gestión de equipo, presupuestos y facturación en una sola plataforma. Diseñada para que pases menos tiempo gestionando y más tiempo en lo que importa.
                 </p>
 
                 <div class="h-enter-3 flex flex-col sm:flex-row gap-4">
                     <a href="sign_up.html" class="btn-primary arrow-cta rounded-full px-7 py-4 text-sm font-semibold text-white inline-flex items-center justify-center gap-2">
-                        Empezar gratis <i class="fas fa-arrow-right text-xs"></i>
+                        Prueba 14 días gratis <i class="fas fa-arrow-right text-xs"></i>
                     </a>
-                    <a href="#como-funciona" class="btn-secondary rounded-full px-7 py-4 text-sm font-medium text-slate-200 inline-flex items-center justify-center gap-2">
+                    <a href="#funcionalidades" class="btn-secondary rounded-full px-7 py-4 text-sm font-medium text-slate-200 inline-flex items-center justify-center gap-2">
                         <i class="fas fa-play text-xs" style="color:#38BDF8"></i> Ver cómo funciona
                     </a>
                 </div>
@@ -274,21 +308,21 @@
                 <!-- Hero stats -->
                 <div class="h-enter-4 grid grid-cols-3 gap-3">
                     <div class="glass rounded-2xl p-3 text-center">
-                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="120" data-suffix="+">0+</p>
-                        <p class="text-xs text-slate-500 mt-1">Clientes activos</p>
+                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="200" data-suffix="+">0+</p>
+                        <p class="text-xs text-slate-500 mt-1">Negocios activos</p>
                     </div>
                     <div class="glass rounded-2xl p-3 text-center">
-                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="95" data-suffix="%">0%</p>
-                        <p class="text-xs text-slate-500 mt-1">Ahorro de tiempo</p>
+                        <p class="text-2xl font-bold text-white stat-glow counter" data-target="40" data-suffix="%">0%</p>
+                        <p class="text-xs text-slate-500 mt-1">Menos no-shows</p>
                     </div>
                     <div class="glass rounded-2xl p-3 text-center">
-                        <p class="text-2xl font-bold text-white" style="text-shadow:0 0 32px rgba(56,189,248,.5)">24/7</p>
-                        <p class="text-xs text-slate-500 mt-1">Soporte incluido</p>
+                        <p class="text-2xl font-bold text-white" style="text-shadow:0 0 32px rgba(56,189,248,.5)">RGPD</p>
+                        <p class="text-xs text-slate-500 mt-1">Datos protegidos</p>
                     </div>
                 </div>
             </div>
 
-            <!-- App mockup -->
+            <!-- App mockup — dental dashboard -->
             <div class="h-enter-5 relative flex justify-center lg:justify-end px-6 lg:px-0">
                 <div class="float relative w-full max-w-md">
 
@@ -300,70 +334,77 @@
                             <span class="h-2.5 w-2.5 rounded-full" style="background:rgba(234,179,8,.55)"></span>
                             <span class="h-2.5 w-2.5 rounded-full" style="background:rgba(34,197,94,.55)"></span>
                             <span class="ml-3 flex-1 rounded-full h-5 text-[10px] text-slate-500 flex items-center px-3" style="background:rgba(255,255,255,.05)">
-                                app.nodetech.es
+                                clinica.nodetech.es
                             </span>
                         </div>
 
                         <!-- User header -->
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Panel principal</p>
-                                <p class="text-white font-semibold text-sm mt-0.5">Buenos días, Sergio 👋</p>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Panel clínico</p>
+                                <p class="text-white font-semibold text-sm mt-0.5">Buenos días, Miguel 👋</p>
                             </div>
                             <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                                 style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">S</div>
+                                 style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">G</div>
                         </div>
 
                         <!-- KPIs -->
                         <div class="grid grid-cols-3 gap-2">
                             <div class="glass rounded-xl p-3">
-                                <p class="text-[10px] text-slate-500">Ingresos</p>
-                                <p class="text-white font-bold text-sm mt-1">€24.8K</p>
-                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +12%</p>
+                                <p class="text-[10px] text-slate-500">Hoy</p>
+                                <p class="text-white font-bold text-sm mt-1">12 citas</p>
+                                <p class="text-[10px] mt-0.5" style="color:#38BDF8">3 salas</p>
                             </div>
                             <div class="glass rounded-xl p-3">
                                 <p class="text-[10px] text-slate-500">Clientes</p>
-                                <p class="text-white font-bold text-sm mt-1">128</p>
-                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +3 hoy</p>
+                                <p class="text-white font-bold text-sm mt-1">847</p>
+                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +4 este mes</p>
                             </div>
                             <div class="glass rounded-xl p-3">
-                                <p class="text-[10px] text-slate-500">Tareas</p>
-                                <p class="text-white font-bold text-sm mt-1">92%</p>
-                                <p class="text-[10px] mt-0.5" style="color:#38BDF8">completadas</p>
+                                <p class="text-[10px] text-slate-500">Facturado</p>
+                                <p class="text-white font-bold text-sm mt-1">€8.4K</p>
+                                <p class="text-[10px] mt-0.5" style="color:#34d399">↑ +18%</p>
                             </div>
                         </div>
 
-                        <!-- Mini chart -->
+                        <!-- Agenda del día -->
                         <div class="glass rounded-xl p-3">
-                            <div class="flex items-center justify-between mb-3">
-                                <p class="text-[11px] text-slate-400 font-medium">Facturación — 2026</p>
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-[11px] text-slate-400 font-medium">Agenda de hoy</p>
                                 <span class="text-[10px] glass rounded-full px-2 py-0.5" style="color:#38BDF8">● En vivo</span>
                             </div>
-                            <div class="flex items-end gap-1 h-12">
-                                <div class="flex-1 rounded-t" style="height:42%;background:rgba(43,147,166,.32)"></div>
-                                <div class="flex-1 rounded-t" style="height:58%;background:rgba(43,147,166,.42)"></div>
-                                <div class="flex-1 rounded-t" style="height:48%;background:rgba(43,147,166,.32)"></div>
-                                <div class="flex-1 rounded-t" style="height:72%;background:rgba(43,147,166,.42)"></div>
-                                <div class="flex-1 rounded-t" style="height:62%;background:rgba(43,147,166,.32)"></div>
-                                <div class="flex-1 rounded-t" style="height:85%;background:rgba(56,189,248,.72)"></div>
-                                <div class="flex-1 rounded-t" style="height:68%;background:rgba(43,147,166,.32)"></div>
-                                <div class="flex-1 rounded-t" style="height:95%;background:rgba(56,189,248,.9)"></div>
+                            <div class="space-y-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] text-slate-500 w-10">09:00</span>
+                                    <span class="flex-1 text-[11px] text-slate-300 truncate">M. López — Limpieza</span>
+                                    <span class="text-[9px] rounded-full px-2 py-0.5" style="background:rgba(52,211,153,.15);color:#34d399">✓</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] text-slate-500 w-10">10:30</span>
+                                    <span class="flex-1 text-[11px] text-white truncate font-medium">J. Fernández — Ortodoncia</span>
+                                    <span class="text-[9px] rounded-full px-2 py-0.5" style="background:rgba(56,189,248,.15);color:#38BDF8">Ahora</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[10px] text-slate-500 w-10">12:00</span>
+                                    <span class="flex-1 text-[11px] text-slate-400 truncate">A. Martín — Implante</span>
+                                    <span class="text-[9px] rounded-full px-2 py-0.5" style="background:rgba(255,255,255,.06);color:#64748b">Pdte.</span>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Module quick links -->
                         <div class="grid grid-cols-4 gap-2">
                             <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
-                                <i class="fas fa-file-invoice-dollar text-sm" style="color:#38BDF8"></i>
-                                <p class="text-[9px] text-slate-400 mt-1">Facturas</p>
-                            </button>
-                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
-                                <i class="fas fa-users text-blue-400 text-sm"></i>
-                                <p class="text-[9px] text-slate-400 mt-1">CRM</p>
+                                <i class="fas fa-tooth text-sm" style="color:#38BDF8"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">Ficha</p>
                             </button>
                             <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
                                 <i class="fas fa-calendar-alt text-purple-400 text-sm"></i>
                                 <p class="text-[9px] text-slate-400 mt-1">Agenda</p>
+                            </button>
+                            <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
+                                <i class="fas fa-file-invoice-dollar text-blue-400 text-sm"></i>
+                                <p class="text-[9px] text-slate-400 mt-1">Presup.</p>
                             </button>
                             <button class="glass rounded-xl p-2 text-center card-lift cursor-pointer">
                                 <i class="fas fa-robot text-emerald-400 text-sm"></i>
@@ -372,34 +413,34 @@
                         </div>
                     </div>
 
-                    <!-- Floating notification -->
-                    <div class="float-a absolute -top-5 -right-4 glass rounded-2xl p-3 z-10" style="border-color:rgba(52,211,153,.25);min-width:168px">
+                    <!-- Floating notification — nueva cita -->
+                    <div class="float-a absolute -top-5 -right-4 glass rounded-2xl p-3 z-10" style="border-color:rgba(52,211,153,.25);min-width:176px">
                         <div class="flex items-center gap-2">
                             <div class="h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(52,211,153,.18)">
-                                <i class="fas fa-check text-xs" style="color:#34d399"></i>
+                                <i class="fas fa-calendar-check text-xs" style="color:#34d399"></i>
                             </div>
                             <div>
-                                <p class="text-white text-[11px] font-medium">Factura cobrada</p>
-                                <p class="text-slate-500 text-[10px]">€1.240 · hace 2 min</p>
+                                <p class="text-white text-[11px] font-medium">Nueva cita confirmada</p>
+                                <p class="text-slate-500 text-[10px]">C. Ruiz · Mañana 09:30</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Floating task card -->
-                    <div class="float-b absolute -bottom-5 -left-5 glass rounded-2xl p-3 z-10" style="border-color:rgba(139,92,246,.2);min-width:172px">
-                        <p class="text-[10px] text-slate-500 mb-2">Tareas pendientes</p>
+                    <!-- Floating — recordatorio revisión -->
+                    <div class="float-b absolute -bottom-5 -left-5 glass rounded-2xl p-3 z-10" style="border-color:rgba(251,146,60,.2);min-width:180px">
+                        <p class="text-[10px] text-slate-500 mb-2">Recordatorios enviados</p>
                         <div class="space-y-1.5">
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-check-circle text-xs" style="color:#38BDF8"></i>
-                                <span class="text-[11px] text-slate-300">Revisar factura #42</span>
+                                <i class="fas fa-sms text-xs text-amber-400"></i>
+                                <span class="text-[11px] text-slate-300">P. Sánchez · revisión 6m</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <i class="fas fa-check-circle text-xs" style="color:#38BDF8"></i>
-                                <span class="text-[11px] text-slate-300">Cita con Cliente A</span>
+                                <i class="fas fa-envelope text-xs text-amber-400"></i>
+                                <span class="text-[11px] text-slate-300">L. Torres · ortodoncia</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <i class="far fa-circle text-xs text-slate-600"></i>
-                                <span class="text-[11px] text-slate-500">Informe mensual</span>
+                                <i class="fas fa-sms text-xs" style="color:#38BDF8"></i>
+                                <span class="text-[11px] text-slate-400">+14 clientes hoy</span>
                             </div>
                         </div>
                     </div>
@@ -419,37 +460,37 @@
      TICKER — Social proof strip
 ════════════════════════════════════════════════════ -->
 <div class="py-9 ticker-wrap" style="border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05)">
-    <p class="text-center text-[10px] text-slate-600 uppercase tracking-[.25em] mb-5">Empresas que ya usan NODE</p>
+    <p class="text-center text-[10px] text-slate-600 uppercase tracking-[.25em] mb-5">Negocios que ya gestionan con NODE</p>
     <div class="ticker-inner inline-flex gap-14 text-slate-600 text-sm font-semibold">
-        <span>Nova Consulting</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>SmartCommerce</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>BitMarket</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>FlexWork</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>TechSolutions</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>GrowthLab</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>Nexus Studios</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Clínica Salud Madrid</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Taller Mecánico Norte</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Peluquería Style BCN</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Fisioterapia Centro</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Optica Visio Valencia</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Asesoría Gómez</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Centro Veterinario Sur</span><span style="color:rgba(43,147,166,.4)">·</span>
         <!-- duplicate for seamless loop -->
-        <span>Nova Consulting</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>SmartCommerce</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>BitMarket</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>FlexWork</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>TechSolutions</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>GrowthLab</span><span style="color:rgba(43,147,166,.4)">·</span>
-        <span>Nexus Studios</span>
+        <span>Clínica Salud Madrid</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Taller Mecánico Norte</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Peluquería Style BCN</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Fisioterapia Centro</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Optica Visio Valencia</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Asesoría Gómez</span><span style="color:rgba(43,147,166,.4)">·</span>
+        <span>Centro Veterinario Sur</span>
     </div>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════
-     HOW IT WORKS — 3 Steps
+     HOW IT WORKS — 3 Pasos clínicos
 ════════════════════════════════════════════════════ -->
 <section id="como-funciona" class="py-28 px-5 sm:px-8">
     <div class="mx-auto max-w-7xl">
 
         <div class="text-center space-y-4 mb-20 reveal">
             <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Cómo funciona</span>
-            <h2 class="text-4xl sm:text-5xl font-bold text-white">Tres pasos para digitalizar<br>tu negocio.</h2>
-            <p class="text-slate-400 max-w-lg mx-auto">Sin configuración complicada, sin migración dolorosa. Estarás operativo en menos de 24 horas.</p>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Del primer contacto<br>al cierre, sin papel.</h2>
+            <p class="text-slate-400 max-w-lg mx-auto">Todo el ciclo del cliente digitalizado. Ficha, servicio, cobro y seguimiento en un solo sistema.</p>
         </div>
 
         <div class="grid gap-5 lg:grid-cols-3">
@@ -460,18 +501,18 @@
                     <i class="fas fa-user-plus" style="color:#38BDF8"></i>
                 </div>
                 <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">01</p>
-                <h3 class="text-xl font-bold text-white mb-3">Crea tu cuenta</h3>
-                <p class="text-slate-400 text-sm leading-relaxed">Regístrate con email o Google en segundos. Sin tarjeta de crédito. Acceso inmediato a todos los módulos.</p>
+                <h3 class="text-xl font-bold text-white mb-3">Registra al cliente</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Crea la ficha completa: datos de contacto, servicios contratados y toda la información relevante. Todo en segundos.</p>
             </div>
 
             <div class="glass rounded-3xl p-8 card-lift reveal rd2">
                 <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-6"
-                     style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2)">
-                    <i class="fas fa-sliders text-blue-300"></i>
+                     style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2)">
+                    <i class="fas fa-chart-line text-purple-300"></i>
                 </div>
                 <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">02</p>
-                <h3 class="text-xl font-bold text-white mb-3">Configura tu empresa</h3>
-                <p class="text-slate-400 text-sm leading-relaxed">Añade clientes, productos y equipo. El asistente IA te guía paso a paso para no perderte nada.</p>
+                <h3 class="text-xl font-bold text-white mb-3">Planifica y presupuesta</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Crea el presupuesto con los servicios que necesita el cliente. Precio detallado y validación en un clic.</p>
             </div>
 
             <div class="glass rounded-3xl p-8 card-lift reveal rd3">
@@ -480,8 +521,8 @@
                     <i class="fas fa-rocket text-emerald-400"></i>
                 </div>
                 <p class="text-5xl font-bold mb-4 text-gradient" style="opacity:.45">03</p>
-                <h3 class="text-xl font-bold text-white mb-3">Gestiona y escala</h3>
-                <p class="text-slate-400 text-sm leading-relaxed">Factura, gestiona citas, controla gastos y consulta informes. Todo desde un único panel, en cualquier dispositivo.</p>
+                <h3 class="text-xl font-bold text-white mb-3">Gestiona y fideliza</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Agenda citas, cobra al instante, envía recordatorios automáticos y programa las próximas visitas para que ningún cliente se pierda.</p>
             </div>
 
         </div>
@@ -493,29 +534,30 @@
 
 
 <!-- ═══════════════════════════════════════════════════
-     MODULES — Feature grid
+     MODULES — Módulos clínicos
 ════════════════════════════════════════════════════ -->
-<section id="modulos" class="py-28 px-5 sm:px-8">
+<section id="funcionalidades" class="py-28 px-5 sm:px-8">
     <div class="mx-auto max-w-7xl">
 
         <div class="text-center space-y-4 mb-20 reveal">
             <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Módulos</span>
-            <h2 class="text-4xl sm:text-5xl font-bold text-white">Todo conectado.<br>Nada que instalar.</h2>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Todo lo que necesita<br>tu negocio. Nada más.</h2>
+            <p class="text-slate-400 max-w-lg mx-auto">Cada módulo pensado para el flujo real de tu negocio. Integrados entre sí desde el primer día.</p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 
-            <!-- Facturación — wide on sm -->
+            <!-- Historia clínica — wide on sm -->
             <div class="glass rounded-3xl p-7 card-lift reveal rd1 sm:col-span-2 xl:col-span-1">
                 <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(43,147,166,.18)">
-                    <i class="fas fa-file-invoice-dollar" style="color:#38BDF8"></i>
+                    <i class="fas fa-tooth" style="color:#38BDF8"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Facturación inteligente</h3>
-                <p class="text-slate-400 text-sm mb-5">Crea y envía facturas profesionales en segundos. Plantillas, recordatorios y cobros automáticos.</p>
+                <h3 class="text-lg font-bold text-white mb-2">Ficha de clientes digital</h3>
+                <p class="text-slate-400 text-sm mb-5">Ficha completa por cliente: datos de contacto, historial de visitas, notas y documentos. Sin papel, siempre accesible.</p>
                 <div>
-                    <div class="flex justify-between text-xs text-slate-500 mb-1.5"><span>Facturas emitidas este mes</span><span style="color:#38BDF8">87%</span></div>
+                    <div class="flex justify-between text-xs text-slate-500 mb-1.5"><span>Fichas digitalizadas</span><span style="color:#38BDF8">94%</span></div>
                     <div class="h-1.5 rounded-full" style="background:rgba(255,255,255,.07)">
-                        <div class="h-1.5 rounded-full bar-fill" style="--w:87%;background:linear-gradient(90deg,#2B93A6,#38BDF8)"></div>
+                        <div class="h-1.5 rounded-full bar-fill" style="--w:94%;background:linear-gradient(90deg,#2B93A6,#38BDF8)"></div>
                     </div>
                 </div>
             </div>
@@ -524,32 +566,32 @@
                 <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(139,92,246,.14)">
                     <i class="fas fa-calendar-alt text-purple-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Agenda y citas</h3>
-                <p class="text-slate-400 text-sm">Gestiona citas, asigna empleados y recibe recordatorios automáticos sin esfuerzo.</p>
+                <h3 class="text-lg font-bold text-white mb-2">Agenda multi-sala</h3>
+                <p class="text-slate-400 text-sm">Vista de día, semana o mes por sala y por empleado. Gestión de huecos, confirmaciones y lista de espera integrada.</p>
             </div>
 
             <div class="glass rounded-3xl p-7 card-lift reveal rd3">
-                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(59,130,246,.14)">
-                    <i class="fas fa-users text-blue-400"></i>
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(251,146,60,.14)">
+                    <i class="fas fa-file-medical-alt text-orange-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">CRM y ventas</h3>
-                <p class="text-slate-400 text-sm">Pipeline de oportunidades, seguimiento de clientes y tareas de ventas en embudo visual.</p>
+                <h3 class="text-lg font-bold text-white mb-2">Presupuestos y cobros</h3>
+                <p class="text-slate-400 text-sm">Crea presupuestos detallados por servicio, asigna prioridades y compártelos con el cliente en PDF.</p>
             </div>
 
             <div class="glass rounded-3xl p-7 card-lift reveal rd1">
                 <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(52,211,153,.11)">
-                    <i class="fas fa-chart-line text-emerald-400"></i>
+                    <i class="fas fa-file-invoice-dollar text-emerald-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Contabilidad</h3>
-                <p class="text-slate-400 text-sm">Registra gastos, controla IVA y genera informes contables al instante.</p>
+                <h3 class="text-lg font-bold text-white mb-2">Facturación y cobros</h3>
+                <p class="text-slate-400 text-sm">Emite facturas, registra pagos y lleva el control de ingresos y gastos. Cierre de caja diario automatizado.</p>
             </div>
 
             <div class="glass rounded-3xl p-7 card-lift reveal rd2">
-                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(251,146,60,.11)">
-                    <i class="fas fa-people-carry-box text-orange-400"></i>
+                <div class="h-11 w-11 rounded-xl flex items-center justify-center mb-5" style="background:rgba(59,130,246,.14)">
+                    <i class="fas fa-boxes-stacked text-blue-400"></i>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-2">Inventario y compras</h3>
-                <p class="text-slate-400 text-sm">Stock sincronizado con ventas, alertas de reposición y proveedores centralizados.</p>
+                <h3 class="text-lg font-bold text-white mb-2">Inventario y materiales</h3>
+                <p class="text-slate-400 text-sm">Control de materiales y productos. Alertas de stock mínimo y gestión de proveedores centralizada.</p>
             </div>
 
             <div class="glass rounded-3xl p-7 card-lift reveal rd3">
@@ -557,7 +599,7 @@
                     <i class="fas fa-robot" style="color:#38BDF8"></i>
                 </div>
                 <h3 class="text-lg font-bold text-white mb-2">Asistente IA</h3>
-                <p class="text-slate-400 text-sm">Consulta datos, genera documentos y obtén recomendaciones en lenguaje natural.</p>
+                <p class="text-slate-400 text-sm">Busca clientes, consulta historial, genera informes con lenguaje natural. Disponible 24/7.</p>
             </div>
 
         </div>
@@ -569,7 +611,216 @@
 
 
 <!-- ═══════════════════════════════════════════════════
-     BENEFITS + METRICS
+     HISTORIAL DE CLIENTE — Sección genérica
+════════════════════════════════════════════════════ -->
+<section id="historial" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+        <div class="grid gap-16 lg:grid-cols-2 items-center">
+
+            <!-- Visual mockup — client history card -->
+            <div class="reveal order-2 lg:order-1">
+                <div class="glass-bright rounded-3xl p-8 mockup-shadow">
+                    <!-- Client header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 mb-1">Ficha de cliente</p>
+                            <p class="text-white font-semibold">María López Romero</p>
+                            <p class="text-slate-500 text-xs mt-0.5">Última visita: 15 marzo 2026</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="glass rounded-xl px-3 py-1.5 text-[10px] font-semibold" style="color:#34d399">Activo</span>
+                            <button class="glass rounded-xl px-3 py-1.5 text-[10px] text-slate-400">Editar</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats row -->
+                    <div class="grid grid-cols-3 gap-3 mb-6">
+                        <div class="glass rounded-xl p-3 text-center">
+                            <p class="text-white font-bold text-lg">14</p>
+                            <p class="text-slate-500 text-[10px]">Visitas</p>
+                        </div>
+                        <div class="glass rounded-xl p-3 text-center">
+                            <p class="text-white font-bold text-lg">€840</p>
+                            <p class="text-slate-500 text-[10px]">Facturado</p>
+                        </div>
+                        <div class="glass rounded-xl p-3 text-center">
+                            <p class="font-bold text-lg" style="color:#34d399">★ 5.0</p>
+                            <p class="text-slate-500 text-[10px]">Valoración</p>
+                        </div>
+                    </div>
+
+                    <!-- Activity feed -->
+                    <p class="text-[9px] uppercase tracking-widest text-slate-600 mb-3">Últimas actividades</p>
+                    <div class="space-y-2">
+                        <div class="glass rounded-xl p-3 flex items-center gap-3">
+                            <div class="h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(52,211,153,.2)">
+                                <i class="fas fa-check text-[9px]" style="color:#34d399"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white text-xs font-medium truncate">Servicio completado</p>
+                                <p class="text-slate-500 text-[10px]">10 mar 2026</p>
+                            </div>
+                            <span class="text-xs font-semibold" style="color:#34d399">€60</span>
+                        </div>
+                        <div class="glass rounded-xl p-3 flex items-center gap-3">
+                            <div class="h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(56,189,248,.2)">
+                                <i class="fas fa-calendar text-[9px]" style="color:#38BDF8"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white text-xs font-medium truncate">Cita programada</p>
+                                <p class="text-slate-500 text-[10px]">20 mar 2026 · 11:00</p>
+                            </div>
+                            <span class="text-xs text-slate-400">pendiente</span>
+                        </div>
+                        <div class="glass rounded-xl p-3 flex items-center gap-3">
+                            <div class="h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(251,146,60,.2)">
+                                <i class="fas fa-file-invoice text-[9px] text-orange-400"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white text-xs font-medium truncate">Presupuesto enviado</p>
+                                <p class="text-slate-500 text-[10px]">8 mar 2026</p>
+                            </div>
+                            <span class="text-xs font-semibold text-orange-400">€120</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text -->
+            <div class="space-y-7 reveal rd2 order-1 lg:order-2">
+                <div>
+                    <span class="inline-block text-xs font-semibold uppercase tracking-[.25em] mb-4" style="color:#38BDF8">Ficha de cliente completa</span>
+                    <h2 class="text-4xl sm:text-5xl font-bold text-white">Toda la historia<br>de tu cliente,<br>en un solo lugar.</h2>
+                    <p class="mt-4 text-slate-400 leading-relaxed max-w-md">Visitas, servicios, pagos y notas en una sola ficha. Sin buscar en carpetas ni hojas de cálculo.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="glass rounded-2xl p-5 card-lift">
+                        <div class="flex items-start gap-4">
+                            <div class="h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(43,147,166,.18)">
+                                <i class="fas fa-history text-sm" style="color:#38BDF8"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm mb-1">Historial de actividad</h4>
+                                <p class="text-slate-400 text-sm">Cada visita, servicio y pago queda registrado con fecha y empleado responsable.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-2xl p-5 card-lift">
+                        <div class="flex items-start gap-4">
+                            <div class="h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(251,146,60,.18)">
+                                <i class="fas fa-bell text-orange-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm mb-1">Notas y alertas por cliente</h4>
+                                <p class="text-slate-400 text-sm">Añade notas internas, preferencias o recordatorios visibles en cada cita.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-2xl p-5 card-lift">
+                        <div class="flex items-start gap-4">
+                            <div class="h-9 w-9 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(139,92,246,.18)">
+                                <i class="fas fa-file-pdf text-purple-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-sm mb-1">Exporta a PDF en un clic</h4>
+                                <p class="text-slate-400 text-sm">Genera el informe del cliente con el historial de servicios y presupuestos aceptados.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     TIPOS DE NEGOCIO — Sección genérica
+════════════════════════════════════════════════════ -->
+<section id="sectores" class="py-28 px-5 sm:px-8">
+    <div class="mx-auto max-w-7xl">
+
+        <div class="text-center space-y-4 mb-16 reveal">
+            <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Sectores</span>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Adaptado a cada<br>tipo de negocio.</h2>
+            <p class="text-slate-400 max-w-lg mx-auto">Terminología, módulos y flujos configurados según tu sector. Sin desarrollos a medida.</p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div class="spec-card reveal rd1">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-5"
+                     style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.22)">
+                    <span style="font-size:1.4rem">🦷</span>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">Clínicas y salud</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Fichas de pacientes, historial clínico, agenda multi-consulta y facturación con cobros parciales.</p>
+                <ul class="mt-4 space-y-1.5 text-xs text-slate-500">
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Clínicas dentales y médicas</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Fisioterapia y estética</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Psicología y terapias</li>
+                </ul>
+            </div>
+
+            <div class="spec-card reveal rd2">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-5"
+                     style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.22)">
+                    <span style="font-size:1.4rem">🔧</span>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">Talleres y servicios</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Órdenes de trabajo, control de vehículos o equipos, historial de intervenciones y presupuestos.</p>
+                <ul class="mt-4 space-y-1.5 text-xs text-slate-500">
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Talleres mecánicos</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Reformas y construcción</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Servicios técnicos</li>
+                </ul>
+            </div>
+
+            <div class="spec-card reveal rd3">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-5"
+                     style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.22)">
+                    <span style="font-size:1.4rem">✂️</span>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">Belleza y bienestar</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Agenda por cabina o estilista, fichas de cliente con preferencias, bonos y fidelización.</p>
+                <ul class="mt-4 space-y-1.5 text-xs text-slate-500">
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Peluquerías y barberías</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Centros de estética</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Spas y masajes</li>
+                </ul>
+            </div>
+
+            <div class="spec-card reveal rd4">
+                <div class="h-12 w-12 rounded-2xl flex items-center justify-center mb-5"
+                     style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.22)">
+                    <span style="font-size:1.4rem">🏢</span>
+                </div>
+                <h3 class="text-base font-bold text-white mb-2">Profesionales y otros</h3>
+                <p class="text-slate-400 text-sm leading-relaxed">Gestión de clientes, agenda de reuniones, seguimiento de proyectos y facturación profesional.</p>
+                <ul class="mt-4 space-y-1.5 text-xs text-slate-500">
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Asesorías y consultoras</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Entrenadores y coaches</li>
+                    <li class="flex items-center gap-2"><i class="fas fa-check text-[10px]" style="color:#38BDF8"></i> Academias y formación</li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<div class="divider mx-8 sm:mx-20"></div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     BENEFITS + METRICS — Resultados en clínicas
 ════════════════════════════════════════════════════ -->
 <section id="beneficios" class="py-28 px-5 sm:px-8">
     <div class="mx-auto max-w-7xl">
@@ -579,52 +830,52 @@
             <div class="space-y-8 reveal">
                 <div>
                     <span class="inline-block text-xs font-semibold uppercase tracking-[.25em] mb-4" style="color:#38BDF8">Resultados reales</span>
-                    <h2 class="text-4xl sm:text-5xl font-bold text-white">Ahorra tiempo.<br>Elimina errores.<br>Crece más rápido.</h2>
-                    <p class="mt-4 text-slate-400 leading-relaxed max-w-md">Nuestros clientes reportan mejoras medibles en las primeras dos semanas de uso real.</p>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Menos tiempo<br>en gestión.<br>Más tiempo<br>en tu negocio.</h2>
+                    <p class="mt-4 text-slate-400 leading-relaxed max-w-md">Negocios reales reportan mejoras desde la primera semana de uso. Sin formación extensa.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="glass rounded-2xl p-6">
-                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="80" data-suffix="%">0%</p>
-                        <p class="text-slate-400 text-sm mt-2">Reducción en tareas manuales</p>
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="40" data-suffix="%">0%</p>
+                        <p class="text-slate-400 text-sm mt-2">Menos no-shows con recordatorios automáticos</p>
                     </div>
                     <div class="glass rounded-2xl p-6">
                         <p class="text-4xl font-bold text-white stat-glow counter" data-target="3" data-suffix="x">0x</p>
-                        <p class="text-slate-400 text-sm mt-2">Más velocidad en facturación</p>
+                        <p class="text-slate-400 text-sm mt-2">Más rápido crear un presupuesto para el cliente</p>
                     </div>
                     <div class="glass rounded-2xl p-6">
-                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="95" data-suffix="%">0%</p>
-                        <p class="text-slate-400 text-sm mt-2">Satisfacción de clientes</p>
+                        <p class="text-4xl font-bold text-white stat-glow counter" data-target="0" data-suffix=" papel">0</p>
+                        <p class="text-slate-400 text-sm mt-2">Fichas 100% digitales desde el primer día</p>
                     </div>
                     <div class="glass rounded-2xl p-6">
                         <p class="text-4xl font-bold text-white stat-glow counter" data-target="24" data-suffix="h">0h</p>
-                        <p class="text-slate-400 text-sm mt-2">Para estar operativo</p>
+                        <p class="text-slate-400 text-sm mt-2">Para estar completamente operativo</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Features list -->
+            <!-- Features list dental -->
             <div class="space-y-4 reveal rd2">
 
                 <div class="glass rounded-3xl p-6 card-lift">
                     <div class="flex items-start gap-4">
                         <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(43,147,166,.18)">
-                            <i class="fas fa-bolt text-sm" style="color:#38BDF8"></i>
+                            <i class="fas fa-bell text-sm" style="color:#38BDF8"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-white mb-1">Automatización de cobros</h4>
-                            <p class="text-slate-400 text-sm">Envía facturas periódicas, recuerda pagos y reduce impagos sin intervención manual.</p>
+                            <h4 class="font-bold text-white mb-1">Recordatorios automáticos</h4>
+                            <p class="text-slate-400 text-sm">SMS y email 24/48h antes de cada cita. Reduce cancelaciones tardías y optimiza la agenda sin intervención manual.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="glass rounded-3xl p-6 card-lift">
                     <div class="flex items-start gap-4">
-                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(59,130,246,.18)">
-                            <i class="fas fa-chart-pie text-blue-400 text-sm"></i>
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(251,146,60,.18)">
+                            <i class="fas fa-rotate text-orange-400 text-sm"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-white mb-1">Dashboard de decisión</h4>
-                            <p class="text-slate-400 text-sm">KPIs financieros, ventas y estado del equipo en tiempo real, sin hojas de cálculo.</p>
+                            <h4 class="font-bold text-white mb-1">Programa de revisiones</h4>
+                            <p class="text-slate-400 text-sm">El sistema recuerda automáticamente a cada cliente cuándo debe volver. Aumenta la fidelización sin esfuerzo.</p>
                         </div>
                     </div>
                 </div>
@@ -635,20 +886,20 @@
                             <i class="fas fa-shield-halved text-emerald-400 text-sm"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-white mb-1">Datos seguros y privados</h4>
-                            <p class="text-slate-400 text-sm">Cifrado, control de permisos por usuario y backups automáticos en la nube.</p>
+                            <h4 class="font-bold text-white mb-1">RGPD y secreto médico</h4>
+                            <p class="text-slate-400 text-sm">Cifrado de datos, consentimientos digitales y control de acceso por rol. Tu negocio siempre en regla.</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="glass rounded-3xl p-6 card-lift">
                     <div class="flex items-start gap-4">
-                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(251,146,60,.14)">
-                            <i class="fas fa-users-gear text-orange-400 text-sm"></i>
+                        <div class="h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center" style="background:rgba(59,130,246,.18)">
+                            <i class="fas fa-users-gear text-blue-400 text-sm"></i>
                         </div>
                         <div>
-                            <h4 class="font-bold text-white mb-1">Colaboración en equipo</h4>
-                            <p class="text-slate-400 text-sm">Asigna tareas, define roles y trabaja en tiempo real con tu equipo desde cualquier lugar.</p>
+                            <h4 class="font-bold text-white mb-1">Multi-usuario, multi-sede</h4>
+                            <p class="text-slate-400 text-sm">Cada empleado ve su agenda y sus clientes. El responsable ve todo el negocio desde un único panel.</p>
                         </div>
                     </div>
                 </div>
@@ -663,14 +914,14 @@
 
 
 <!-- ═══════════════════════════════════════════════════
-     TESTIMONIALS
+     TESTIMONIALS — Clínicas reales
 ════════════════════════════════════════════════════ -->
-<section id="testimonios" class="py-28 px-5 sm:px-8">
+<section id="clinicas" class="py-28 px-5 sm:px-8">
     <div class="mx-auto max-w-7xl">
 
         <div class="text-center space-y-4 mb-16 reveal">
             <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Testimonios</span>
-            <h2 class="text-4xl sm:text-5xl font-bold text-white">Empresas reales.<br>Resultados reales.</h2>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Negocios reales.<br>Resultados reales.</h2>
         </div>
 
         <div class="grid gap-5 md:grid-cols-3">
@@ -681,13 +932,13 @@
                     <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
                     <i class="fas fa-star text-yellow-400 text-xs"></i>
                 </div>
-                <p class="text-slate-300 text-sm leading-relaxed flex-1">"NODE nos permitió centralizar la facturación y el CRM en una sola app. Nuestro equipo gana tiempo y evita errores de comunicación."</p>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"La gestión de clientes ha cambiado completamente nuestra forma de trabajar. En segundos veo el historial completo de cualquier cliente y puedo actualizar el estado de sus servicios al instante."</p>
                 <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
                     <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                         style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">L</div>
+                         style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">A</div>
                     <div>
-                        <p class="font-semibold text-white text-sm">Laura Gómez</p>
-                        <p class="text-slate-500 text-xs">CFO · Nova Consulting</p>
+                        <p class="font-semibold text-white text-sm">Ana Castillo</p>
+                        <p class="text-slate-500 text-xs">Directora · Clínica Salud Madrid</p>
                     </div>
                 </div>
             </div>
@@ -698,13 +949,13 @@
                     <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
                     <i class="fas fa-star text-yellow-400 text-xs"></i>
                 </div>
-                <p class="text-slate-300 text-sm leading-relaxed flex-1">"La integración entre ventas y contabilidad es impresionante. Tenemos todo bajo control y podemos escalar sin aumentar costes."</p>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"Los recordatorios automáticos nos han reducido los no-shows un 38%. Además la gestión de materiales nos evita quedarnos sin stock en el momento más inoportuno."</p>
                 <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
                     <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                         style="background:linear-gradient(135deg,#1D4ED8,#2B93A6)">R</div>
+                         style="background:linear-gradient(135deg,#1D4ED8,#2B93A6)">M</div>
                     <div>
-                        <p class="font-semibold text-white text-sm">Raúl Pedraza</p>
-                        <p class="text-slate-500 text-xs">CEO · SmartCommerce</p>
+                        <p class="font-semibold text-white text-sm">Miguel Torres</p>
+                        <p class="text-slate-500 text-xs">Gestor · Taller Mecánico Norte, Barcelona</p>
                     </div>
                 </div>
             </div>
@@ -715,13 +966,13 @@
                     <i class="fas fa-star text-yellow-400 text-xs"></i><i class="fas fa-star text-yellow-400 text-xs"></i>
                     <i class="fas fa-star text-yellow-400 text-xs"></i>
                 </div>
-                <p class="text-slate-300 text-sm leading-relaxed flex-1">"El panel de informes es clarísimo. Los procesos internos son más rápidos y la adopción del equipo fue inmediata desde el primer día."</p>
+                <p class="text-slate-300 text-sm leading-relaxed flex-1">"Llevo 15 años con mi negocio y es el primer software que realmente se adapta a cómo trabajo. Los presupuestos, el asistente IA y la agenda me ahorran dos horas al día."</p>
                 <div class="flex items-center gap-3 mt-6 pt-5" style="border-top:1px solid rgba(255,255,255,.07)">
                     <div class="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                         style="background:linear-gradient(135deg,#7C3AED,#2B93A6)">M</div>
+                         style="background:linear-gradient(135deg,#7C3AED,#2B93A6)">S</div>
                     <div>
-                        <p class="font-semibold text-white text-sm">Marta Ruiz</p>
-                        <p class="text-slate-500 text-xs">Directora operativa · BitMarket</p>
+                        <p class="font-semibold text-white text-sm">Sara Vidal</p>
+                        <p class="text-slate-500 text-xs">Propietaria · Peluquería Style, Valencia</p>
                     </div>
                 </div>
             </div>
@@ -735,27 +986,28 @@
 
 
 <!-- ═══════════════════════════════════════════════════
-     PRICING
+     PRICING — Planes para clínicas
 ════════════════════════════════════════════════════ -->
 <section id="precios" class="py-28 px-5 sm:px-8">
     <div class="mx-auto max-w-7xl">
 
         <div class="text-center space-y-4 mb-16 reveal">
             <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">Precios</span>
-            <h2 class="text-4xl sm:text-5xl font-bold text-white">Planes claros.<br>Sin sorpresas.</h2>
-            <p class="text-slate-400">14 días de prueba gratuita en todos los planes. Sin tarjeta de crédito.</p>
+            <h2 class="text-4xl sm:text-5xl font-bold text-white">Planes claros<br>para tu negocio.</h2>
+            <p class="text-slate-400">14 días de prueba gratuita. Sin tarjeta de crédito. Cancela cuando quieras.</p>
         </div>
 
         <div class="grid gap-5 lg:grid-cols-3">
 
             <div class="glass rounded-3xl p-8 card-lift reveal rd1">
-                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Startup</p>
-                <div class="mb-6"><span class="text-5xl font-bold text-white">€29</span><span class="text-slate-400 text-sm">/mes</span></div>
-                <p class="text-slate-400 text-sm mb-8">Gestión básica para autónomos y pequeños equipos.</p>
+                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Starter</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€49</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">Para negocios pequeños con un solo responsable.</p>
                 <ul class="space-y-3 text-sm text-slate-300 mb-8">
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Facturación</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> CRM básico</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Agenda</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Ficha de clientes</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Agenda básica</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Presupuestos básicos</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Recordatorios SMS (50/mes)</li>
                     <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Soporte email</li>
                 </ul>
                 <a href="sign_up.html" class="btn-secondary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Empezar gratis</a>
@@ -764,33 +1016,50 @@
             <div class="plan-featured rounded-3xl p-8 card-lift reveal rd2 relative overflow-hidden">
                 <div class="absolute top-4 right-4 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
                      style="background:linear-gradient(135deg,#2B93A6,#38BDF8)">Más popular</div>
-                <p class="text-xs font-semibold uppercase tracking-[.2em] mb-6" style="color:#38BDF8">Growth</p>
-                <div class="mb-6"><span class="text-5xl font-bold text-white">€59</span><span class="text-slate-400 text-sm">/mes</span></div>
-                <p class="text-slate-400 text-sm mb-8">La opción ideal para empresas que quieren crecer rápido.</p>
+                <p class="text-xs font-semibold uppercase tracking-[.2em] mb-6" style="color:#38BDF8">Profesional</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€89</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">Para negocios con equipo de 2 a 5 personas.</p>
                 <ul class="space-y-3 text-sm text-slate-300 mb-8">
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Startup</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Contabilidad avanzada</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Gestión de inventario</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Starter</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Agenda multi-usuario (hasta 5)</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Presupuestos avanzados</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Facturación completa</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Control de inventario</li>
                     <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Asistente IA</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Informes avanzados</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> SMS ilimitados</li>
                 </ul>
                 <a href="sign_up.html" class="btn-primary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Empezar gratis</a>
             </div>
 
             <div class="glass rounded-3xl p-8 card-lift reveal rd3">
-                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Premium</p>
-                <div class="mb-6"><span class="text-5xl font-bold text-white">€99</span><span class="text-slate-400 text-sm">/mes</span></div>
-                <p class="text-slate-400 text-sm mb-8">Soporte dedicado y personalización para organizaciones grandes.</p>
+                <p class="text-xs font-semibold uppercase tracking-[.2em] text-slate-500 mb-6">Empresa</p>
+                <div class="mb-6"><span class="text-5xl font-bold text-white">€199</span><span class="text-slate-400 text-sm">/mes</span></div>
+                <p class="text-slate-400 text-sm mb-8">Para empresas con múltiples sedes o franquicias.</p>
                 <ul class="space-y-3 text-sm text-slate-300 mb-8">
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Growth</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Integraciones API</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Todo en Profesional</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Gestión multi-sede</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Dashboard consolidado</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> API de integración</li>
                     <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Onboarding dedicado</li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Soporte prioritario</li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check text-xs w-4" style="color:#38BDF8"></i> Soporte prioritario 24/7</li>
                 </ul>
                 <a href="sign_up.html" class="btn-secondary w-full rounded-full py-3 text-sm font-semibold text-white text-center block">Contactar</a>
             </div>
 
         </div>
+
+        <!-- Nota RGPD -->
+        <div class="mt-10 glass rounded-2xl p-6 flex items-center gap-5 reveal">
+            <div class="h-12 w-12 rounded-2xl flex-shrink-0 flex items-center justify-center"
+                 style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.22)">
+                <i class="fas fa-shield-halved text-emerald-400"></i>
+            </div>
+            <div>
+                <p class="text-white font-semibold text-sm mb-1">Cumplimiento RGPD y Protección de Datos</p>
+                <p class="text-slate-400 text-sm">Todos los planes incluyen cifrado de datos, gestión de consentimientos, control de acceso por rol y backups automáticos en servidores europeos. Tu negocio siempre en regla.</p>
+            </div>
+        </div>
+
     </div>
 </section>
 
@@ -805,19 +1074,25 @@
             <!-- Glow center -->
             <div class="glow-orb w-80 h-80" style="top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(43,147,166,.1)"></div>
             <div class="relative z-10 space-y-6">
-                <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">¿Listo para empezar?</span>
-                <h2 class="text-4xl sm:text-5xl font-bold text-white">Tu empresa merece una<br>gestión de primer nivel.</h2>
-                <p class="text-slate-400 max-w-md mx-auto leading-relaxed">Únete a más de 120 pymes que ya automatizan su gestión con NODE. Empieza gratis hoy mismo.</p>
+                <div class="flex justify-center mb-2">
+                    <div class="h-16 w-16 rounded-2xl flex items-center justify-center"
+                         style="background:rgba(43,147,166,.15);border:1px solid rgba(43,147,166,.3)">
+                        <i class="fas fa-tooth text-2xl" style="color:#38BDF8"></i>
+                    </div>
+                </div>
+                <span class="inline-block text-xs font-semibold uppercase tracking-[.25em]" style="color:#38BDF8">¿Lista tu clínica?</span>
+                <h2 class="text-4xl sm:text-5xl font-bold text-white">Tu clínica merece<br>un software a su altura.</h2>
+                <p class="text-slate-400 max-w-md mx-auto leading-relaxed">Númate a más de 200 negocios que ya digitalizan su gestión con NODE. Sin papel, sin caos, sin excusas.</p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center pt-2">
                     <a href="sign_up.html" class="btn-primary arrow-cta rounded-full px-8 py-4 text-sm font-semibold text-white inline-flex items-center justify-center gap-2">
-                        Empezar gratis ahora <i class="fas fa-arrow-right text-xs"></i>
+                        Prueba gratis 14 días <i class="fas fa-arrow-right text-xs"></i>
                     </a>
                     <a href="sign_up.html" class="btn-secondary rounded-full px-8 py-4 text-sm font-medium text-slate-200 inline-flex items-center justify-center gap-2">
                         <i class="fas fa-calendar-check text-xs" style="color:#38BDF8"></i>
-                        Pedir demo personalizada
+                        Pedir demo para mi clínica
                     </a>
                 </div>
-                <p class="text-slate-600 text-xs">Sin tarjeta de crédito · 14 días gratis · Cancela cuando quieras</p>
+                <p class="text-slate-600 text-xs">Sin tarjeta de crédito · 14 días gratis · Datos en servidores europeos</p>
             </div>
         </div>
     </div>
@@ -835,16 +1110,17 @@
                 <div class="mb-4">
                     <img src="../assets/logonodetech_inicio.png" alt="NODE TECH" class="h-24 w-auto">
                 </div>
-                <p class="text-slate-500 text-sm leading-relaxed max-w-xs">Software de gestión empresarial para equipos que buscan un crecimiento ordenado y más automatización.</p>
+                <p class="text-slate-500 text-sm leading-relaxed max-w-xs">Software de gestión para negocios. Clientes, agenda, equipo, presupuestos y facturación en una sola plataforma.</p>
             </div>
 
             <div>
                 <p class="text-white font-semibold text-sm mb-4">Producto</p>
                 <ul class="space-y-2 text-slate-500 text-sm">
-                    <li><a href="#modulos"       class="hover:text-slate-300 transition">Módulos</a></li>
-                    <li><a href="#precios"        class="hover:text-slate-300 transition">Precios</a></li>
-                    <li><a href="#testimonios"    class="hover:text-slate-300 transition">Clientes</a></li>
-                    <li><a href="sign_up.html"    class="hover:text-slate-300 transition">Demo gratuita</a></li>
+                    <li><a href="#funcionalidades"  class="hover:text-slate-300 transition">Funcionalidades</a></li>
+                    <li><a href="#sectores"         class="hover:text-slate-300 transition">Sectores</a></li>
+                    <li><a href="#historial"        class="hover:text-slate-300 transition">Ficha de cliente</a></li>
+                    <li><a href="#precios"          class="hover:text-slate-300 transition">Precios</a></li>
+                    <li><a href="sign_up.html"      class="hover:text-slate-300 transition">Demo gratuita</a></li>
                 </ul>
             </div>
 
@@ -866,6 +1142,7 @@
             <div class="flex gap-5 text-slate-600 text-sm">
                 <a href="#" class="hover:text-slate-400 transition">Privacidad</a>
                 <a href="#" class="hover:text-slate-400 transition">Términos</a>
+                <a href="#" class="hover:text-slate-400 transition">RGPD</a>
             </div>
         </div>
     </div>
@@ -875,7 +1152,6 @@
 <!-- ═══════════════════════════════════════════════════
      SCRIPTS
 ════════════════════════════════════════════════════ -->
-<script type="module" src="../logic/navigation.js"></script>
 <script>
     // ── Navbar glassmorphism on scroll ─────────────────────
     const navbar = document.getElementById('navbar');
@@ -920,7 +1196,7 @@
         const t0       = performance.now();
         const tick = (now) => {
             const p = Math.min((now - t0) / duration, 1);
-            const v = Math.floor((1 - Math.pow(1 - p, 3)) * target); // ease-out cubic
+            const v = Math.floor((1 - Math.pow(1 - p, 3)) * target);
             el.textContent = v + suffix;
             if (p < 1) requestAnimationFrame(tick);
             else el.textContent = target + suffix;
@@ -954,6 +1230,16 @@
                 mobileMenu.classList.add('hidden');
                 mobileIcon.className = 'fas fa-bars text-lg';
             }
+        });
+    });
+
+    // ── Tooth hover tooltip ─────────────────────────────────
+    document.querySelectorAll('.tooth').forEach(tooth => {
+        tooth.addEventListener('mouseenter', function() {
+            this.style.zIndex = '10';
+        });
+        tooth.addEventListener('mouseleave', function() {
+            this.style.zIndex = '';
         });
     });
 </script>

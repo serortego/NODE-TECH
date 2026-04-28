@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <style id="auth-loading">body{visibility:hidden!important}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NODE TECH</title>
+    <title>NODE TECH | Clínica Dental</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -156,80 +156,174 @@
         }
         .table-row:hover { background: rgba(255,255,255,0.04); }
         .bg-node-teal { background: #2B93A6; }
-    </style>
+
+        /* ── Dental badge ───────────────────────────────────── */
+        .dental-badge {
+            background: linear-gradient(135deg, rgba(43,147,166,0.2), rgba(56,189,248,0.1));
+            border: 1px solid rgba(43,147,166,0.35);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #38BDF8;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Nav section label ──────────────────────────────── */
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 4px 16px 2px;
+            margin-top: 8px;
+        }
+        /* ── Floating Chat Widget ───────────────────────────────── */
+        #chat-widget-btn {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-light) 100%);
+            box-shadow: 0 0 28px var(--teal-glow), 0 4px 16px rgba(0,0,0,0.5);
+            z-index: 200;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            border: none;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        #chat-widget-btn:hover { transform: scale(1.12); box-shadow: 0 0 44px rgba(56,189,248,.65); }
+        #chat-widget-btn.active { background: linear-gradient(135deg, var(--teal-light) 0%, var(--teal) 100%); }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(120%); opacity: 0; }
+        }
+
+        #chat-widget-panel {
+            position: fixed;
+            bottom: 86px; right: 24px;
+            width: 340px;
+            background: #0d1b30;
+            border: 1px solid rgba(43,147,166,0.3);
+            border-radius: 16px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(43,147,166,0.08);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            z-index: 199;
+            transform: scale(0.9) translateY(16px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform .22s ease, opacity .22s ease;
+        }
+        #chat-widget-panel.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+        #chat-widget-messages {
+            overflow-y: auto;
+            overflow-anchor: none;
+            padding: 12px;
+            display: flex; flex-direction: column; gap: 8px;
+            min-height: 180px; max-height: 280px;
+        }
+        #chat-anchor {
+            overflow-anchor: auto;
+            height: 1px;
+            flex-shrink: 0;
+        }
+        .chat-msg-user {
+            align-self: flex-end;
+            background: rgba(43,147,166,0.22);
+            border: 1px solid rgba(43,147,166,0.35);
+            color: #fff;
+            padding: 7px 12px;
+            border-radius: 12px 12px 2px 12px;
+            font-size: 12px; max-width: 85%;
+        }
+        .chat-msg-ai {
+            align-self: flex-start;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            color: #cbd5e1;
+            padding: 7px 12px;
+            border-radius: 12px 12px 12px 2px;
+            font-size: 12px; max-width: 85%;
+        }    </style>
 </head>
 <body class="min-h-screen">
-    <!-- Sidebar Fijo -->
+
+    <!-- ══════════════════════════════════════════════════
+         SIDEBAR FIJO — Clínica Dental
+    ══════════════════════════════════════════════════ -->
     <aside class="fixed left-0 top-0 h-screen w-60 bg-[#0B1628] border-r border-[rgba(43,147,166,0.2)] flex flex-col z-40">
-        <!-- Logo Section -->
+
+        <!-- Logo + Dental badge -->
         <div class="px-3 py-4 border-b border-[rgba(255,255,255,0.08)]">
             <img src="../assets/logonodetech_inicio.png" alt="NODE TECH" class="h-20 w-auto">
+            <div class="flex justify-center mt-1">
+                <span class="dental-badge" data-label="badge">🦷 Clínica Dental</span>
+            </div>
         </div>
 
         <!-- Navigation -->
-        <nav class="mt-2 flex-1 overflow-y-auto space-y-1 px-2">
-            <!-- CORE MODULES -->
-            <div class="nav-item active flex items-center gap-3 py-3 px-4 rounded-md" data-view="dashboard">
+        <nav class="mt-2 flex-1 overflow-y-auto space-y-0.5 px-2">
+
+            <div class="nav-item active flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="dashboard">
                 <i class="fas fa-home w-5 text-center"></i>
                 <span>Inicio</span>
             </div>
-            
-            <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="agenda">
+
+            <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="agenda">
                 <i class="fas fa-calendar-alt w-5 text-center"></i>
                 <span>Agenda</span>
             </div>
-            
-            <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="finanzas">
-                <i class="fas fa-credit-card w-5 text-center"></i>
-                <span>Caja / Pagos</span>
-            </div>
-            
-            <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="clientes">
-                <i class="fas fa-users w-5 text-center"></i>
-                <span>Clientes</span>
-            </div>
-            
-            <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="empleados">
-                <i class="fas fa-users w-5 text-center"></i>
-                <span>Empleados</span>
+
+            <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="pacientes">
+                <i class="fas fa-user-injured w-5 text-center"></i>
+                <span data-label="clientePlural">Pacientes</span>
             </div>
 
-            <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="contabilidad">
+            <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="empleados">
+                <i class="fas fa-user-md w-5 text-center"></i>
+                <span data-label="empleadoPlural">Dentistas</span>
+            </div>
+
+            <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="contabilidad">
                 <i class="fas fa-file-invoice-dollar w-5 text-center"></i>
                 <span>Contabilidad</span>
             </div>
-            
-            <!-- SEPARATOR -->
-            <div class="my-4 pt-4 border-t border-[rgba(255,255,255,0.08)]">
-                <p class="text-xs font-semibold text-white/70 uppercase tracking-wider px-4 pb-3">🤖 IA & Automatización</p>
-                
-                <div class="nav-item flex items-center gap-3 py-3 px-4 rounded-md" data-view="asistente">
-                    <i class="fas fa-magic w-5 text-center"></i>
-                    <span>Asistente Hub</span>
-                </div>
+
+            <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="asistente">
+                <i class="fas fa-robot w-5 text-center"></i>
+                <span>Asistente IA</span>
             </div>
+
         </nav>
 
-        <!-- Footer: Profile & Settings -->
+        <!-- Footer: Perfil dentista + botones -->
         <div class="p-4 border-t border-[rgba(255,255,255,0.08)] space-y-3">
-            <!-- Mini Profile -->
             <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-user text-white text-sm"></i>
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user-md text-white text-sm"></i>
                 </div>
                 <div class="min-w-0">
-                    <p class="text-sm font-semibold text-white truncate sidebar-user-name">Usuario</p>
-                    <p class="text-xs text-blue-100 sidebar-user-role">Propietario</p>
+                    <p class="text-sm font-semibold text-white truncate sidebar-user-name">Dr. Usuario</p>
+                    <p class="text-xs text-[#38BDF8] sidebar-user-role" data-label="empleadoSingular">Dentista</p>
                 </div>
             </div>
-            
-            <!-- Settings Button -->
+
             <button class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-white hover:text-white hover:bg-white/10 transition">
                 <i class="fas fa-cog w-5 text-center"></i>
                 <span class="text-sm">Configuración</span>
             </button>
 
-            <!-- Logout Button -->
             <button onclick="window.navManager?.logout()" class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-white/80 hover:text-white hover:bg-red-500/30 transition">
                 <i class="fas fa-sign-out-alt w-5 text-center"></i>
                 <span class="text-sm">Cerrar sesión</span>
@@ -237,57 +331,69 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="ml-60 min-h-screen overflow-y-auto bg-[#060D1A] p-6">
-        <div id="content-area"></div>
+    <!-- ══════════════════════════════════════════════════
+         MAIN CONTENT
+    ══════════════════════════════════════════════════ -->
+    <main class="ml-60 h-screen overflow-hidden bg-[#060D1A] p-6 flex flex-col">
+        <div id="content-area" class="flex-1 min-h-0 overflow-y-auto"></div>
     </main>
 
-    <!-- Modal: Crear/Editar Cita -->
+    <!-- ══════════════════════════════════════════════════
+         MODAL: Crear / Editar Cita Dental
+    ══════════════════════════════════════════════════ -->
     <div id="modal-cita" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-[#0f1e35] border border-[rgba(255,255,255,0.08)] rounded-xl shadow-2xl max-w-sm w-full mx-4 p-5">
             <div class="flex items-center justify-between mb-4">
-                <h2 id="modal-title" class="text-lg font-bold text-white">Nueva Cita</h2>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-tooth text-[#2B93A6] text-base"></i>
+                    <h2 id="modal-title" class="text-lg font-bold text-white" data-label="nuevaCita">Nueva Cita</h2>
+                </div>
                 <button id="close-modal" class="text-slate-400 hover:text-slate-200 transition">
                     <i class="fas fa-times text-sm"></i>
                 </button>
             </div>
-            
+
             <form id="form-cita" class="space-y-3">
                 <input type="hidden" id="cita-id">
-                
+
+                <!-- Paciente -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Cliente</label>
-                    <input type="text" id="cita-cliente" placeholder="Nombre del cliente" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" data-label="clienteSingular">Paciente</label>
+                    <input type="text" id="cita-cliente" placeholder="Nombre del paciente" data-placeholder="placeholderCliente"
+                        class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                 </div>
-                
+
+                <!-- Servicio -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Servicio</label>
-                    <select id="cita-servicio" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
-                        <option value="" class="bg-[#0f1e35]">Selecciona un servicio</option>
-                        <option value="Corte" class="bg-[#0f1e35]">Corte</option>
-                        <option value="Coloracion" class="bg-[#0f1e35]">Coloracion</option>
-                        <option value="Peinado" class="bg-[#0f1e35]">Peinado</option>
-                        <option value="Tratamiento Capilar" class="bg-[#0f1e35]">Tratamiento Capilar</option>
-                        <option value="Reunion" class="bg-[#0f1e35]">Reunión</option>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" data-label="servicioSingular">Tratamiento</label>
+                    <select id="cita-servicio"
+                        class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
+                        <!-- Generado dinámicamente por theme-loader.js -->
                     </select>
                 </div>
-                
+
+                <!-- Fecha y Hora -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Fecha</label>
-                        <input type="date" id="cita-fecha" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
+                        <input type="date" id="cita-fecha"
+                            class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-300 mb-1">Hora</label>
-                        <input type="time" id="cita-hora" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
+                        <input type="time" id="cita-hora"
+                            class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" required>
                     </div>
                 </div>
-                
+
+                <!-- Precio -->
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Precio (EUR)</label>
-                    <input type="number" id="cita-precio" placeholder="0.00" class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" step="0.01">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" data-label="precioLabel">Precio tratamiento (€)</label>
+                    <input type="number" id="cita-precio" placeholder="0.00"
+                        class="w-full px-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2B93A6] focus:border-transparent transition text-sm" step="5" min="0">
                 </div>
-                
+
+                <!-- Botones -->
                 <div class="flex gap-2 pt-2">
                     <button type="submit" class="btn-primary flex-1 py-1.5 rounded-md transition text-sm">Guardar</button>
                     <button type="button" id="btn-cancelar-modal" class="btn-secondary flex-1 py-1.5 rounded-md transition text-sm">Cancelar</button>
@@ -296,31 +402,72 @@
         </div>
     </div>
 
-    </main>
+    <!-- ══════════════════════════════════════════════════
+         FLOATING AI CHAT WIDGET — siempre accesible
+    ══════════════════════════════════════════════════ -->
+    <div id="chat-widget-panel">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.08)] flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-[rgba(43,147,166,0.3)] flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-[#38BDF8] text-xs"></i>
+                </div>
+                <span class="text-sm font-bold text-white">Asistente IA</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" title="Online"></span>
+            </div>
+            <button id="chat-widget-close" class="text-slate-400 hover:text-white transition p-1 leading-none">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+        <!-- Messages -->
+        <div id="chat-widget-messages"><div id="chat-anchor"></div></div>
+        <!-- Quick command chips -->
+        <div id="chat-widget-chips" class="px-3 pb-2 pt-1 flex flex-wrap gap-1 border-t border-[rgba(255,255,255,0.06)] flex-shrink-0"></div>
+        <!-- Input row -->
+        <div class="flex items-center gap-2 px-3 py-2.5 border-t border-[rgba(255,255,255,0.08)] flex-shrink-0">
+            <input type="text" id="chat-widget-input" placeholder="Pregunta o da una instrucción..."
+                class="flex-1 px-3 py-1.5 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+            <button id="chat-widget-send" class="p-2 bg-[#2B93A6] hover:bg-[#38BDF8] text-white rounded-lg transition flex-shrink-0" title="Enviar">
+                <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Toggle button -->
+    <button id="chat-widget-btn" title="Asistente IA" type="button">
+        <i class="fas fa-robot text-white text-lg" id="chat-widget-icon"></i>
+    </button>
 
-    <!-- Modal close button handler -->
+    <!-- Modal close handlers -->
     <script>
-        const closeModalBtn = document.getElementById('close-modal');
-        const btnCancelarModal = document.getElementById('btn-cancelar-modal');
-        const modal = document.getElementById('modal-cita');
-        
-        if (closeModalBtn) closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
-        if (btnCancelarModal) btnCancelarModal.addEventListener('click', () => modal.classList.add('hidden'));
+        const _closeModal = document.getElementById('close-modal');
+        const _btnCancelar = document.getElementById('btn-cancelar-modal');
+        const _modal = document.getElementById('modal-cita');
+        if (_closeModal) _closeModal.addEventListener('click', () => _modal.classList.add('hidden'));
+        if (_btnCancelar) _btnCancelar.addEventListener('click', () => _modal.classList.add('hidden'));
     </script>
 
-    <!-- jsPDF for contabilidad PDF export -->
+    <!-- ══════════════════════════════════════════════════
+         SCRIPTS — load order matters
+    ══════════════════════════════════════════════════ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- Load DataManager first (required by all modules) -->
-    <!-- Load all managers before navigation -->
+
+    <!-- Config de negocio + loader de terminología -->
+    <script src="../logic/business-config.js"></script>
+    <script src="../logic/theme-loader.js"></script>
+
+    <!-- Base managers (define classes) -->
     <script src="../logic/agenda.js"></script>
     <script src="../logic/empleados.js"></script>
-    <script src="../logic/clientes.js"></script>
-    <script src="../logic/finanzas.js"></script>
     <script src="../logic/chatbot.js"></script>
     <script src="../logic/contabilidad.js"></script>
     <script src="../logic/navigation.js"></script>
+
+    <!-- Overrides (extend base classes) -->
+
+    <!-- Initializer (listens for appReady) -->
     <script src="../logic/inicio.js"></script>
+
+    <!-- Auth guard fires 'appReady' after confirming session -->
     <script type="module" src="../logic/auth.js"></script>
 </body>
 </html>

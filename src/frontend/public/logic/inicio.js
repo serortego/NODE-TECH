@@ -1,6 +1,12 @@
-// inicio.js - Inicialización del SPA: espera a que auth-guard.js confirme auth
+// ═══════════════════════════════════════════════════════════════════
+// INICIO.JS — Inicializador del NavigationManager
+// Se ejecuta tras la confirmación de auth (evento 'appReady')
+// ═══════════════════════════════════════════════════════════════════
+
 document.addEventListener('appReady', () => {
-    if (typeof NavigationManager !== 'undefined') {
-        window.navManager = new NavigationManager();
+    window.navManager = new NavigationManager();
+
+    if (window.navManager?.setupFloatingChat) {
+        window.navManager.setupFloatingChat();
     }
 });

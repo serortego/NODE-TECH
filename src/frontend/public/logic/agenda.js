@@ -18,10 +18,37 @@ class AgendaManager {
         };
     }
 
+    // ── Color map dinámico desde BCONFIG ──────────────────────────
+    _buildColorMap() {
+        const palette = [
+            { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
+            { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
+            { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9' },
+            { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' },
+            { bg: '#FEF2F2', border: '#EF4444', text: '#B91C1C' },
+            { bg: '#F0FDF4', border: '#22C55E', text: '#166534' },
+            { bg: '#FDF4FF', border: '#A855F7', text: '#7E22CE' },
+            { bg: '#FFF7ED', border: '#F97316', text: '#C2410C' },
+            { bg: '#F0F9FF', border: '#0EA5E9', text: '#0369A1' },
+            { bg: '#FDF2F8', border: '#EC4899', text: '#9D174D' },
+        ];
+        const cfg = window.BCONFIG || {};
+        const servicios = [];
+        if (cfg.servicios) {
+            cfg.servicios.forEach(grupo => { if (grupo.items) servicios.push(...grupo.items); });
+        }
+        const map = {};
+        servicios.forEach((s, i) => { map[s] = palette[i % palette.length]; });
+        return map;
+    }
+
     render() {
         const proximasCitas = this.navManager.getProximasCitas(5);
-        const hoy = new Date().toISOString().split('T')[0];
-        const citasHoy = this.navManager.citas.filter(c => c.fecha === hoy).length;
+        const hoy           = new Date().toISOString().split('T')[0];
+        const citasHoyArr   = this.navManager.citas.filter(c => c.fecha === hoy);
+        const citasHoy      = citasHoyArr.length;
+        const pendientes    = citasHoyArr.filter(c => !c.estado || c.estado === 'pendiente' || c.estado === 'no-presentado').length;
+        const estimado      = citasHoyArr.reduce((s, c) => s + parseInt(c.precio || 0), 0);
 
         return `
             <div class="space-y-2">
@@ -71,11 +98,11 @@ class AgendaManager {
                     </div>
                     <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(251,146,60,0.12)] text-orange-300 rounded font-semibold">
                         <i class="fas fa-clock"></i>
-                        <span>2 pendientes</span>
+                        <span>${pendientes} pendientes</span>
                     </div>
                     <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(52,211,153,0.12)] text-emerald-300 rounded font-semibold">
                         <i class="fas fa-euro-sign"></i>
-                        <span>350€ est.</span>
+                        <span>€${estimado} est.</span>
                     </div>
                 </div>
 
@@ -161,13 +188,7 @@ class AgendaManager {
         const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
         const estaHoy = fechaStr === ahora.toISOString().split('T')[0];
         
-        const colorMap = {
-            'Corte': { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
-            'Coloracion': { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
-            'Peinado': { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9' },
-            'Tratamiento Capilar': { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
-            'Reunion': { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' }
-        };
+        const colorMap = this._buildColorMap();
 
         // Calcular slots de 15 minutos por hora
         const slotsPerHora = 60 / this.tiempoGranularidad;
@@ -317,14 +338,8 @@ class AgendaManager {
             dias.push(fecha);
         }
 
-        const horas = Array.from({ length: 10 }, (_, i) => 9 + i);
-        const colorMap = {
-            'Corte': { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
-            'Coloracion': { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
-            'Peinado': { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9' },
-            'Tratamiento Capilar': { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
-            'Reunion': { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' }
-        };
+        const horas    = Array.from({ length: 10 }, (_, i) => 9 + i);
+        const colorMap = this._buildColorMap();
 
         let html = '<div class="overflow-x-auto"><div class="grid" style="grid-template-columns: 60px repeat(7, 1fr); gap: 0;">';
         

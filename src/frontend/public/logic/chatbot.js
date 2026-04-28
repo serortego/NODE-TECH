@@ -32,21 +32,21 @@ class ChatbotManager {
 
     render() {
         return `
-            <div class="space-y-6">
-                <div class="flex items-center justify-between gap-4 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+            <div class="flex flex-col h-full gap-3">
+                <div class="flex items-center justify-between gap-4 pb-2 border-b border-[rgba(255,255,255,0.08)] flex-shrink-0">
                     <div>
                         <h2 class="text-2xl font-bold text-white">Asistente NODE</h2>
                         <p class="text-slate-400 mt-0.5 text-sm">Tu asistente inteligente de gestión empresarial</p>
                     </div>
                 </div>
 
-                <div class="glass rounded-2xl p-4 flex flex-col border border-[rgba(255,255,255,0.08)]" style="height: 520px;">
+                <div class="glass rounded-2xl px-4 pt-4 pb-2 flex flex-col border border-[rgba(255,255,255,0.08)] flex-1 min-h-0">
                     <div id="chat-history" class="space-y-4 flex flex-col flex-1 overflow-y-auto pr-1">
                         <!-- Mensajes aquí -->
                     </div>
                 </div>
 
-                <form id="chat-form" class="flex gap-3">
+                <form id="chat-form" class="flex gap-3 flex-shrink-0">
                     <input 
                         id="chat-input" 
                         type="text" 
@@ -63,7 +63,7 @@ class ChatbotManager {
                     </button>
                 </form>
 
-                <div id="sugerencias-rapidas" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div id="sugerencias-rapidas" class="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
                     <!-- Sugerencias -->
                 </div>
             </div>
