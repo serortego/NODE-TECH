@@ -7,12 +7,18 @@ class NavigationManager {
 
     // ── Servicios dinámicos desde BCONFIG ──────────────────────────
     static get SERVICIOS() {
+        const dm = window.dataManager?.cache?.tarifas;
+        if (dm?.length) return dm.map(t => t.nombre);
         const cfg = window.BCONFIG;
         if (cfg?.servicios) return cfg.servicios.flatMap(g => g.items);
         return ['Servicio general'];
     }
 
-    static get PRECIOS() { return {}; }
+    static get PRECIOS() {
+        const dm = window.dataManager?.cache?.tarifas;
+        if (dm?.length) return Object.fromEntries(dm.map(t => [t.nombre, t.precio]));
+        return {};
+    }
 
     static get QUICK_ACTIONS_CATALOG() {
         const cfg = window.BCONFIG || {};

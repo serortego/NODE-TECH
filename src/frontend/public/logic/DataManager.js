@@ -39,7 +39,9 @@ class DataManager {
       clientes: [],
       servicios: [],
       citas: [],
-      finanzas: []
+      finanzas: [],
+      tarifas: [],
+      gastosFijos: []
     };
     
     // LISTENERS (para sincronización en tiempo real)
@@ -48,7 +50,9 @@ class DataManager {
       clientes: null,
       servicios: null,
       citas: null,
-      finanzas: null
+      finanzas: null,
+      tarifas: null,
+      gastosFijos: null
     };
     
     // OBSERVADORES (módulos que quieren ser notificados de cambios)
@@ -157,6 +161,26 @@ class DataManager {
         (error) => {
           console.error('❌ Error en listener de finanzas:', error);
         }
+      );
+
+      // Listener para TARIFAS
+      this.listeners.tarifas = onSnapshot(
+        collection(db, 'users', this.userId, 'tarifas'),
+        (snapshot) => {
+          this.cache.tarifas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          this.notificarObservadores('tarifas');
+        },
+        (error) => console.error('❌ Error en listener de tarifas:', error)
+      );
+
+      // Listener para GASTOS FIJOS
+      this.listeners.gastosFijos = onSnapshot(
+        collection(db, 'users', this.userId, 'gastosFijos'),
+        (snapshot) => {
+          this.cache.gastosFijos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          this.notificarObservadores('gastosFijos');
+        },
+        (error) => console.error('❌ Error en listener de gastosFijos:', error)
       );
 
       console.log('✅ Listeners configurados - cambios en tiempo real activados');

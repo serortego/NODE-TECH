@@ -294,7 +294,7 @@ class ContabilidadManager {
             };
             try {
                 if (this.editingTransId) {
-                    await updateDoc(doc(db, "users", uid, "finanzas", this.editingTransId), data);
+                    await updateDoc(doc(db, "users", uid, "caja", this.editingTransId), data);
                 } else {
                     data.createdAt = serverTimestamp();
                     await addDoc(colTrans(), data);
@@ -361,13 +361,46 @@ class ContabilidadManager {
             this._renderAtajos();
         };
 
-        this._loadTrans  = loadTrans;
-        this._loadFijos  = loadFijos;
+        this._loadTrans = loadTrans;
+        this._loadFijos = loadFijos;
+
+        // Seed from DataManager cache if available
+        if (window.dataManager?.cache) {
+            if (window.dataManager.cache.finanzas?.length)    this.transacciones = [...window.dataManager.cache.finanzas];
+            if (window.dataManager.cache.gastosFijos?.length) this.gastosFijos   = [...window.dataManager.cache.gastosFijos];
+            if (window.dataManager.cache.tarifas?.length)     this.tarifas       = [...window.dataManager.cache.tarifas];
+        }
         await Promise.all([loadTrans(), loadFijos(), loadTarifas()]);
+
+        // Subscribe to DataManager for real-time updates
+        if (window.dataManager) {
+            this._unsubs = [
+                window.dataManager.suscribirse('finanzas', data => {
+                    if (this._destroyed) return;
+                    this.transacciones = data;
+                    this._rellenarFiltroMes();
+                    this._renderTransStats();
+                    this._renderTransLista({ deleteDoc, doc, db, uid, loadTrans });
+                }),
+                window.dataManager.suscribirse('gastosFijos', data => {
+                    if (this._destroyed) return;
+                    this.gastosFijos = data;
+                    this._renderFijosLista({ deleteDoc, doc, db, uid, loadFijos });
+                    this._renderTransStats();
+                }),
+                window.dataManager.suscribirse('tarifas', data => {
+                    if (this._destroyed) return;
+                    this.tarifas = data;
+                    this._renderAtajos();
+                }),
+            ];
+        }
     }
 
     destroy() {
         this._destroyed = true;
+        (this._unsubs || []).forEach(u => u?.());
+        this._unsubs = [];
     }
 
     // ------- Helpers privados -------
@@ -503,8 +536,8 @@ class ContabilidadManager {
             btn.addEventListener("click", async () => {
                 if (!confirm("Eliminar este movimiento?")) return;
                 try {
-                    await deleteDoc(doc(db, "users", uid, "finanzas", btn.dataset.transDel));
-                    await loadTrans();
+                    await deleteDoc(doc(db, "users", uid, "caja", btn.dataset.transDel));
+                    if (!window.dataManager) await loadTrans();
                     this.navManager?.showNotification("Movimiento eliminado", "info");
                 } catch (err) { alert("Error al eliminar: " + err.message); }
             });

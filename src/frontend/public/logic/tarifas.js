@@ -131,7 +131,21 @@ class TarifasManager {
             renderLista();
         };
 
-        await loadTarifas();
+        // Seed from DataManager cache if available, else load from Firestore
+        if (window.dataManager?.cache?.tarifas?.length) {
+            tarifas = window.dataManager.cache.tarifas;
+            renderLista();
+        } else {
+            await loadTarifas();
+        }
+
+        // Subscribe to DataManager for real-time updates
+        if (window.dataManager) {
+            this._tarUnsub = window.dataManager.suscribirse('tarifas', data => {
+                tarifas = data;
+                renderLista();
+            });
+        }
 
         document.getElementById('tar-btn-nuevo')?.addEventListener('click', () => {
             editingId = null;
@@ -168,7 +182,9 @@ class TarifasManager {
         });
     }
 
-    destroy() {}
+    destroy() {
+        this._tarUnsub?.();
+    }
 }
 
 // Auto-init para la pagina standalone tarifas.html
