@@ -219,6 +219,7 @@ class NavigationManager {
         }
         // Limpiar suscripción de estadísticas si se sale de esa vista
         if (this._estadUnsub) { this._estadUnsub(); this._estadUnsub = null; }
+        this._destroyStatsCharts();
         this.currentView = viewName;
 
         switch (viewName) {
@@ -443,6 +444,7 @@ class NavigationManager {
 
                 // Limpiar suscripción de estadísticas si se sale de esa tab
                 if (this._estadUnsub) { this._estadUnsub(); this._estadUnsub = null; }
+                this._destroyStatsCharts();
 
                 // Actualizar estilos de pestañas
                 document.querySelectorAll('.inicio-tab').forEach(b => {
@@ -463,139 +465,416 @@ class NavigationManager {
         });
     }
 
-    // ── Vista Estadísticas / Resumen del negocio ──────────────────
+    // ── Vista Estadísticas — Dashboard rico con gráficos ─────────
     _renderEstadisticasView() {
-        const cache  = window.dataManager?.cache || {};
-        const citas  = cache.citas   || [];
-        const clientes = cache.clientes || [];
+        const cache     = window.dataManager?.cache || {};
+        const citas     = cache.citas     || [];
+        const clientes  = cache.clientes  || [];
         const empleados = cache.empleados || [];
         const tarifas   = cache.tarifas   || [];
         const caja      = cache.caja      || [];
 
-        const hoy    = this._hoyStr();
-        const mesStr = hoy.substring(0, 7); // YYYY-MM
-        const citasHoy  = citas.filter(c => c.fecha === hoy);
-        const citasMes  = citas.filter(c => (c.fecha || '').startsWith(mesStr));
-        const cobradoMes = citasMes.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
-        const cobradoHoy = citasHoy.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
-        const completadasMes = citasMes.filter(c => c.estado === 'completado').length;
+        const hoy     = this._hoyStr();
+        const mesStr  = hoy.substring(0, 7);
+        const hoyDate = new Date(hoy + 'T00:00:00');
 
-        // Ingresos en caja del mes
-        const ingresosCaja = (caja).filter(t => t.tipo === 'ingreso' && (t.fecha || '').startsWith(mesStr))
+        // ── KPIs ──────────────────────────────────────────────────
+        const citasHoy    = citas.filter(c => c.fecha === hoy);
+        const citasMes    = citas.filter(c => (c.fecha || '').startsWith(mesStr));
+        const cobradoHoy  = citasHoy.filter(c => c.cobrado).reduce((s, c) => s + parseFloat(c.precio || 0), 0);
+        const cobradoMes  = citasMes.filter(c => c.cobrado).reduce((s, c) => s + parseFloat(c.precio || 0), 0);
+        const ingresosMes = caja.filter(t => t.tipo === 'ingreso' && (t.fecha || '').startsWith(mesStr))
             .reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0);
-        const gastosCaja   = (caja).filter(t => t.tipo === 'gasto' && (t.fecha || '').startsWith(mesStr))
+        const gastosMes   = caja.filter(t => t.tipo === 'gasto' && (t.fecha || '').startsWith(mesStr))
             .reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0);
+        const balance     = ingresosMes - gastosMes;
+        const totalNoCan  = citasMes.filter(c => c.estado !== 'cancelado').length;
+        const tasaCobro   = totalNoCan ? Math.round((citasMes.filter(c => c.cobrado).length / totalNoCan) * 100) : 0;
 
-        // Top servicios del mes
-        const contadorServs = {};
-        citasMes.forEach(c => { if (c.servicio) contadorServs[c.servicio] = (contadorServs[c.servicio] || 0) + 1; });
-        const topServs = Object.entries(contadorServs).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        // ── Top servicios (por ingresos) ───────────────────────────
+        const PALETTE  = ['#2B93A6', '#38BDF8', '#6366f1', '#a78bfa', '#f59e0b', '#10b981', '#f43f5e'];
+        const servRev  = {};
+        citasMes.filter(c => c.cobrado && c.servicio).forEach(c => {
+            servRev[c.servicio] = (servRev[c.servicio] || 0) + parseFloat(c.precio || 0);
+        });
+        const topServs    = Object.entries(servRev).sort((a, b) => b[1] - a[1]).slice(0, 7);
 
+        // ── Top clientes ───────────────────────────────────────────
+        const cliCount    = {};
+        citas.filter(c => c.cobrado && c.cliente).forEach(c => {
+            cliCount[c.cliente] = (cliCount[c.cliente] || 0) + 1;
+        });
+        const topClientes = Object.entries(cliCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        // ── Citas de hoy ───────────────────────────────────────────
+        const citasHoySort = [...citasHoy].sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+
+        // ── Datos para gráficos ────────────────────────────────────
+        const labels30 = [], ing30 = [];
+        for (let i = 29; i >= 0; i--) {
+            const d  = new Date(hoyDate); d.setDate(d.getDate() - i);
+            const ds = d.toISOString().split('T')[0];
+            labels30.push(i % 5 === 0 || i === 0 ? d.getDate() + '/' + (d.getMonth() + 1) : '');
+            ing30.push(citas.filter(c => c.cobrado && c.fecha === ds).reduce((s, c) => s + parseFloat(c.precio || 0), 0));
+        }
+        const m6L = [], m6I = [], m6G = [];
+        for (let i = 5; i >= 0; i--) {
+            const d  = new Date(hoyDate.getFullYear(), hoyDate.getMonth() - i, 1);
+            const ms = d.toISOString().split('T')[0].substring(0, 7);
+            m6L.push(d.toLocaleDateString('es-ES', { month: 'short' }));
+            m6I.push(caja.filter(t => t.tipo === 'ingreso' && (t.fecha || '').startsWith(ms)).reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0));
+            m6G.push(caja.filter(t => t.tipo === 'gasto'   && (t.fecha || '').startsWith(ms)).reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0));
+        }
+        this._estadChartData = {
+            ing30: { labels: labels30, data: ing30 },
+            servs: { labels: topServs.map(s => s[0]), data: topServs.map(s => Math.round(s[1])), colors: PALETTE.slice(0, topServs.length) },
+            bal6m: { labels: m6L, ing: m6I, gas: m6G },
+        };
+
+        // ── Widget system ──────────────────────────────────────────
+        const hidden   = JSON.parse(localStorage.getItem('nt_stats_hidden') || '[]');
+        const vis      = id => hidden.includes(id) ? 'hidden' : '';
         const mesLabel = new Date(mesStr + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        const WIDGETS  = [
+            { id: 'kpis',      label: 'KPIs principales',   icon: 'fa-tachometer-alt' },
+            { id: 'linea',     label: 'Ingresos 30 días',    icon: 'fa-chart-line' },
+            { id: 'servicios', label: 'Top servicios',       icon: 'fa-chart-pie' },
+            { id: 'balance',   label: 'Balance mensual',     icon: 'fa-balance-scale' },
+            { id: 'citas',     label: 'Citas de hoy',        icon: 'fa-calendar-day' },
+            { id: 'clientes',  label: 'Clientes frecuentes', icon: 'fa-star' },
+            { id: 'bd',        label: 'Base de datos',       icon: 'fa-database' },
+        ];
+        const savedOrder = JSON.parse(localStorage.getItem('nt_stats_order') || '[]');
+        const allIds     = WIDGETS.map(w => w.id);
+        const wOrder     = savedOrder.length
+            ? [...new Set([...savedOrder, ...allIds.filter(id => !savedOrder.includes(id))])]
+            : allIds;
+
+        // Widget wrapper with drag handle
+        const W = (id, span, html) =>
+            `<div data-widget-id="${id}" draggable="true"
+                class="stats-widget ${span} ${vis(id)} glass border border-[rgba(255,255,255,0.07)] rounded-xl overflow-hidden relative">
+                <div class="stats-drag-handle absolute top-2 right-2 z-10 cursor-grab px-1 py-0.5 rounded text-slate-700 hover:text-slate-400 transition select-none">
+                    <i class="fas fa-grip-vertical text-[10px]"></i></div>
+                ${html}</div>`;
+
+        // Pre-computed substrings to avoid deeply nested template literals
+        const balColor = balance >= 0 ? 'text-emerald-400' : 'text-red-400';
+        const balBg    = balance >= 0 ? 'rgba(16,185,129,0.1)'  : 'rgba(239,68,68,0.08)';
+        const balBrd   = balance >= 0 ? 'rgba(16,185,129,0.2)'  : 'rgba(239,68,68,0.18)';
+        const tcColor  = tasaCobro >= 80 ? 'text-emerald-400' : tasaCobro >= 50 ? 'text-amber-400' : 'text-red-400';
+        const ing30Total = Math.round(ing30.reduce((a, b) => a + b, 0));
+        const servTotal  = Math.round(topServs.reduce((s, e) => s + e[1], 0));
+
+        const kpisHTML = `
+            <div class="p-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div class="rounded-xl border p-3" style="background:rgba(43,147,166,0.12);border-color:rgba(43,147,166,0.25)">
+                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado hoy</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(cobradoHoy)}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${citasHoy.filter(c => c.cobrado).length} pagos</p>
+                </div>
+                <div class="rounded-xl border p-3" style="background:rgba(43,147,166,0.08);border-color:rgba(43,147,166,0.2)">
+                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado mes</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(cobradoMes)}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${citasMes.filter(c => c.cobrado).length} citas</p>
+                </div>
+                <div class="rounded-xl border p-3" style="background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.2)">
+                    <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Ingresos caja</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(ingresosMes)}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">este mes</p>
+                </div>
+                <div class="rounded-xl border p-3" style="background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.18)">
+                    <p class="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-1">Gastos</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(gastosMes)}</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">este mes</p>
+                </div>
+                <div class="rounded-xl border p-3" style="background:${balBg};border-color:${balBrd}">
+                    <p class="text-[10px] font-bold ${balColor} uppercase tracking-wider mb-1">Balance</p>
+                    <p class="text-2xl font-black ${balColor}">${balance >= 0 ? '+' : ''}€${Math.round(balance)}</p>
+                    <p class="text-[11px] mt-0.5"><span class="font-bold ${tcColor}">${tasaCobro}%</span> <span class="text-slate-400">cobrado</span></p>
+                </div>
+            </div>`;
+
+        const servLegend = topServs.map((e, i) =>
+            `<div class="flex items-center gap-2 text-xs">
+                <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${PALETTE[i]}"></span>
+                <span class="text-slate-300 truncate">${e[0]}</span>
+                <span class="text-white font-bold ml-auto flex-shrink-0">€${Math.round(e[1])}</span>
+            </div>`).join('');
+
+        const servDonut = topServs.length
+            ? `<div class="p-4 flex items-center gap-4">
+                <div style="position:relative;height:150px;width:150px;flex-shrink:0">
+                    <canvas id="chart-serv-donut"></canvas>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+                        <p class="text-[10px] text-slate-500">Total</p>
+                        <p class="text-base font-black text-white">€${servTotal}</p>
+                    </div>
+                </div>
+                <div class="space-y-1.5 flex-1 min-w-0">${servLegend}</div>
+            </div>`
+            : '<p class="text-xs text-slate-500 text-center py-10">Sin citas cobradas este mes</p>';
+
+        const citasHoyRows = citasHoySort.length
+            ? citasHoySort.map(c => {
+                const ec = { pendiente: 'text-amber-400 bg-amber-400/10', confirmado: 'text-sky-400 bg-sky-400/10', completado: 'text-emerald-400 bg-emerald-400/10', cancelado: 'text-red-400 bg-red-400/10' }[c.estado] || 'text-slate-400 bg-slate-400/10';
+                return `<div class="flex items-center justify-between px-4 py-2.5 hover:bg-[rgba(255,255,255,0.02)] transition">
+                    <div>
+                        <p class="text-xs font-semibold text-white">${c.hora || '?:??'} · ${c.cliente || 'Sin nombre'}</p>
+                        <p class="text-[10px] text-slate-500">${c.servicio || ''}${c.precio ? ' · €' + c.precio : ''}</p>
+                    </div>
+                    <span class="text-[10px] font-bold ${ec} px-2 py-0.5 rounded-full capitalize">${c.estado || 'pendiente'}</span>
+                </div>`;
+            }).join('')
+            : '<p class="text-xs text-slate-500 text-center py-8">No hay citas para hoy</p>';
+
+        const cliRows = topClientes.length
+            ? topClientes.map(([nombre, cnt], i) => {
+                const pct    = Math.round((cnt / topClientes[0][1]) * 100);
+                const medals = ['🥇', '🥈', '🥉', '4.', '5.'];
+                return `<div class="px-1 py-1.5">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-sm w-5 text-center">${medals[i]}</span>
+                            <span class="text-xs text-slate-300 truncate max-w-[120px]">${nombre}</span>
+                        </div>
+                        <span class="text-[11px] font-bold text-[#38BDF8]">${cnt} visitas</span>
+                    </div>
+                    <div class="w-full bg-[rgba(255,255,255,0.05)] rounded-full h-1">
+                        <div class="h-1 rounded-full bg-gradient-to-r from-[#2B93A6] to-[#38BDF8]" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+            }).join('')
+            : '<p class="text-xs text-slate-500 text-center py-6">Sin datos todavía</p>';
+
+        const bdGrid = [
+            ['fa-users',       'text-teal-400',   'Clientes',  clientes.length],
+            ['fa-user-tie',    'text-blue-400',   'Empleados', empleados.length],
+            ['fa-tags',        'text-amber-400',  'Servicios', tarifas.length],
+            ['fa-calendar-day','text-purple-400', 'Citas',     citas.length],
+        ].map(([ico, col, label, val]) =>
+            `<div class="rounded-lg bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] p-3 flex items-center gap-2">
+                <i class="fas ${ico} ${col} text-sm"></i>
+                <div><p class="text-[10px] text-slate-500">${label}</p><p class="text-base font-black text-white">${val}</p></div>
+            </div>`).join('');
+
+        const widgetHTML = {
+            kpis:     W('kpis', 'col-span-2', kpisHTML),
+            linea:    W('linea', 'col-span-2',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-2">
+                    <i class="fas fa-chart-area text-[#38BDF8] text-sm"></i>
+                    <p class="text-sm font-bold text-white">Ingresos últimos 30 días</p>
+                    <span class="text-xs text-slate-500 ml-1">€${ing30Total} total</span>
+                </div>
+                <div class="p-4" style="height:190px"><canvas id="chart-ing30d"></canvas></div>`),
+            servicios: W('servicios', 'col-span-1',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-purple-400 text-sm"></i>
+                    <p class="text-sm font-bold text-white">Servicios este mes</p>
+                </div>${servDonut}`),
+            balance:  W('balance', 'col-span-1',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-2">
+                    <i class="fas fa-balance-scale text-amber-400 text-sm"></i>
+                    <p class="text-sm font-bold text-white">Ingresos vs Gastos</p>
+                    <span class="text-xs text-slate-500">6 meses</span>
+                </div>
+                <div class="p-4" style="height:200px"><canvas id="chart-bal6m"></canvas></div>`),
+            citas:    W('citas', 'col-span-1',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-calendar-day text-[#38BDF8] text-sm"></i>
+                        <p class="text-sm font-bold text-white">Citas de hoy</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400 bg-[rgba(255,255,255,0.06)] px-2 py-0.5 rounded-full">${citasHoySort.length}</span>
+                </div>
+                <div class="divide-y divide-[rgba(255,255,255,0.05)] max-h-52 overflow-y-auto">${citasHoyRows}</div>`),
+            clientes: W('clientes', 'col-span-1',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-2">
+                    <i class="fas fa-star text-amber-400 text-sm"></i>
+                    <p class="text-sm font-bold text-white">Clientes frecuentes</p>
+                </div>
+                <div class="p-3 space-y-1">${cliRows}</div>`),
+            bd:       W('bd', 'col-span-1',
+                `<div class="px-4 py-3 border-b border-[rgba(255,255,255,0.06)] flex items-center gap-2">
+                    <i class="fas fa-database text-slate-400 text-sm"></i>
+                    <p class="text-sm font-bold text-white">Base de datos</p>
+                </div>
+                <div class="grid grid-cols-2 gap-2 p-3">${bdGrid}</div>`),
+        };
+
+        const renderedWidgets = wOrder.filter(id => widgetHTML[id]).map(id => widgetHTML[id]).join('');
 
         return `
-        <div class="space-y-5 max-w-4xl">
-            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
-                <h1 class="text-2xl font-bold text-white"><i class="fas fa-chart-pie text-[#2B93A6] mr-2"></i>Estadísticas</h1>
-                <span class="text-xs text-slate-500 capitalize">${mesLabel}</span>
+        <style>
+            .stats-widget { transition: opacity .15s, box-shadow .15s; }
+            .stats-widget.stats-dragging { opacity: .35; }
+            .stats-widget.stats-drag-over { box-shadow: 0 0 0 2px #2B93A6 !important; }
+        </style>
+        <div class="space-y-3 pb-4">
+            <div class="flex items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold text-white"><i class="fas fa-chart-pie text-[#2B93A6] mr-2"></i>Estadísticas</h1>
+                    <span class="text-xs text-slate-500 capitalize">${mesLabel}</span>
+                </div>
+                <button id="stats-personalizar-btn" class="btn-secondary px-3 py-1.5 rounded-lg text-xs flex items-center gap-2 transition">
+                    <i class="fas fa-sliders-h text-[#38BDF8]"></i> Personalizar
+                </button>
             </div>
-
-            <!-- KPIs principales -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
-                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado hoy</p>
-                    <p class="text-2xl font-black text-white">€${cobradoHoy}</p>
-                    <p class="text-xs text-slate-400 mt-0.5">${citasHoy.filter(c=>c.cobrado).length} pagos</p>
-                </div>
-                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
-                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado este mes</p>
-                    <p class="text-2xl font-black text-white">€${cobradoMes}</p>
-                    <p class="text-xs text-slate-400 mt-0.5">${completadasMes} citas</p>
-                </div>
-                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
-                    <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Ingresos caja</p>
-                    <p class="text-2xl font-black text-white">€${Math.round(ingresosCaja)}</p>
-                    <p class="text-xs text-slate-400 mt-0.5">este mes</p>
-                </div>
-                <div class="glass border border-[rgba(255,200,100,0.2)] rounded-xl p-4">
-                    <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">Gastos</p>
-                    <p class="text-2xl font-black text-white">€${Math.round(gastosCaja)}</p>
-                    <p class="text-xs text-slate-400 mt-0.5">este mes</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Totales BD -->
-                <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[rgba(255,255,255,0.07)]">
-                        <p class="text-sm font-bold text-white">Base de datos</p>
-                    </div>
-                    <div class="divide-y divide-[rgba(255,255,255,0.06)]">
-                        ${[
-                            ['fas fa-users text-teal-400',   'Clientes',   clientes.length],
-                            ['fas fa-user-tie text-blue-400','Empleados',  empleados.length],
-                            ['fas fa-tags text-amber-400',   'Servicios',  tarifas.length],
-                            ['fas fa-calendar-day text-purple-400','Citas totales', citas.length],
-                        ].map(([icon, label, val]) => `
-                        <div class="flex items-center justify-between px-4 py-3">
-                            <div class="flex items-center gap-2">
-                                <i class="fas ${icon.replace('fas ', '')} w-4 text-center text-sm"></i>
-                                <span class="text-sm text-slate-300">${label}</span>
-                            </div>
-                            <span class="text-sm font-bold text-white">${val}</span>
-                        </div>`).join('')}
-                    </div>
-                </div>
-
-                <!-- Top servicios -->
-                <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
-                    <div class="px-4 py-3 border-b border-[rgba(255,255,255,0.07)]">
-                        <p class="text-sm font-bold text-white">Servicios más solicitados <span class="text-xs text-slate-500 font-normal">este mes</span></p>
-                    </div>
-                    <div class="p-4 space-y-2">
-                        ${topServs.length ? topServs.map(([serv, cnt], i) => {
-                            const max = topServs[0][1];
-                            const pct = Math.round((cnt / max) * 100);
-                            return `
-                            <div>
-                                <div class="flex justify-between text-xs mb-0.5">
-                                    <span class="text-slate-300 truncate">${serv}</span>
-                                    <span class="text-white font-bold ml-2 flex-shrink-0">${cnt}</span>
-                                </div>
-                                <div class="w-full bg-[rgba(255,255,255,0.06)] rounded-full h-1.5">
-                                    <div class="h-1.5 rounded-full bg-[#2B93A6]" style="width:${pct}%"></div>
-                                </div>
-                            </div>`;
-                        }).join('') : '<p class="text-xs text-slate-500 text-center py-4">Sin citas este mes todavía</p>'}
-                    </div>
+            <div id="stats-personalizar-panel" class="hidden glass border border-[rgba(255,255,255,0.08)] rounded-xl p-4">
+                <p class="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
+                    <i class="fas fa-eye text-[#38BDF8]"></i> Mostrar / ocultar · arrastra <i class="fas fa-grip-vertical mx-0.5"></i> para reordenar
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    ${WIDGETS.map(w =>
+                        `<label class="flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border transition hover:bg-[rgba(255,255,255,0.04)] select-none ${hidden.includes(w.id) ? 'border-[rgba(255,255,255,0.07)] text-slate-500' : 'border-[rgba(43,147,166,0.3)] text-slate-300'}">
+                            <input type="checkbox" data-widget-toggle="${w.id}" class="accent-[#2B93A6]" ${hidden.includes(w.id) ? '' : 'checked'}>
+                            <i class="fas ${w.icon} text-xs ${hidden.includes(w.id) ? 'text-slate-600' : 'text-[#38BDF8]'}"></i>
+                            <span class="text-xs">${w.label}</span>
+                        </label>`).join('')}
                 </div>
             </div>
-
-            <!-- Balance del mes -->
-            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-4 flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Balance del mes</p>
-                    <p class="text-3xl font-black ${(ingresosCaja - gastosCaja) >= 0 ? 'text-emerald-400' : 'text-red-400'} mt-1">
-                        ${(ingresosCaja - gastosCaja) >= 0 ? '+' : ''}€${Math.round(ingresosCaja - gastosCaja)}
-                    </p>
-                </div>
-                <div class="text-right text-xs text-slate-500">
-                    <p>Ingresos: <span class="text-emerald-400 font-bold">€${Math.round(ingresosCaja)}</span></p>
-                    <p>Gastos: <span class="text-red-400 font-bold">€${Math.round(gastosCaja)}</span></p>
-                </div>
+            <div id="stats-grid" class="grid grid-cols-2 gap-4">
+                ${renderedWidgets}
             </div>
         </div>`;
     }
 
     _setupEstadisticasListeners() {
-        // Refrescar si DataManager actualiza datos mientras la vista está activa
-        if (window.dataManager) {
-            const unsub = window.dataManager.suscribirse('caja', () => {
-                if (this.currentView === 'estadisticas') this.loadView('estadisticas');
+        // Personalizar panel toggle
+        document.getElementById('stats-personalizar-btn')?.addEventListener('click', () => {
+            document.getElementById('stats-personalizar-panel')?.classList.toggle('hidden');
+        });
+
+        // Widget visibility toggles
+        document.querySelectorAll('[data-widget-toggle]').forEach(chk => {
+            chk.addEventListener('change', () => {
+                const id   = chk.dataset.widgetToggle;
+                const list = JSON.parse(localStorage.getItem('nt_stats_hidden') || '[]');
+                if (chk.checked) { const i = list.indexOf(id); if (i > -1) list.splice(i, 1); }
+                else if (!list.includes(id)) list.push(id);
+                localStorage.setItem('nt_stats_hidden', JSON.stringify(list));
+                document.querySelector(`[data-widget-id="${id}"]`)?.classList.toggle('hidden', !chk.checked);
             });
-            // Guardar unsub para limpiar al salir
-            this._estadUnsub = unsub;
+        });
+
+        // Drag & drop reorder
+        this._setupStatsDrag();
+
+        // Init Chart.js after DOM settles
+        setTimeout(() => this._initStatsCharts(), 50);
+
+        // DataManager live refresh
+        if (window.dataManager) {
+            this._estadUnsub = window.dataManager.suscribirse('citas', () => {
+                if (!document.getElementById('stats-grid')) return;
+                this._destroyStatsCharts();
+                const content = document.getElementById('inicio-tab-content') || this.contentArea;
+                if (content) { content.innerHTML = this._renderEstadisticasView(); setTimeout(() => this._setupEstadisticasListeners(), 0); }
+            });
         }
+    }
+
+    _setupStatsDrag() {
+        const grid = document.getElementById('stats-grid');
+        if (!grid) return;
+        let dragSrc = null;
+        grid.querySelectorAll('.stats-widget').forEach(widget => {
+            widget.addEventListener('dragstart', e => {
+                dragSrc = widget;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => widget.classList.add('stats-dragging'), 0);
+            });
+            widget.addEventListener('dragend', () => {
+                widget.classList.remove('stats-dragging');
+                grid.querySelectorAll('.stats-widget').forEach(w => w.classList.remove('stats-drag-over'));
+                dragSrc = null;
+                localStorage.setItem('nt_stats_order',
+                    JSON.stringify([...grid.querySelectorAll('.stats-widget')].map(w => w.dataset.widgetId)));
+            });
+            widget.addEventListener('dragover', e => {
+                e.preventDefault();
+                if (dragSrc && dragSrc !== widget) {
+                    grid.querySelectorAll('.stats-widget').forEach(w => w.classList.remove('stats-drag-over'));
+                    widget.classList.add('stats-drag-over');
+                }
+            });
+            widget.addEventListener('dragleave', () => widget.classList.remove('stats-drag-over'));
+            widget.addEventListener('drop', e => {
+                e.preventDefault();
+                widget.classList.remove('stats-drag-over');
+                if (dragSrc && dragSrc !== widget) {
+                    const all = [...grid.querySelectorAll('.stats-widget')];
+                    all.indexOf(dragSrc) < all.indexOf(widget) ? widget.after(dragSrc) : widget.before(dragSrc);
+                }
+            });
+        });
+    }
+
+    _initStatsCharts() {
+        if (typeof Chart === 'undefined') return;
+        const d = this._estadChartData;
+        if (!d) return;
+        this._stats_charts = [];
+        const darkGrid = 'rgba(255,255,255,0.04)';
+        Chart.defaults.color     = '#94a3b8';
+        Chart.defaults.font.size = 11;
+
+        // 1. Line chart — ingresos 30 días
+        const c1 = document.getElementById('chart-ing30d');
+        if (c1) this._stats_charts.push(new Chart(c1, {
+            type: 'line',
+            data: { labels: d.ing30.labels, datasets: [{
+                label: 'Ingresos', data: d.ing30.data,
+                borderColor: '#2B93A6', backgroundColor: 'rgba(43,147,166,0.12)',
+                fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2,
+            }]},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' €' + Math.round(ctx.raw) } } },
+                scales: {
+                    x: { grid: { color: darkGrid }, ticks: { maxTicksLimit: 10 } },
+                    y: { grid: { color: darkGrid }, ticks: { callback: v => '€' + v }, beginAtZero: true },
+                },
+            },
+        }));
+
+        // 2. Doughnut — servicios
+        const c2 = document.getElementById('chart-serv-donut');
+        if (c2 && d.servs.data.length) this._stats_charts.push(new Chart(c2, {
+            type: 'doughnut',
+            data: { labels: d.servs.labels, datasets: [{ data: d.servs.data, backgroundColor: d.servs.colors, borderWidth: 0, hoverOffset: 6 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' €' + ctx.raw } } },
+                cutout: '68%',
+            },
+        }));
+
+        // 3. Bar — balance 6 meses
+        const c3 = document.getElementById('chart-bal6m');
+        if (c3) this._stats_charts.push(new Chart(c3, {
+            type: 'bar',
+            data: { labels: d.bal6m.labels, datasets: [
+                { label: 'Ingresos', data: d.bal6m.ing, backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 4 },
+                { label: 'Gastos',   data: d.bal6m.gas, backgroundColor: 'rgba(239,68,68,0.7)',   borderRadius: 4 },
+            ]},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } },
+                    tooltip: { callbacks: { label: ctx => ' €' + Math.round(ctx.raw) } },
+                },
+                scales: {
+                    x: { grid: { color: darkGrid } },
+                    y: { grid: { color: darkGrid }, ticks: { callback: v => '€' + v }, beginAtZero: true },
+                },
+            },
+        }));
+    }
+
+    _destroyStatsCharts() {
+        (this._stats_charts || []).forEach(c => { try { c?.destroy(); } catch (_) {} });
+        this._stats_charts = [];
     }
 
     // ── Vista Tutorial ────────────────────────────────────────────
