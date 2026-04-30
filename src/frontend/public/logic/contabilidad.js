@@ -201,7 +201,7 @@ class ContabilidadManager {
         const { collection, getDocs, addDoc, updateDoc, deleteDoc,
                 doc, query, orderBy, serverTimestamp } = window.fs;
 
-        const colTrans  = () => collection(db, "users", uid, "finanzas");
+        const colTrans  = () => collection(db, "users", uid, "caja");
         const colFijos  = () => collection(db, "users", uid, "gastosFijos");
         const colTarifa = () => collection(db, "users", uid, "tarifas");
 

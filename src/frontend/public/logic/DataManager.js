@@ -143,9 +143,9 @@ class DataManager {
         }
       );
 
-      // Listener para FINANZAS
+      // Listener para CAJA (movimientos de contabilidad)
       this.listeners.finanzas = onSnapshot(
-        collection(db, 'users', this.userId, 'finanzas'),
+        collection(db, 'users', this.userId, 'caja'),
         (snapshot) => {
           this.cache.finanzas = [];
           snapshot.forEach(doc => {
@@ -624,7 +624,7 @@ class DataManager {
   async crearIngreso(datos) {
     try {
       const docRef = await addDoc(
-        collection(db, 'users', this.userId, 'finanzas'),
+        collection(db, 'users', this.userId, 'caja'),
         {
           ...datos,
           tipoMovimiento: 'ingreso',
@@ -663,7 +663,7 @@ class DataManager {
     try {
       if (this.cache.finanzas.length === 0) {
         const snapshot = await getDocs(
-          collection(db, 'users', this.userId, 'finanzas')
+          collection(db, 'users', this.userId, 'caja')
         );
         this.cache.finanzas = [];
         snapshot.forEach(doc => {
