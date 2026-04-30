@@ -126,7 +126,7 @@ class ChatbotManager {
             try {
                 const nombreDr = document.querySelector('.sidebar-user-name')?.textContent || 'Doctor/a';
                 const rolDr = document.querySelector('.sidebar-user-role')?.textContent || 'Profesional';
-                const clinica = window.BCONFIG?.empresa || 'la clínica';
+                const clinica = 'el negocio';
                 userContext = `Te estás dirigiendo a ${nombreDr} (${rolDr}) de ${clinica}.`;
             } catch(e) {}
 

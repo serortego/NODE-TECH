@@ -14,7 +14,6 @@
 //
 // Modelo Firestore (users/{uid}):
 //   uid, email, displayName, role ("user"|"admin"), status ("active"|"disabled"),
-//   businessType ("dental"|"medica"|"taller"|"peluqueria"|"otros"),
 //   createdAt, lastLoginAt
 
 import {
@@ -45,9 +44,9 @@ const googleProvider = new GoogleAuthProvider();
 
 // ─── Funciones de autenticación exportables ───────────────────────────────────
 
-export async function registerWithEmail(email, password, displayName = null, businessType = 'dental') {
+export async function registerWithEmail(email, password, displayName = null) {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await _createUserProfile(credential.user, displayName, businessType);
+  await _createUserProfile(credential.user, displayName);
   return credential.user;
 }
 
@@ -81,7 +80,7 @@ export async function loginWithGoogle() {
   const credential = await signInWithPopup(auth, googleProvider);
   const info = getAdditionalUserInfo(credential);
   if (info?.isNewUser) {
-    await _createUserProfile(credential.user, null, null); // businessType se pide en sign_up.js
+    await _createUserProfile(credential.user);
   } else {
     const profile = await getUserProfile(credential.user.uid);
     if (!profile) {
@@ -102,11 +101,7 @@ export async function getUserProfile(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
-export async function updateUserBusinessType(uid, businessType) {
-  await updateDoc(doc(db, 'users', uid), { businessType });
-}
-
-async function _createUserProfile(user, displayName = null, businessType = 'dental') {
+async function _createUserProfile(user, displayName = null) {
   const data = {
     uid:          user.uid,
     email:        user.email,
@@ -116,7 +111,6 @@ async function _createUserProfile(user, displayName = null, businessType = 'dent
     createdAt:    serverTimestamp(),
     lastLoginAt:  serverTimestamp()
   };
-  if (businessType) data.businessType = businessType;
   await setDoc(doc(db, 'users', user.uid), data);
 }
 
@@ -155,11 +149,7 @@ if (!window.location.pathname.endsWith('sign_up.html')) {
           window.location.replace('sign_up.html');
           return;
         }
-        // Perfil incompleto (Google sin tipo de negocio) → volver a completar
-        if (!profile.businessType) {
-          window.location.replace('sign_up.html');
-          return;
-        }
+
       }
     } catch {
       // No bloqueamos si Firestore no responde temporalmente
@@ -171,25 +161,32 @@ if (!window.location.pathname.endsWith('sign_up.html')) {
     window.firebaseProfile = profile;
     window.firebaseSignOut = () => signOut(auth);
 
-    // ── Aplicar terminología según tipo de negocio ────────────────
-    const bType = profile.businessType || localStorage.getItem('businessType') || 'dental';
-    localStorage.setItem('businessType', bType); // cachear localmente
-    if (typeof BUSINESS_CONFIG !== 'undefined') {
-      window.BCONFIG = BUSINESS_CONFIG[bType] || BUSINESS_CONFIG.dental;
-      // Re-aplicar etiquetas (theme-loader pudo correr antes con valor viejo de localStorage)
-      document.querySelectorAll('[data-label]').forEach(el => {
-        const key = el.dataset.label;
-        if (window.BCONFIG[key] !== undefined) el.textContent = window.BCONFIG[key];
-      });
-      document.querySelectorAll('[data-placeholder]').forEach(el => {
-        const key = el.dataset.placeholder;
-        if (window.BCONFIG[key] !== undefined) el.placeholder = window.BCONFIG[key];
-      });
-    }
+    // ── Config genérica (sin archivos externos) ────────────────────
+    window.BCONFIG = {
+      businessName:        'Mi Negocio',
+      clienteSingular:     'Cliente',
+      clientePlural:       'Clientes',
+      empleadoSingular:    'Empleado',
+      empleadoPlural:      'Empleados',
+      salaSingular:        'Sala',
+      salaPlural:          'Salas',
+      citaSingular:        'Cita',
+      citaPlural:          'Citas',
+      servicioSingular:    'Servicio',
+      servicioPlural:      'Servicios',
+      nuevaCita:           'Nueva Cita',
+      precioLabel:         'Importe (€)',
+      placeholderCliente:  'Nombre del cliente',
+      placeholderServicio: 'Selecciona un servicio',
+      servicios: [
+        { grupo: 'Servicios', color: '#38BDF8',
+          items: ['Consultoría', 'Asesoría', 'Formación', 'Proyecto', 'Reunión', 'Servicio general'] }
+      ]
+    };
 
     // Rellenar nombre/rol en el sidebar
     const name = profile.displayName || user.email || 'Usuario';
-    const role = window.BCONFIG?.empleadoSingular || (profile.role === 'admin' ? 'Administrador' : 'Propietario');
+    const role = profile.role === 'admin' ? 'Administrador' : 'Propietario';
     document.querySelectorAll('.sidebar-user-name').forEach(el => el.textContent = name);
     document.querySelectorAll('.sidebar-user-role').forEach(el => el.textContent = role);
 

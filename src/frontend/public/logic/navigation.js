@@ -22,9 +22,9 @@ class NavigationManager {
             { id: 'urgencia',      icon: 'fa-exclamation-circle',  label: 'Urgencia',                       color: 'text-red-400'     },
             { id: 'nueva-cita',    icon: 'fa-calendar-plus',       label: cfg.nuevaCita || 'Nueva cita',    color: 'text-purple-400'  },
             { id: 'ver-agenda',    icon: 'fa-calendar-alt',        label: 'Ver agenda',                     color: 'text-amber-400'   },
-            { id: 'clientes',      icon: 'fa-user-injured',        label: cfg.clientePlural || 'Clientes',  color: 'text-teal-400'    },
+            { id: 'clientes',      icon: 'fa-users',               label: cfg.clientePlural  || 'Clientes',  color: 'text-teal-400'    },
             { id: 'contabilidad',  icon: 'fa-file-invoice-dollar', label: 'Contabilidad',                   color: 'text-green-400'   },
-            { id: 'empleados',     icon: 'fa-user-md',             label: cfg.empleadoPlural || 'Equipo',   color: 'text-blue-400'    },
+            { id: 'empleados',     icon: 'fa-user-tie',            label: cfg.empleadoPlural || 'Equipo',    color: 'text-blue-400'    },
         ];
     }
 
@@ -46,13 +46,13 @@ class NavigationManager {
     }
 
     _getQuickActions() {
-        const saved = localStorage.getItem('node-quick-actions-' + (localStorage.getItem('businessType') || 'general'));
+        const saved = localStorage.getItem('node-quick-actions');
         if (saved) { try { return JSON.parse(saved); } catch (_) {} }
         return ['cita-express', 'cobro-rapido', 'urgencia', 'nueva-cita'];
     }
 
     _saveQuickActions(ids) {
-        localStorage.setItem('node-quick-actions-' + (localStorage.getItem('businessType') || 'general'), JSON.stringify(ids));
+        localStorage.setItem('node-quick-actions', JSON.stringify(ids));
     }
 
     constructor() {
@@ -112,14 +112,43 @@ class NavigationManager {
                 }
             });
         });
+
+        // Arbol expandible (nav-tree)
+        document.querySelectorAll('.nav-tree-parent').forEach(parent => {
+            parent.addEventListener('click', () => {
+                parent.classList.toggle('open');
+                const childrenId = parent.id + '-children';
+                const children = document.getElementById(childrenId);
+                if (children) children.classList.toggle('open');
+            });
+        });
+
+        document.querySelectorAll('.nav-tree-child').forEach(child => {
+            child.addEventListener('click', (e) => {
+                e.preventDefault();
+                const view = child.getAttribute('data-view');
+                if (view) {
+                    this.setActiveNav(child);
+                    this.loadView(view);
+                }
+            });
+        });
     }
 
     setActiveNav(clickedItem) {
-        this.navItems.forEach(item => {
-            item.classList.remove('active');
-        });
-        if (clickedItem) {
-            clickedItem.classList.add('active');
+        this.navItems.forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.nav-tree-child').forEach(c => c.classList.remove('active'));
+        if (clickedItem) clickedItem.classList.add('active');
+
+        // Si el item activo es un nav-tree-child, marcar el padre como open
+        if (clickedItem && clickedItem.classList.contains('nav-tree-child')) {
+            const children = clickedItem.closest('.nav-tree-children');
+            if (children) {
+                children.classList.add('open');
+                const parentId = children.id.replace('-children', '');
+                const parent = document.getElementById(parentId);
+                if (parent) parent.classList.add('open');
+            }
         }
     }
 
@@ -159,6 +188,17 @@ class NavigationManager {
             case 'agenda':
                 if (typeof AgendaManager !== 'undefined') {
                     this.currentManager = new AgendaManager(this);
+                }
+                if (this.currentManager) {
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                }
+                return;
+
+            case 'agenda-stats':
+                if (typeof AgendaManager !== 'undefined') {
+                    this.currentManager = new AgendaManager(this);
+                    this.currentManager.agendaView = 'analytics';
                 }
                 if (this.currentManager) {
                     this.contentArea.innerHTML = this.currentManager.render();
@@ -206,8 +246,54 @@ class NavigationManager {
                 if (typeof ContabilidadManager !== 'undefined') {
                     this.currentManager = new ContabilidadManager(this);
                     this.contentArea.innerHTML = this.currentManager.render();
-                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                    setTimeout(() => {
+                        this.currentManager.setupListeners();
+                        // Contabilidad = solo Caja y gastos (sin facturas, sin tarifas)
+                        document.getElementById('cont-tab-btn-facturas')?.remove();
+                        document.getElementById('cont-tab-facturas')?.remove();
+                        document.getElementById('caja-tab-btn-tarifa')?.closest('button')?.remove();
+                        document.getElementById('caja-tab-btn-tarifa')?.remove();
+                        document.getElementById('caja-subtab-tarifa')?.remove();
+                        // Activar directamente la pestaña de transacciones
+                        const btnT = document.getElementById('cont-tab-btn-transacciones');
+                        const tabT = document.getElementById('cont-tab-transacciones');
+                        if (btnT) { btnT.click(); }
+                        // Actualizar cabecera y botón
+                        const h1 = document.querySelector('#cont-root h1');
+                        if (h1) h1.textContent = 'Contabilidad';
+                        const sub = document.querySelector('#cont-root p.text-slate-400');
+                        if (sub) sub.textContent = 'Caja, ingresos y gastos fijos';
+                    }, 0);
                 }
+                return;
+
+            case 'facturacion':
+                if (typeof ContabilidadManager !== 'undefined') {
+                    this.currentManager = new ContabilidadManager(this);
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => {
+                        this.currentManager.setupListeners();
+                        // Facturación = solo Facturas (sin caja/gastos)
+                        document.getElementById('cont-tab-btn-transacciones')?.remove();
+                        document.getElementById('cont-tab-transacciones')?.remove();
+                        // Actualizar cabecera
+                        const h1 = document.querySelector('#cont-root h1');
+                        if (h1) h1.textContent = 'Facturación';
+                        const sub = document.querySelector('#cont-root p.text-slate-400');
+                        if (sub) sub.textContent = 'Gestión de facturas y cobros';
+                        const btnNueva = document.getElementById('cont-btn-nueva-label');
+                        if (btnNueva) btnNueva.textContent = 'Nueva factura';
+                    }, 0);
+                }
+                return;
+
+            case 'tarifas':
+                this.contentArea.innerHTML = this.renderTarifas();
+                setTimeout(() => this._setupTarifasListeners(), 0);
+                return;
+
+            case 'impuestos':
+                this.contentArea.innerHTML = this._renderImpuestos();
                 return;
 
             default:
@@ -246,7 +332,7 @@ class NavigationManager {
 
     // ── Dashboard con KPIs + timeline ─────────────────────────────
     renderDashboard() {
-        const hoy      = new Date().toISOString().split('T')[0];
+        const hoy      = this._hoyStr();
         const ahora    = new Date();
         const citasHoy = this.citas
             .filter(c => c.fecha === hoy)
@@ -368,16 +454,21 @@ class NavigationManager {
         `;
     }
 
+    // ── Helpers fecha local (sin UTC) ─────────────────────────────
+    _hoyStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
     // ── Helpers de estado ─────────────────────────────────────────
     getCitasHoy() {
-        const hoy = new Date().toISOString().split('T')[0];
+        const hoy = this._hoyStr();
         return this.citas.filter(c => c.fecha === hoy);
     }
 
     getProximaCita() {
         const ahora = new Date();
-        const hoy = ahora.toISOString().split('T')[0];
-        
+        const hoy = this._hoyStr();
         const citasProximas = this.citas
             .filter(c => {
                 if (c.fecha > hoy) return true;
@@ -388,14 +479,12 @@ class NavigationManager {
                 if (a.fecha !== b.fecha) return new Date(a.fecha) - new Date(b.fecha);
                 return a.hora.localeCompare(b.hora);
             });
-        
         return citasProximas[0] || null;
     }
 
     getProximasCitas(limite = 5) {
         const ahora = new Date();
-        const hoy = ahora.toISOString().split('T')[0];
-        
+        const hoy = this._hoyStr();
         const citasProximas = this.citas
             .filter(c => {
                 if (c.fecha > hoy) return true;
@@ -406,7 +495,6 @@ class NavigationManager {
                 if (a.fecha !== b.fecha) return new Date(a.fecha) - new Date(b.fecha);
                 return a.hora.localeCompare(b.hora);
             });
-        
         return citasProximas.slice(0, limite);
     }
 
@@ -432,7 +520,7 @@ class NavigationManager {
 
     saveCita(cita) {
         if (window.dataManager && cita.id) {
-            window.dataManager.actualizarCita(cita.id, { hora: cita.hora, fecha: cita.fecha })
+            window.dataManager.actualizarCita(cita.id, { hora: cita.hora, fecha: cita.fecha, recurso: cita.recurso || '' })
                 .catch(err => console.error('❌ Error guardando cita en Firestore:', err));
         }
         const idx = this.citas.findIndex(c => c.id === cita.id);
@@ -441,6 +529,19 @@ class NavigationManager {
 
     deleteCita(citaId) {
         this.citas = this.citas.filter(c => c.id !== citaId);
+        // Eliminar de Firestore
+        if (window.dataManager && typeof window.dataManager.actualizarCita === 'function') {
+            // DataManager no tiene eliminarCita, usamos deleteDoc directamente
+            if (window.fs && window.db && window.firebaseUser) {
+                window.fs.deleteDoc(
+                    window.fs.doc(window.db, 'users', window.firebaseUser.uid, 'citas', citaId)
+                ).catch(err => console.error('❌ Error eliminando cita:', err));
+            } else if (window.db && window.firebaseUser) {
+                import('https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js')
+                    .then(({ deleteDoc, doc }) => deleteDoc(doc(window.db, 'users', window.firebaseUser.uid, 'citas', citaId)))
+                    .catch(err => console.error('❌ Error eliminando cita:', err));
+            }
+        }
         this.loadView('agenda');
     }
 
@@ -532,6 +633,11 @@ class NavigationManager {
                             </div>
                         </div>
                         <div>
+                            <label class="block text-xs font-bold text-slate-300 mb-1">Duracion (min)</label>
+                            <input type="number" id="cita-duracion" value="${predatos.duracion || 60}" min="15" step="15"
+                                class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                        </div>
+                        <div>
                             <label class="block text-xs font-bold text-slate-300 mb-1">Precio (€)</label>
                             <input type="number" id="cita-precio"
                                 placeholder="0" value="${predatos.precio || ''}" min="0" step="5"
@@ -591,6 +697,7 @@ class NavigationManager {
                 precio:   document.getElementById('cita-precio').value || '0',
                 recurso:  document.getElementById('cita-recurso')?.value || '',
                 notas:    document.getElementById('cita-notas')?.value || '',
+                duracion: parseInt(document.getElementById('cita-duracion')?.value || 60),
             };
             if (nueva.cliente && nueva.servicio && nueva.fecha && nueva.hora) {
                 this._guardarCitaFirebase(nueva).then(id => {
@@ -839,6 +946,200 @@ class NavigationManager {
         });
     }
 
+    // ── Vista impuestos (placeholder) ─────────────────────────────
+    _renderImpuestos() {
+        return `
+        <div class="space-y-4">
+            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <i class="fas fa-percentage text-[#2B93A6] text-xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Impuestos</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">IVA, IRPF y modelos trimestrales</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">IVA repercutido</p>
+                    <p class="text-2xl font-black text-white">—</p>
+                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
+                </div>
+                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">IVA soportado</p>
+                    <p class="text-2xl font-black text-white">—</p>
+                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
+                </div>
+                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Resultado IVA</p>
+                    <p class="text-2xl font-black text-white">—</p>
+                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
+                </div>
+            </div>
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-8 text-center">
+                <i class="fas fa-tools text-3xl text-slate-700 mb-3 block"></i>
+                <p class="text-slate-400 font-semibold">Módulo de impuestos en construcción</p>
+                <p class="text-slate-600 text-sm mt-1">Próximamente: Modelo 303, 130, resumen trimestral automático</p>
+            </div>
+        </div>`;
+    }
+
+    // ── Vista de clientes ─────────────────────────────────────────────────────────
+    renderTarifas() {
+        const cfg = window.BCONFIG || {};
+        const label = cfg.servicioPlural || 'Servicios';
+        const sing  = cfg.servicioSingular || 'Servicio';
+        return `
+        <div class="space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white"><i class="fas fa-tags text-[#2B93A6] mr-2"></i>${label} y tarifas</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">Precios base de cada servicio</p>
+                </div>
+                <button id="tarifa-btn-nuevo" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Nuevo ${sing.toLowerCase()}
+                </button>
+            </div>
+
+            <!-- Formulario añadir / editar -->
+            <div id="tarifa-form-wrapper" class="hidden glass border border-[rgba(43,147,166,0.3)] rounded-xl p-5">
+                <h2 class="text-base font-bold text-white mb-3" id="tarifa-form-titulo">Nuevo ${sing.toLowerCase()}</h2>
+                <form id="tarifa-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="hidden" id="tarifa-edit-id">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-300 mb-1">${sing} *</label>
+                        <input type="text" id="tarifa-nombre" required placeholder="Ej: Corte y lavado"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Precio (€) *</label>
+                        <input type="number" id="tarifa-precio" required placeholder="0.00" min="0" step="0.50"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div class="sm:col-span-3 flex gap-2">
+                        <button type="submit" class="btn-primary flex-1 px-4 py-2 rounded-lg text-sm">Guardar</button>
+                        <button type="button" id="tarifa-btn-cancelar" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista -->
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                <div id="tarifa-lista">
+                    <p class="text-slate-500 text-sm p-6 text-center"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    async _setupTarifasListeners() {
+        const db  = window.db;
+        const uid = window.firebaseUser?.uid;
+        const fs  = window.fs;
+        if (!db || !uid || !fs) {
+            const el = document.getElementById('tarifa-lista');
+            if (el) el.innerHTML = '<p class="text-red-400 text-sm p-6 text-center">Sin conexión a Firebase</p>';
+            return;
+        }
+        const { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } = fs;
+        const col = () => collection(db, 'users', uid, 'tarifas');
+        let tarifas = [];
+        let editingId = null;
+
+        const renderLista = () => {
+            const lista = document.getElementById('tarifa-lista');
+            if (!lista) return;
+            if (!tarifas.length) {
+                lista.innerHTML = '<p class="text-slate-600 text-sm p-8 text-center">Sin tarifas aún — pulsa «+» para añadir</p>';
+                return;
+            }
+            lista.innerHTML = tarifas.map(t => `
+                <div class="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.03)] transition group" data-id="${t.id}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(43,147,166,0.15)">
+                            <i class="fas fa-tag text-[#38BDF8] text-xs"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-white">${t.nombre}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-base font-black text-[#38BDF8]">€${parseFloat(t.precio || 0).toFixed(2)}</span>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                            <button class="tarifa-edit p-1.5 text-slate-400 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition text-xs" data-id="${t.id}" title="Editar"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
+                            <button class="tarifa-del p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition text-xs" data-id="${t.id}" title="Eliminar"><i class="fas fa-trash pointer-events-none"></i></button>
+                        </div>
+                    </div>
+                </div>`).join('');
+
+            lista.querySelectorAll('.tarifa-edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const t = tarifas.find(x => x.id === btn.dataset.id);
+                    if (!t) return;
+                    editingId = t.id;
+                    document.getElementById('tarifa-edit-id').value = t.id;
+                    document.getElementById('tarifa-nombre').value  = t.nombre;
+                    document.getElementById('tarifa-precio').value  = t.precio;
+                    document.getElementById('tarifa-form-titulo').textContent = 'Editar servicio';
+                    document.getElementById('tarifa-form-wrapper').classList.remove('hidden');
+                    document.getElementById('tarifa-nombre').focus();
+                });
+            });
+
+            lista.querySelectorAll('.tarifa-del').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Eliminar esta tarifa?')) return;
+                    try {
+                        await deleteDoc(doc(db, 'users', uid, 'tarifas', btn.dataset.id));
+                        tarifas = tarifas.filter(t => t.id !== btn.dataset.id);
+                        renderLista();
+                        this.showNotification('Tarifa eliminada', 'success');
+                    } catch { this.showNotification('Error al eliminar', 'error'); }
+                });
+            });
+        };
+
+        const loadTarifas = async () => {
+            try {
+                const snap = await getDocs(col());
+                tarifas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch { tarifas = []; }
+            renderLista();
+        };
+
+        await loadTarifas();
+
+        document.getElementById('tarifa-btn-nuevo')?.addEventListener('click', () => {
+            editingId = null;
+            document.getElementById('tarifa-edit-id').value  = '';
+            document.getElementById('tarifa-nombre').value   = '';
+            document.getElementById('tarifa-precio').value   = '';
+            document.getElementById('tarifa-form-titulo').textContent = 'Nuevo servicio';
+            document.getElementById('tarifa-form-wrapper').classList.remove('hidden');
+            document.getElementById('tarifa-nombre').focus();
+        });
+
+        document.getElementById('tarifa-btn-cancelar')?.addEventListener('click', () => {
+            document.getElementById('tarifa-form-wrapper').classList.add('hidden');
+            editingId = null;
+        });
+
+        document.getElementById('tarifa-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('tarifa-nombre').value.trim();
+            const precio = parseFloat(document.getElementById('tarifa-precio').value) || 0;
+            if (!nombre) return;
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, 'users', uid, 'tarifas', editingId), { nombre, precio });
+                    this.showNotification('Tarifa actualizada', 'success');
+                } else {
+                    await addDoc(col(), { nombre, precio, createdAt: serverTimestamp() });
+                    this.showNotification('Tarifa añadida', 'success');
+                }
+                editingId = null;
+                document.getElementById('tarifa-form-wrapper').classList.add('hidden');
+                await loadTarifas();
+            } catch { this.showNotification('Error al guardar', 'error'); }
+        });
+    }
+
     // ── Vista de clientes ─────────────────────────────────────────
     renderPacientes() {
         const mapa = {};
@@ -966,8 +1267,7 @@ class NavigationManager {
             case 'clientes':
             case 'pacientes':      this.loadView('pacientes'); break;
             case 'contabilidad':   this.loadView('contabilidad'); break;
-            case 'empleados':
-            case 'dentistas':      this.loadView('empleados'); break;
+            case 'empleados':      this.loadView('empleados'); break;
             case 'urgencia': {
                 const hora = `${new Date().getHours().toString().padStart(2, '0')}:00`;
                 const urgServicio = window.BCONFIG?.servicios?.at(-1)?.items?.at(-1) || 'Urgencia';

@@ -4,8 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 (function () {
-  const type = localStorage.getItem('businessType') || 'dental';
-  const cfg  = BUSINESS_CONFIG[type] || BUSINESS_CONFIG.dental;
+  const cfg  = BUSINESS_CONFIG.otros;
 
   // Exponer globalmente para que navigation.js / dental_navigation.js lo usen
   window.BCONFIG = cfg;

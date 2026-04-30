@@ -1,1243 +1,1130 @@
-﻿// agenda.js - Gestión completa de la agenda: vistas día, semana y mes
+﻿// agenda.js — AgendaManager v2.0 — NodeTech dark theme
+// Gestión completa de agenda: vistas día/semana/mes, drag&drop,
+// panel de detalle lateral, cambio de estado en hover, solapamientos.
 
 class AgendaManager {
     constructor(navigationManager) {
-        this.navManager = navigationManager;
-        this.agendaView = 'day'; // 'day', 'week', 'month'
-        this.selectedDate = new Date();
-        this.recursos = (window.dataManager?.cache?.empleados?.map(e => e.nombre).filter(Boolean)) 
-                        || this.navManager.recursos
-                        || ['Sin empleados'];
-        this.tiempoGranularidad = 15; // minutos (15 o 30)
-        this.sidebarVisible = true;
+        this.navManager      = navigationManager;
+        this.agendaView      = 'day';
+        this.selectedDate    = new Date();
+        this.recursos        = this._loadRecursos();
+        this.granularidad    = 15;
+        this.horaInicio      = 8;
+        this.horaFin         = 20;
+        this.pxPorHora       = 80;
+        this.sidebarVisible  = true;
+        this._timeInterval   = null;
+        this.bloques         = JSON.parse(localStorage.getItem('nodetech_bloques') || '[]');
+
         this.citaStates = {
-            'no-presentado': { bg: '#F3F4F6', border: '#9CA3AF', text: '#4B5563' },
-            'esperando': { bg: '#FEF3C7', border: '#FBBF24', text: '#92400E' },
-            'atendiendose': { bg: '#DBEAFE', border: '#3B82F6', text: '#1E40AF' },
-            'completado': { bg: '#DCFCE7', border: '#22C55E', text: '#166534' }
+            'pendiente':     { bg: 'rgba(100,116,139,0.22)', border: '#64748B', text: '#94a3b8',  label: 'Pendiente',      icon: 'o'  },
+            'no-presentado': { bg: 'rgba(100,116,139,0.22)', border: '#64748B', text: '#94a3b8',  label: 'No presentado',  icon: 'x'  },
+            'esperando':     { bg: 'rgba(251,191,36,0.18)',  border: '#FBBF24', text: '#FDE68A',  label: 'Esperando',      icon: '?'  },
+            'atendiendose':  { bg: 'rgba(59,130,246,0.20)',  border: '#60A5FA', text: '#BFDBFE',  label: 'En atencion',    icon: '*'  },
+            'completado':    { bg: 'rgba(34,197,94,0.18)',   border: '#4ADE80', text: '#BBF7D0',  label: 'Completado',     icon: 'v'  },
         };
+
+        this._servicioColors = [
+            { bg: 'rgba(59,130,246,0.18)',  border: '#60A5FA', text: '#BFDBFE' },
+            { bg: 'rgba(16,185,129,0.18)',  border: '#34D399', text: '#A7F3D0' },
+            { bg: 'rgba(139,92,246,0.18)',  border: '#A78BFA', text: '#DDD6FE' },
+            { bg: 'rgba(245,158,11,0.18)',  border: '#FCD34D', text: '#FEF3C7' },
+            { bg: 'rgba(239,68,68,0.18)',   border: '#F87171', text: '#FECACA' },
+            { bg: 'rgba(6,182,212,0.18)',   border: '#22D3EE', text: '#CFFAFE' },
+            { bg: 'rgba(249,115,22,0.18)',  border: '#FB923C', text: '#FED7AA' },
+            { bg: 'rgba(236,72,153,0.18)',  border: '#F472B6', text: '#FBCFE8' },
+            { bg: 'rgba(20,184,166,0.18)',  border: '#2DD4BF', text: '#CCFBF1' },
+            { bg: 'rgba(168,85,247,0.18)',  border: '#C084FC', text: '#F3E8FF' },
+        ];
     }
 
-    // ── Color map dinámico desde BCONFIG ──────────────────────────
+    _loadRecursos() {
+        const fromCache = window.dataManager?.cache?.empleados?.map(e => e.nombre).filter(Boolean);
+        if (fromCache && fromCache.length > 0) return fromCache;
+        if (this.navManager?.recursos?.length > 0) return this.navManager.recursos;
+        return ['General'];
+    }
+
     _buildColorMap() {
-        const palette = [
-            { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF' },
-            { bg: '#ECFDF5', border: '#10B981', text: '#047857' },
-            { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9' },
-            { bg: '#FFFBEB', border: '#F59E0B', text: '#92400E' },
-            { bg: '#FEF2F2', border: '#EF4444', text: '#B91C1C' },
-            { bg: '#F0FDF4', border: '#22C55E', text: '#166534' },
-            { bg: '#FDF4FF', border: '#A855F7', text: '#7E22CE' },
-            { bg: '#FFF7ED', border: '#F97316', text: '#C2410C' },
-            { bg: '#F0F9FF', border: '#0EA5E9', text: '#0369A1' },
-            { bg: '#FDF2F8', border: '#EC4899', text: '#9D174D' },
-        ];
         const cfg = window.BCONFIG || {};
         const servicios = [];
-        if (cfg.servicios) {
-            cfg.servicios.forEach(grupo => { if (grupo.items) servicios.push(...grupo.items); });
-        }
+        if (cfg.servicios) cfg.servicios.forEach(g => { if (g.items) servicios.push(...g.items); });
         const map = {};
-        servicios.forEach((s, i) => { map[s] = palette[i % palette.length]; });
+        servicios.forEach((s, i) => { map[s] = this._servicioColors[i % this._servicioColors.length]; });
         return map;
     }
 
+    _dateStr(date) {
+        return date.getFullYear() + '-' +
+            String(date.getMonth() + 1).padStart(2, '0') + '-' +
+            String(date.getDate()).padStart(2, '0');
+    }
+
+    _toMinutes(horaStr) {
+        const [h, m] = (horaStr || '0:0').split(':').map(Number);
+        return h * 60 + (m || 0);
+    }
+
+    _detectarSolapamientos(citas) {
+        const overlapping = new Set();
+        const groups = {};
+        citas.forEach(c => {
+            const key = c.fecha + '__' + (c.recurso || 'sin-recurso');
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(c);
+        });
+        Object.values(groups).forEach(grupo => {
+            for (let i = 0; i < grupo.length; i++) {
+                for (let j = i + 1; j < grupo.length; j++) {
+                    const a = grupo[i], b = grupo[j];
+                    const aStart = this._toMinutes(a.hora);
+                    const aEnd   = aStart + (a.duracion || 60);
+                    const bStart = this._toMinutes(b.hora);
+                    const bEnd   = bStart + (b.duracion || 60);
+                    if (aStart < bEnd && aEnd > bStart) {
+                        overlapping.add(a.id);
+                        overlapping.add(b.id);
+                    }
+                }
+            }
+        });
+        return overlapping;
+    }
+
     render() {
-        const proximasCitas = this.navManager.getProximasCitas(5);
-        const hoy           = new Date().toISOString().split('T')[0];
-        const citasHoyArr   = this.navManager.citas.filter(c => c.fecha === hoy);
-        const citasHoy      = citasHoyArr.length;
-        const pendientes    = citasHoyArr.filter(c => !c.estado || c.estado === 'pendiente' || c.estado === 'no-presentado').length;
-        const estimado      = citasHoyArr.reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        this.recursos = this._loadRecursos();
+        const fechaStr    = this._dateStr(this.selectedDate);
+        const citasArr    = this.navManager.citas.filter(c => c.fecha === fechaStr);
+        const citasHoy    = citasArr.length;
+        const pendientes  = citasArr.filter(c => !c.estado || c.estado === 'pendiente' || c.estado === 'esperando' || c.estado === 'no-presentado').length;
+        const completados = citasArr.filter(c => c.estado === 'completado').length;
+        const estimado    = citasArr.reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        const proximas    = this.navManager.getProximasCitas(8);
+        const fechaLabel  = this._buildFechaLabel();
 
         return `
-            <div class="space-y-2">
-                <!-- Header COMPACTO - Una sola línea -->
-                <div class="flex items-center justify-between gap-4 pb-2 border-b border-[rgba(255,255,255,0.08)]">
-                    <!-- Título izquierda -->
-                    <div class="flex items-center gap-2 min-w-fit">
-                        <i class="fas fa-calendar-alt text-[#2B93A6] text-lg"></i>
-                        <h2 class="text-xl font-bold text-white">Agenda</h2>
-                    </div>
+        <div class="agenda-root flex flex-col gap-2 h-full" style="min-height:0">
 
-                    <!-- Vistas + Navegación centro -->
-                    <div class="flex items-center gap-3 flex-1">
-                        <div class="flex gap-1 bg-[rgba(255,255,255,0.06)] p-1 rounded-lg">
-                            <button class="agenda-view-btn px-2.5 py-1 bg-[#2B93A6] text-white rounded text-xs font-semibold active" data-view="day">Día</button>
-                            <button class="agenda-view-btn px-2.5 py-1 text-slate-400 text-xs font-semibold hover:bg-[rgba(255,255,255,0.08)]" data-view="week">Semana</button>
-                            <button class="agenda-view-btn px-2.5 py-1 text-slate-400 text-xs font-semibold hover:bg-[rgba(255,255,255,0.08)]" data-view="month">Mes</button>
-                        </div>
-                        
-                        <div class="flex items-center gap-1">
-                            <button id="agenda-prev-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition">
-                                <i class="fas fa-chevron-left text-xs"></i>
-                            </button>
-                            <input type="date" id="agenda-date-input" value="${this.selectedDate.toISOString().split('T')[0]}" class="px-2 py-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white rounded text-xs w-28 focus:outline-none focus:ring-1 focus:ring-[#2B93A6]">
-                            <button id="agenda-next-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition">
-                                <i class="fas fa-chevron-right text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Botones derecha -->
-                    <div class="flex gap-2 min-w-fit">
-                        <button id="btn-toggle-sidebar" class="px-2.5 py-1.5 bg-[rgba(255,255,255,0.06)] text-slate-400 rounded-lg hover:bg-[rgba(255,255,255,0.1)] transition font-semibold text-xs" title="Expandir/Contraer panel">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                        <button id="btn-nueva-cita" class="btn-primary inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs">
-                            <i class="fas fa-plus"></i> Cita
-                        </button>
-                    </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                    <i class="fas ${this.agendaView === 'analytics' ? 'fa-chart-bar' : 'fa-calendar-alt'} text-[#2B93A6]"></i>
+                    <h2 class="text-lg font-bold text-white">${this.agendaView === 'analytics' ? 'Estad\u00edsticas' : 'Agenda'}</h2>
                 </div>
 
-                <!-- Métricas rápidas del día -->
-                <div class="flex gap-2 text-xs px-1">
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(43,147,166,0.15)] text-[#38BDF8] rounded font-semibold">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>${citasHoy} citas</span>
-                    </div>
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(251,146,60,0.12)] text-orange-300 rounded font-semibold">
-                        <i class="fas fa-clock"></i>
-                        <span>${pendientes} pendientes</span>
-                    </div>
-                    <div class="flex items-center gap-1 px-3 py-1.5 bg-[rgba(52,211,153,0.12)] text-emerald-300 rounded font-semibold">
-                        <i class="fas fa-euro-sign"></i>
-                        <span>€${estimado} est.</span>
-                    </div>
-                </div>
+                ${this.agendaView !== 'analytics' ? `
+                <div class="flex bg-[rgba(255,255,255,0.06)] p-0.5 rounded-lg">
+                    <button class="agenda-view-btn px-3 py-1 rounded-md text-xs font-semibold transition ${this.agendaView === 'day'   ? 'bg-[#2B93A6] text-white' : 'text-slate-400 hover:text-white'}" data-view="day">Dia</button>
+                    <button class="agenda-view-btn px-3 py-1 rounded-md text-xs font-semibold transition ${this.agendaView === 'week'  ? 'bg-[#2B93A6] text-white' : 'text-slate-400 hover:text-white'}" data-view="week">Semana</button>
+                    <button class="agenda-view-btn px-3 py-1 rounded-md text-xs font-semibold transition ${this.agendaView === 'month' ? 'bg-[#2B93A6] text-white' : 'text-slate-400 hover:text-white'}" data-view="month">Mes</button>
+                </div>` : ''}
 
-                <!-- Contenido Principal -->
-                <div class="flex gap-4">
-                    <!-- Timeline/Calendario (flex-1) -->
-                    <div id="agenda-content" class="flex-1 glass border border-[rgba(255,255,255,0.08)] rounded-lg overflow-y-auto relative">
-                        ${this.renderContent()}
-                    </div>
+                ${this.agendaView !== 'analytics' ? `
+                <div class="flex items-center gap-1">
+                    <button id="agenda-prev-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition"><i class="fas fa-chevron-left text-xs"></i></button>
+                    <button id="agenda-hoy-btn" class="px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition">Hoy</button>
+                    <button id="agenda-next-btn" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded transition"><i class="fas fa-chevron-right text-xs"></i></button>
+                    <span id="agenda-fecha-label" class="text-sm font-semibold text-white ml-1 capitalize">${fechaLabel}</span>
+                    <input type="date" id="agenda-date-input" value="${fechaStr}" class="opacity-0 absolute w-0 h-0 pointer-events-none">
+                </div>` : ''}
 
-                    <!-- Sidebar (derecho) -->
-                    <div id="agenda-sidebar" class="w-64 space-y-4 transition-all duration-300">
-                        <!-- Calendario Mini -->
-                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
-                            <div class="text-center mb-3">
-                                <h4 class="font-bold text-white text-sm">Calendario</h4>
-                            </div>
-                            <div id="calendar-mini">
-                                ${this.renderCalendarMini()}
-                            </div>
-                        </div>
+                ${this.agendaView !== 'analytics' ? `
+                <div class="flex-1 max-w-48 relative">
+                    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+                    <input type="text" id="agenda-search" placeholder="Buscar cliente..."
+                        class="w-full pl-7 pr-3 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-white placeholder-slate-500 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#2B93A6]">
+                </div>` : ''}
 
-                        <!-- Próximas Citas -->
-                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
-                            <h4 class="font-bold text-white text-sm mb-3">Próximas citas</h4>
-                            ${proximasCitas.length > 0 ? `
-                                <div id="proximas-citas-container" class="space-y-2 max-h-80 overflow-y-auto">
-                                    ${proximasCitas.slice(0, 5).map(cita => `
-                                        <div class="p-2 border border-[rgba(255,255,255,0.08)] rounded-lg hover:bg-[rgba(43,147,166,0.08)] transition cursor-pointer text-xs" data-cita-id="${cita.id}">
-                                            <p class="font-bold text-white truncate">${cita.cliente}</p>
-                                            <p class="text-slate-400 text-xs truncate">${cita.servicio}</p>
-                                            <p class="text-slate-500 text-xs mt-1">${cita.hora}</p>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : `
-                                <p class="text-xs text-slate-500 text-center py-4">Sin citas próximas</p>
-                            `}
-                        </div>
-
-                        <!-- Leyenda -->
-                        <div class="glass rounded-lg border border-[rgba(255,255,255,0.08)] p-4">
-                            <h4 class="font-bold text-white text-sm mb-2">Estado</h4>
-                            <div class="space-y-1 text-xs">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded" style="background-color: #9CA3AF;"></div>
-                                    <span class="text-slate-400">No presentado</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded" style="background-color: #FBBF24;"></div>
-                                    <span class="text-slate-400">Esperando</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded" style="background-color: #3B82F6;"></div>
-                                    <span class="text-slate-400">En atención</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded" style="background-color: #22C55E;"></div>
-                                    <span class="text-slate-400">Completado</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="flex gap-2 ml-auto">
+                    ${this.agendaView !== 'analytics' ? `
+                    <button id="btn-toggle-sidebar" class="p-1.5 text-slate-400 hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition" title="Panel lateral">
+                        <i class="fas fa-columns text-xs"></i>
+                    </button>
+                    <button id="btn-bloquear" class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold border border-[rgba(100,116,139,0.4)] text-slate-400 hover:text-white hover:border-[rgba(100,116,139,0.7)] transition">
+                        <i class="fas fa-ban"></i> Bloquear
+                    </button>
+                    <button id="btn-nueva-cita" class="btn-primary inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold">
+                        <i class="fas fa-plus"></i> Nueva cita
+                    </button>` : ''}
                 </div>
             </div>
-        `;
+
+            ${this.agendaView !== 'analytics' ? `
+            <div class="flex gap-2 text-xs flex-wrap">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold" style="background:rgba(43,147,166,0.15);color:#38BDF8">
+                    <i class="fas fa-calendar-check"></i>${citasHoy} cita${citasHoy !== 1 ? 's' : ''}
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold" style="background:rgba(251,191,36,0.12);color:#FDE68A">
+                    <i class="fas fa-clock"></i>${pendientes} pendiente${pendientes !== 1 ? 's' : ''}
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold" style="background:rgba(34,197,94,0.12);color:#86EFAC">
+                    <i class="fas fa-check-circle"></i>${completados} completada${completados !== 1 ? 's' : ''}
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold" style="background:rgba(16,185,129,0.12);color:#6EE7B7">
+                    <i class="fas fa-euro-sign"></i>€${estimado} est.
+                </div>
+            </div>` : ''}
+
+            <div class="flex gap-3 flex-1 min-h-0">
+                <div id="agenda-content"
+                    class="flex-1 min-w-0 glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-y-auto relative">
+                    ${this.renderContent()}
+                </div>
+
+                ${this.agendaView !== 'analytics' ? `
+                <div id="agenda-sidebar" class="w-56 flex-shrink-0 flex flex-col gap-3 overflow-y-auto transition-all duration-300">
+                    <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-3">
+                        <div id="calendar-mini">${this.renderCalendarMini()}</div>
+                    </div>
+
+                    <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-3 flex-1 min-h-0">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Proximas</p>
+                        <div class="space-y-1 overflow-y-auto" style="max-height:260px">
+                            ${proximas.length > 0 ? proximas.map(cita => {
+                                const st = this.citaStates[cita.estado] || this.citaStates['pendiente'];
+                                return '<div class="proxima-cita-item flex items-center gap-2 p-2 rounded-lg hover:bg-[rgba(255,255,255,0.05)] cursor-pointer transition" data-cita-id="' + cita.id + '">'
+                                    + '<div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xs" style="background:rgba(43,147,166,0.3)">' + (cita.cliente || '?').charAt(0).toUpperCase() + '</div>'
+                                    + '<div class="min-w-0 flex-1"><p class="text-xs font-semibold text-white truncate">' + cita.cliente + '</p><p class="text-xs text-slate-500 truncate">' + cita.servicio + ' - ' + cita.hora + '</p></div>'
+                                    + '<div class="w-2 h-2 rounded-full flex-shrink-0" style="background:' + st.border + '" title="' + st.label + '"></div>'
+                                    + '</div>';
+                            }).join('') : '<p class="text-xs text-slate-600 text-center py-4">Sin citas proximas</p>'}
+                        </div>
+                    </div>
+
+                    <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-3">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Estados</p>
+                        <div class="space-y-1.5">
+                            ${Object.entries(this.citaStates).map(([, v]) =>
+                                '<div class="flex items-center gap-2 text-xs"><div class="w-2.5 h-2.5 rounded-sm flex-shrink-0" style="background:' + v.border + '"></div><span class="text-slate-400">' + v.label + '</span></div>'
+                            ).join('')}
+                        </div>
+                    </div>
+                </div>` : ''}
+            </div>
+        </div>`;
     }
 
     renderContent() {
-        if (this.agendaView === 'day') {
-            return this.renderTimelineCompleto();
-        } else if (this.agendaView === 'week') {
-            return this.renderWeekView();
-        } else {
-            return this.renderMonthView();
-        }
+        if (this.agendaView === 'analytics') return this.renderAnalytics();
+        if (this.agendaView === 'week')  return this.renderWeekView();
+        if (this.agendaView === 'month') return this.renderMonthView();
+        return this.renderDayView();
     }
 
-    renderTimelineCompleto() {
-        const horas = Array.from({ length: 10 }, (_, i) => 9 + i);
-        const fechaStr = this.selectedDate.toISOString().split('T')[0];
-        const ahora = new Date();
-        const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
-        const estaHoy = fechaStr === ahora.toISOString().split('T')[0];
-        
-        const colorMap = this._buildColorMap();
+    renderDayView() {
+        const fechaStr    = this._dateStr(this.selectedDate);
+        const ahora       = new Date();
+        const estaHoy     = fechaStr === this._dateStr(ahora);
+        const colorMap    = this._buildColorMap();
+        const slotsPerH   = 60 / this.granularidad;
+        const pxPerSlot   = this.pxPorHora / slotsPerH;
+        const headerH     = 40;
+        const citasDia    = this.navManager.citas.filter(c => c.fecha === fechaStr);
+        const overlapping = this._detectarSolapamientos(citasDia);
+        const numR        = this.recursos.length;
 
-        // Calcular slots de 15 minutos por hora
-        const slotsPerHora = 60 / this.tiempoGranularidad;
-        const pixelsPorHora = 96; // 4 slots * 24px = 96px por hora
-        const pixelsPorSlot = pixelsPorHora / slotsPerHora; // 24px por slot
+        let html = '<div class="relative select-none" style="min-width:' + (70 + numR * 110) + 'px">';
 
-        let html = '<div class="relative w-full" style="overflow-x: auto;">';
-        
-        // Grid: hora | Maria | Juan | Pedro
-        html += `<div class="grid" style="grid-template-columns: 70px repeat(${this.recursos.length}, 1fr); gap: 0;">`;
-        
-        // ===== HEADER CON NOMBRES DE RECURSOS =====
-        html += '<div class="bg-[rgba(255,255,255,0.04)] border-b-2 border-[rgba(255,255,255,0.1)] p-3 font-bold text-xs text-slate-500 sticky top-0 z-10"></div>';
-        this.recursos.forEach((recurso, idx) => {
-            html += `<div class="bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.07)] transition border-b-2 border-[rgba(255,255,255,0.1)] p-3 font-bold text-xs text-white sticky top-0 z-10 ${idx > 0 ? 'border-l border-[rgba(255,255,255,0.06)]' : ''} text-center">${recurso}</div>`;
+        html += '<div class="grid sticky top-0 z-20" style="grid-template-columns:70px repeat(' + numR + ',1fr)">';
+        html += '<div class="border-b border-r border-[rgba(255,255,255,0.08)] bg-[#0B1628]" style="height:' + headerH + 'px"></div>';
+        this.recursos.forEach(r => {
+            html += '<div class="border-b border-r border-[rgba(255,255,255,0.08)] bg-[#0B1628] flex items-center justify-center px-2" style="height:' + headerH + 'px"><span class="text-xs font-bold text-white truncate">' + r + '</span></div>';
         });
+        html += '</div>';
 
-        // ===== TIMELINE CON GRANULARIDAD =====
-        horas.forEach((hora) => {
-            const horaStr = String(hora).padStart(2, '0');
-            
-            // Para cada slot de 15/30 min
-            for (let slot = 0; slot < slotsPerHora; slot++) {
-                const minutos = slot * this.tiempoGranularidad;
-                const tiempoStr = `${horaStr}:${String(minutos).padStart(2, '0')}`;
-                const isMediaHora = minutos === 30;
-
-                // Celda de hora (solo en el primer slot)
-                if (slot === 0) {
-                    html += `<div class="bg-[rgba(255,255,255,0.02)] border-r border-[rgba(255,255,255,0.06)] p-1 font-bold text-xs text-slate-500 text-right pr-2" style="grid-row: span ${slotsPerHora}; border-bottom: 1px solid rgba(255,255,255,0.06);">${horaStr}:00</div>`;
+        html += '<div class="grid" id="agenda-day-grid" style="grid-template-columns:70px repeat(' + numR + ',1fr)">';
+        for (let h = this.horaInicio; h < this.horaFin; h++) {
+            const horaStr = String(h).padStart(2, '0');
+            for (let s = 0; s < slotsPerH; s++) {
+                const min     = s * this.granularidad;
+                const tStr    = horaStr + ':' + String(min).padStart(2, '0');
+                const isMedH  = min === 30;
+                const borderB = isMedH ? '1px dashed rgba(255,255,255,0.04)' : '1px solid rgba(255,255,255,0.07)';
+                if (s === 0) {
+                    html += '<div class="border-r border-[rgba(255,255,255,0.07)] bg-[rgba(255,255,255,0.01)] flex items-start justify-end pr-2 pt-0.5" style="grid-row:span ' + slotsPerH + ';border-bottom:' + borderB + ';min-height:' + this.pxPorHora + 'px"><span class="text-xs font-semibold text-slate-600">' + horaStr + ':00</span></div>';
                 }
-
-                // Celdas de recursos para este slot - AISLADAS CON position: relative
-                this.recursos.forEach((recurso) => {
-                    const borderStyle = isMediaHora ? '1px dashed rgba(255,255,255,0.04)' : '1px solid rgba(255,255,255,0.06)';
-                    const bgStyle = isMediaHora ? 'bg-[rgba(255,255,255,0.02)]' : '';
-                    
-                    html += `<div class="relative p-0.5 border-r ${bgStyle} cursor-pointer hover:bg-[rgba(43,147,166,0.08)] transition text-center text-xs border-l border-[rgba(255,255,255,0.04)]" 
-                             style="border-bottom: ${borderStyle}; min-height: ${pixelsPorSlot}px; position: relative;" 
-                             data-recurso="${recurso}" 
-                             data-tiempo="${tiempoStr}" 
-                             data-fecha="${fechaStr}">
-                    </div>`;
+                this.recursos.forEach(recurso => {
+                    html += '<div class="agenda-cell border-r border-[rgba(255,255,255,0.04)] hover:bg-[rgba(43,147,166,0.07)] transition cursor-pointer" style="border-bottom:' + borderB + ';min-height:' + pxPerSlot + 'px" data-recurso="' + recurso + '" data-tiempo="' + tStr + '" data-fecha="' + fechaStr + '"></div>';
                 });
             }
-        });
-
-        html += '</div>'; // Cierra grid
-
-        // ===== CITAS ABSOLUTAS - Contenedor wrapper con posicionamiento =====
-        html = this.renderCitasOverlay(html, fechaStr, colorMap, pixelsPorHora);
-
-        // ===== LÍNEA DE HORA ACTUAL (Current Time Indicator) =====
-        if (estaHoy) {
-            const horasDesdeInicio = ahora.getHours() - 9;
-            const minutosEnHora = ahora.getMinutes();
-            const topPx = 50 + (horasDesdeInicio * pixelsPorHora) + ((minutosEnHora / 60) * pixelsPorHora);
-            
-            if (topPx >= 50 && topPx <= (50 + pixelsPorHora * 10)) {
-                html += `
-                    <div class="absolute left-0 right-0 pointer-events-none z-40" style="top: ${topPx}px;">
-                        <div class="h-1 bg-red-500 w-full shadow-lg" style="box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);"></div>
-                        <div class="absolute left-1 -top-2.5 text-xs font-bold text-white bg-red-500 px-2 py-0.5 rounded shadow-md">${horaActual}</div>
-                    </div>
-                `;
-            }
         }
+        html += '</div>';
 
-        html += '</div>'; // Cierra relative wrapper
+        html += this._renderCitasDay(citasDia, colorMap, overlapping, headerH);
+        html += this._renderBloquesDay(fechaStr, headerH, numR);
+        if (estaHoy) html += this._renderTimeIndicator(ahora, headerH);
+        html += '</div>';
         return html;
     }
 
-    renderCitasOverlay(html, fechaStr, colorMap, pixelsPorHora) {
-        // Renderizar las tarjetas de citas como overlay (absolute positioning dentro de la grilla)
-        const citasDelDia = this.navManager.citas.filter(c => c.fecha === fechaStr);
-        const hMin = 9;
-        const hMax = 19;
-        
-        const citasHTML = citasDelDia.map((cita, idx) => {
-            const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
-            const [citaHora, citaMin] = cita.hora.split(':').map(Number);
-            
-            // Validar que la cita esté dentro del rango de horas
-            if (citaHora < hMin || citaHora > hMax) return '';
-            
-            // Calcular posición Y (en píxeles desde el inicio del timeline)
-            const horasDesdeInicio = citaHora - hMin;
-            const minutosEnHora = citaMin;
-            const topPx = 50 + (horasDesdeInicio * pixelsPorHora) + ((minutosEnHora / 60) * pixelsPorHora);
-            
-            // Altura: calcular basada en horaFin si existe, si no usar 60 minutos
-            let heightPx = pixelsPorHora; // DEFAULT: 1 hora
-            if (cita.horaFin) {
-                const [finHora, finMin] = cita.horaFin.split(':').map(Number);
-                const minutosTotales = (finHora - citaHora) * 60 + (finMin - citaMin);
-                heightPx = (minutosTotales / 60) * pixelsPorHora;
-            }
-            
-            // Distribuir recursos: usar índice para distribuir entre columnas
-            const resourceIndex = idx % this.recursos.length;
-            const columnWidth = 100 / this.recursos.length;
-            const leftPercent = columnWidth * resourceIndex;
-            
-            // Estado: por ahora "atendiendose" (en desarrollo puedes agregar campo 'estado' a cita)
-            const estado = 'atendiendose';
-            const estadoStyle = this.citaStates[estado] || this.citaStates['atendiendose'];
+    _renderCitasDay(citas, colorMap, overlapping, headerH) {
+        const numR = this.recursos.length;
+        const colW = 'calc((100% - 70px) / ' + numR + ')';
+        return citas.map(cita => {
+            const [ch, cm] = (cita.hora || '0:0').split(':').map(Number);
+            if (ch < this.horaInicio || ch >= this.horaFin) return '';
+            const duracion   = cita.duracion || 60;
+            const topPx      = headerH + (ch - this.horaInicio) * this.pxPorHora + (cm / 60) * this.pxPorHora;
+            const heightPx   = Math.max(duracion / 60 * this.pxPorHora, 28);
+            const recursoIdx = this.recursos.indexOf(cita.recurso);
+            const colIdx     = recursoIdx >= 0 ? recursoIdx : 0;
+            const leftCalc   = 'calc(70px + ' + colIdx + ' * ' + colW + ')';
+            const estado     = cita.estado || 'pendiente';
+            const st         = this.citaStates[estado] || this.citaStates['pendiente'];
+            const esOverlap  = overlapping.has(cita.id);
+            const cobBadge   = cita.cobrado ? '<span class="absolute top-0.5 right-4 text-xs" title="Cobrada">€v</span>' : '';
+            const overlapBadge = esOverlap ? '<span class="absolute top-0.5 right-1 text-xs" title="Solapamiento">!</span>' : '';
+            const overlapStyle = esOverlap ? 'animation:overlap-pulse 2s infinite;box-shadow:0 0 0 2px rgba(239,68,68,0.5);' : '';
 
-            return `
-                <div class="absolute rounded-lg border-l-4 text-xs shadow-md cursor-grab active:cursor-grabbing hover:shadow-lg transition z-20 overflow-hidden"
-                     style="
-                        background-color: ${estadoStyle.bg};
-                        border-left-color: ${estadoStyle.border};
-                        color: ${estadoStyle.text};
-                        top: ${topPx}px;
-                        left: calc(70px + (100% - 70px) * ${leftPercent / 100});
-                        width: calc((100% - 70px) / ${this.recursos.length} - 10px);
-                        height: ${heightPx}px;
-                        min-height: 48px;
-                        display: flex;
-                        flex-direction: column;
-                        padding: 8px;
-                     "
-                     draggable="true"
-                     data-cita-id="${cita.id}">
-                    <p class="font-bold text-xs truncate leading-tight">${cita.cliente}</p>
-                    <p class="text-xs opacity-90 truncate leading-tight flex-1">${cita.servicio}</p>
-                    <div class="flex justify-between items-center mt-auto pt-1 border-t" style="border-top-color: rgba(0,0,0,0.1);">
-                        <span class="text-xs font-semibold">${cita.hora}${cita.horaFin ? ' - ' + cita.horaFin : ''}</span>
-                        ${cita.precio ? `<span class="text-xs font-bold">€${parseInt(cita.precio)}</span>` : ''}
-                    </div>
-                </div>
-            `;
+            return '<div class="agenda-cita-card absolute rounded-lg border-l-4 overflow-hidden cursor-pointer transition-all duration-150 group z-10"'
+                + ' style="top:' + topPx + 'px;left:' + leftCalc + ';width:calc(' + colW + ' - 8px);height:' + heightPx + 'px;'
+                + 'background:' + st.bg + ';border-left-color:' + st.border + ';'
+                + 'border-top:1px solid ' + st.border + '33;border-right:1px solid ' + st.border + '22;border-bottom:1px solid ' + st.border + '22;' + overlapStyle + '"'
+                + ' draggable="true" data-cita-id="' + cita.id + '">'
+                + '<div class="px-1.5 py-1 flex flex-col h-full pointer-events-none">'
+                + '<p class="text-xs font-bold truncate leading-tight" style="color:' + st.text + '">' + cita.cliente + '</p>'
+                + (heightPx > 40 ? '<p class="text-xs opacity-80 truncate leading-tight" style="color:' + st.text + '">' + cita.servicio + '</p>' : '')
+                + (heightPx > 56 ? '<p class="text-xs mt-auto font-semibold opacity-60" style="color:' + st.text + '">' + cita.hora + (cita.precio ? ' - €' + parseInt(cita.precio) : '') + '</p>' : '')
+                + overlapBadge + cobBadge
+                + '</div>'
+                + '<div class="agenda-state-overlay absolute inset-0 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" style="background:rgba(11,22,40,0.88);backdrop-filter:blur(2px);border-radius:inherit">'
+                + '<div class="flex gap-1">'
+                + '<button class="quick-estado px-2 py-1 rounded text-xs font-bold border" style="border-color:rgba(251,191,36,0.5);color:#FDE68A;background:rgba(251,191,36,0.1)" data-estado="esperando" data-cita-id="' + cita.id + '" title="Esperando">Esp</button>'
+                + '<button class="quick-estado px-2 py-1 rounded text-xs font-bold border" style="border-color:rgba(96,165,250,0.5);color:#BFDBFE;background:rgba(59,130,246,0.1)" data-estado="atendiendose" data-cita-id="' + cita.id + '" title="En atencion">Ate</button>'
+                + '<button class="quick-estado px-2 py-1 rounded text-xs font-bold border" style="border-color:rgba(74,222,128,0.5);color:#BBF7D0;background:rgba(34,197,94,0.1)" data-estado="completado" data-cita-id="' + cita.id + '" title="Completado">Fin</button>'
+                + '<button class="quick-estado px-2 py-1 rounded text-xs font-bold border" style="border-color:rgba(100,116,139,0.5);color:#94a3b8;background:rgba(100,116,139,0.1)" data-estado="no-presentado" data-cita-id="' + cita.id + '" title="No presentado">NP</button>'
+                + '</div>'
+                + '<button class="open-detail px-3 py-1 rounded-lg text-xs font-semibold text-white" style="background:rgba(43,147,166,0.4);border:1px solid rgba(43,147,166,0.5)" data-cita-id="' + cita.id + '">Ver detalle</button>'
+                + '</div>'
+                + '</div>';
         }).join('');
+    }
 
-        // Insertar cards justo antes del cierre de wrapper (<!-- CARDS_MARKER -->)
-        return html + citasHTML;
+    _renderTimeIndicator(ahora, headerH) {
+        const h = ahora.getHours(), m = ahora.getMinutes();
+        if (h < this.horaInicio || h >= this.horaFin) return '';
+        const topPx = headerH + (h - this.horaInicio) * this.pxPorHora + (m / 60) * this.pxPorHora;
+        const label = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+        return '<div class="pointer-events-none absolute left-0 right-0 z-30" id="time-indicator-line" style="top:' + topPx + 'px">'
+            + '<div class="absolute left-14 right-0 h-px" style="background:#EF4444;box-shadow:0 0 6px rgba(239,68,68,0.6)"></div>'
+            + '<div class="absolute left-14 -top-1.5 w-3 h-3 rounded-full border-2 border-white" style="background:#EF4444;box-shadow:0 0 6px rgba(239,68,68,0.8)"></div>'
+            + '<div class="absolute left-1 -top-2.5 text-xs font-bold text-white px-1.5 py-0.5 rounded" style="background:#EF4444">' + label + '</div>'
+            + '</div>';
     }
 
     renderWeekView() {
-        const semanaInicio = new Date(this.selectedDate);
-        semanaInicio.setDate(semanaInicio.getDate() - semanaInicio.getDay() + 1);
-        
-        const dias = [];
-        for (let i = 0; i < 7; i++) {
-            const fecha = new Date(semanaInicio);
-            fecha.setDate(fecha.getDate() + i);
-            dias.push(fecha);
-        }
-
-        const horas    = Array.from({ length: 10 }, (_, i) => 9 + i);
-        const colorMap = this._buildColorMap();
-
-        let html = '<div class="overflow-x-auto"><div class="grid" style="grid-template-columns: 60px repeat(7, 1fr); gap: 0;">';
-        
-        // Header días
-        html += '<div class="bg-[rgba(255,255,255,0.04)] border-b border-[rgba(255,255,255,0.08)]"></div>';
-        dias.forEach(dia => {
-            const diaNombre = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'][dia.getDay()];
-            const isToday = dia.toDateString() === new Date().toDateString();
-            html += `<div class="p-2 border-b border-[rgba(255,255,255,0.08)] text-center font-bold text-xs ${isToday ? 'bg-[rgba(43,147,166,0.15)] text-[#38BDF8]' : 'bg-[rgba(255,255,255,0.04)] text-white'}">${diaNombre} ${dia.getDate()}</div>`;
+        const lunes = new Date(this.selectedDate);
+        const dow   = lunes.getDay();
+        lunes.setDate(lunes.getDate() - (dow === 0 ? 6 : dow - 1));
+        const dias = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(lunes); d.setDate(d.getDate() + i); return d;
         });
+        const hoy    = this._dateStr(new Date());
+        const horas  = Array.from({ length: this.horaFin - this.horaInicio }, (_, i) => this.horaInicio + i);
+        const pxPerH = 64, headerH = 44;
 
-        // Horas y citas
-        horas.forEach(hora => {
-            const horaStr = String(hora).padStart(2, '0') + ':00';
-            html += `<div class="bg-[rgba(255,255,255,0.02)] border-r border-[rgba(255,255,255,0.06)] border-b border-[rgba(255,255,255,0.04)] text-xs font-semibold text-center text-slate-500 p-1">${horaStr}</div>`;
-            
+        let html = '<div class="relative" style="min-width:500px">';
+        html += '<div class="grid sticky top-0 z-20 border-b border-[rgba(255,255,255,0.08)] bg-[#0B1628]" style="grid-template-columns:60px repeat(7,1fr)">';
+        html += '<div style="height:' + headerH + 'px"></div>';
+        dias.forEach(dia => {
+            const dStr    = this._dateStr(dia);
+            const isToday = dStr === hoy;
+            const nombre  = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'][dia.getDay()];
+            html += '<div class="flex flex-col items-center justify-center border-l border-[rgba(255,255,255,0.06)] cursor-pointer hover:bg-[rgba(43,147,166,0.07)] transition" style="height:' + headerH + 'px;' + (isToday ? 'border-bottom:2px solid #2B93A6' : '') + '" onclick="window.agendaManagerInstance&&window.agendaManagerInstance.jumpToDate(\'' + dStr + '\')">'
+                + '<span class="text-xs font-bold ' + (isToday ? 'text-[#38BDF8]' : 'text-slate-400') + '">' + nombre + '</span>'
+                + '<span class="text-sm font-black leading-tight ' + (isToday ? 'text-white bg-[#2B93A6] w-6 h-6 rounded-full flex items-center justify-center' : 'text-white') + '">' + dia.getDate() + '</span>'
+                + '</div>';
+        });
+        html += '</div>';
+        html += '<div class="grid" style="grid-template-columns:60px repeat(7,1fr)">';
+        horas.forEach(h => {
+            const horaStr = String(h).padStart(2,'0') + ':00';
+            html += '<div class="border-r border-b border-[rgba(255,255,255,0.07)] text-right pr-2 pt-0.5" style="height:' + pxPerH + 'px"><span class="text-xs font-semibold text-slate-600">' + horaStr + '</span></div>';
             dias.forEach(dia => {
-                const fechaStr = dia.toISOString().split('T')[0];
-                const citasHora = this.navManager.citas.filter(c => c.hora === horaStr && c.fecha === fechaStr);
-                
-                html += `<div class="border-r border-b border-[rgba(255,255,255,0.06)] p-1 h-20 overflow-y-auto text-xs space-y-0.5 hover:bg-[rgba(43,147,166,0.04)] transition">`;
-                citasHora.forEach(cita => {
-                    const colors = colorMap[cita.servicio] || { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
-                    html += `
-                        <div class="p-1 rounded border-l-2 truncate cursor-pointer hover:shadow-sm" 
-                             style="background-color: ${colors.bg}; border-left-color: ${colors.border}; color: ${colors.text}; font-weight: 500;">
-                            ${cita.cliente}
-                        </div>
-                    `;
-                });
-                html += '</div>';
+                const dStr      = this._dateStr(dia);
+                const isToday   = dStr === hoy;
+                const citasHora = this.navManager.citas.filter(c => c.fecha === dStr && (c.hora || '').startsWith(String(h).padStart(2,'0')));
+                html += '<div class="week-cell border-r border-b border-[rgba(255,255,255,0.06)] p-0.5 overflow-hidden hover:bg-[rgba(43,147,166,0.05)] transition cursor-pointer ' + (isToday ? 'bg-[rgba(43,147,166,0.04)]' : '') + '" style="height:' + pxPerH + 'px" data-recurso="auto" data-tiempo="' + horaStr + '" data-fecha="' + dStr + '">'
+                    + citasHora.map(cita => {
+                        const st = this.citaStates[cita.estado || 'pendiente'] || this.citaStates['pendiente'];
+                        return '<div class="agenda-cita-card week-cita-chip rounded px-1 py-0.5 text-xs font-semibold truncate cursor-pointer border-l-2 mb-0.5" style="background:' + st.bg + ';border-left-color:' + st.border + ';color:' + st.text + '" draggable="true" data-cita-id="' + cita.id + '">' + cita.cliente + '</div>';
+                    }).join('')
+                    + '</div>';
             });
         });
-
         html += '</div></div>';
         return html;
     }
 
     renderMonthView() {
-        const year = this.selectedDate.getFullYear();
-        const month = this.selectedDate.getMonth();
-        
-        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const daysInMonth = lastDay.getDate();
-        const startingDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const year    = this.selectedDate.getFullYear();
+        const month   = this.selectedDate.getMonth();
+        const MESES   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const firstDay   = new Date(year, month, 1);
+        const lastDay    = new Date(year, month + 1, 0);
+        const startDow   = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const hoy        = this._dateStr(new Date());
+        const selStr     = this._dateStr(this.selectedDate);
 
-        let html = `
-            <div class="p-4">
-                <h3 class="text-base font-bold text-white mb-3 text-center">${meses[month]} ${year}</h3>
-                <div class="grid grid-cols-7 gap-1">
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">L</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">M</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">X</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">J</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">V</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">S</div>
-                    <div class="text-xs font-bold text-slate-500 p-2 text-center">D</div>
-        `;
-
-        // Días vacíos
-        for (let i = 0; i < startingDayOfWeek; i++) {
-            html += '<div class="p-2 bg-[rgba(255,255,255,0.02)] rounded"></div>';
+        let html = '<div class="p-3"><h3 class="text-sm font-bold text-white mb-3 text-center">' + MESES[month] + ' ' + year + '</h3>'
+            + '<div class="grid grid-cols-7 gap-1 mb-1">' + ['L','M','X','J','V','S','D'].map(d => '<div class="text-xs font-bold text-slate-500 text-center py-1">' + d + '</div>').join('') + '</div>'
+            + '<div class="grid grid-cols-7 gap-1">';
+        for (let i = 0; i < startDow; i++) html += '<div></div>';
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+            const dateStr  = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+            const n        = this.navManager.citas.filter(c => c.fecha === dateStr).length;
+            const isToday  = dateStr === hoy;
+            const isSel    = dateStr === selStr;
+            const dotColor = n === 0 ? '' : n <= 2 ? '#4ADE80' : n <= 5 ? '#FCD34D' : '#F87171';
+            html += '<div class="rounded-lg p-1.5 text-center cursor-pointer transition border hover:border-[rgba(43,147,166,0.5)] '
+                + (isToday ? 'bg-[rgba(43,147,166,0.2)] border-[#2B93A6]' : isSel ? 'bg-[rgba(43,147,166,0.1)] border-[rgba(43,147,166,0.4)]' : 'bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)]') + '"'
+                + ' onclick="window.agendaManagerInstance&&window.agendaManagerInstance.jumpToDate(\'' + dateStr + '\')">'
+                + '<p class="text-xs font-bold ' + (isToday ? 'text-[#38BDF8]' : 'text-slate-300') + '">' + day + '</p>'
+                + '<div class="flex justify-center gap-0.5 mt-0.5 min-h-[6px]">'
+                + (dotColor ? '<div class="w-1.5 h-1.5 rounded-full" style="background:' + dotColor + '"></div>' : '')
+                + (n > 2 ? '<div class="w-1.5 h-1.5 rounded-full" style="background:' + dotColor + '"></div>' : '')
+                + (n > 5 ? '<div class="w-1.5 h-1.5 rounded-full" style="background:' + dotColor + '"></div>' : '')
+                + '</div></div>';
         }
-
-        // Días del mes
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const citasDay = this.navManager.citas.filter(c => c.fecha === dateStr);
-            const isToday = day === new Date().getDate() && month === new Date().getMonth();
-
-            html += `
-                <div class="p-2 border rounded-lg cursor-pointer hover:shadow-md transition min-h-14 text-xs ${isToday ? 'bg-[rgba(43,147,166,0.2)] border-[#2B93A6]' : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)]'} hover:border-[rgba(43,147,166,0.4)]" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">
-                    <p class="text-xs font-bold ${isToday ? 'text-[#38BDF8]' : 'text-slate-400'} mb-1">${day}</p>
-                    ${citasDay.length > 0 ? `<p class="font-semibold text-[#38BDF8] text-xs">${citasDay.length} cita${citasDay.length > 1 ? 's' : ''}</p>` : ''}
-                </div>
-            `;
-        }
-
         html += '</div></div>';
         return html;
     }
 
     renderCalendarMini() {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth();
-        
-        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const year   = this.selectedDate.getFullYear();
+        const month  = this.selectedDate.getMonth();
+        const MESES  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const daysInMonth = lastDay.getDate();
-        const startingDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const lastDay  = new Date(year, month + 1, 0);
+        const startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+        const today    = new Date();
+        const selStr   = this._dateStr(this.selectedDate);
 
-        let html = `
-            <div class="text-center mb-2">
-                <p class="text-xs font-bold text-white">${meses[month]} ${year}</p>
-            </div>
-            <div class="grid grid-cols-7 gap-1 text-center mb-2">
-                <div class="text-xs font-bold text-slate-500">L</div>
-                <div class="text-xs font-bold text-slate-500">M</div>
-                <div class="text-xs font-bold text-slate-500">X</div>
-                <div class="text-xs font-bold text-slate-500">J</div>
-                <div class="text-xs font-bold text-slate-500">V</div>
-                <div class="text-xs font-bold text-slate-500">S</div>
-                <div class="text-xs font-bold text-slate-500">D</div>
-        `;
+        let html = '<div class="flex items-center justify-between mb-2">'
+            + '<button id="mini-cal-prev" class="text-slate-500 hover:text-white p-1 rounded transition"><i class="fas fa-chevron-left text-xs"></i></button>'
+            + '<span class="text-xs font-bold text-white">' + MESES[month] + ' ' + year + '</span>'
+            + '<button id="mini-cal-next" class="text-slate-500 hover:text-white p-1 rounded transition"><i class="fas fa-chevron-right text-xs"></i></button>'
+            + '</div>'
+            + '<div class="grid grid-cols-7 gap-0.5 text-center mb-1">'
+            + ['L','M','X','J','V','S','D'].map(d => '<div class="text-xs text-slate-600 font-bold">' + d + '</div>').join('')
+            + '</div>'
+            + '<div class="grid grid-cols-7 gap-0.5 text-center">';
 
-        // Días vacíos
-        for (let i = 0; i < startingDayOfWeek; i++) {
-            html += '<div class="h-8"></div>';
+        for (let i = 0; i < startDow; i++) html += '<div></div>';
+        for (let day = 1; day <= lastDay.getDate(); day++) {
+            const dateStr  = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+            const n        = this.navManager.citas.filter(c => c.fecha === dateStr).length;
+            const isToday  = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+            const isSel    = dateStr === selStr;
+            const dotColor = n === 0 ? '' : n <= 2 ? '#4ADE80' : n <= 5 ? '#FCD34D' : '#F87171';
+            html += '<div class="flex flex-col items-center cursor-pointer py-0.5 rounded hover:bg-[rgba(255,255,255,0.06)] transition '
+                + (isToday ? 'bg-[#2B93A6] rounded-full' : '') + (isSel && !isToday ? 'border border-[#2B93A6]' : '') + '"'
+                + ' onclick="window.agendaManagerInstance&&window.agendaManagerInstance.jumpToDate(\'' + dateStr + '\')">'
+                + '<span class="text-xs leading-tight ' + (isToday ? 'text-white font-black' : 'text-slate-400') + '">' + day + '</span>'
+                + '<div class="w-1 h-1 rounded-full" style="' + (dotColor ? 'background:' + dotColor : '') + '"></div>'
+                + '</div>';
         }
-
-        // Días del mes
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const hasCita = this.navManager.citas.some(c => c.fecha === dateStr);
-            const isToday = day === today.getDate() && month === today.getMonth();
-            const isSelected = day === this.selectedDate.getDate() && month === this.selectedDate.getMonth() && year === this.selectedDate.getFullYear();
-
-            if (isToday) {
-                html += `<div class="h-8 w-8 mx-auto rounded-full bg-[#2B93A6] text-white flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-[#38BDF8]" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
-            } else if (isSelected) {
-                html += `<div class="h-8 w-8 mx-auto rounded text-xs font-bold text-[#38BDF8] flex items-center justify-center border-2 border-[#2B93A6] cursor-pointer" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
-            } else if (hasCita) {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-[#38BDF8] flex items-center justify-center cursor-pointer font-bold hover:bg-[rgba(43,147,166,0.15)] rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
-            } else {
-                html += `<div class="h-8 w-8 mx-auto text-xs text-slate-500 flex items-center justify-center cursor-pointer hover:bg-[rgba(255,255,255,0.08)] rounded" onclick="document.getElementById('agenda-date-input').value='${dateStr}'; document.getElementById('agenda-date-input').dispatchEvent(new Event('change'));">${day}</div>`;
-            }
-        }
-
         html += '</div>';
         return html;
     }
 
-    setupListeners() {
-        // Guardar referencia global
-        window.agendaManagerInstance = this;
+    mostrarDetalleCita(cita) {
+        document.getElementById('agenda-detail-panel') && document.getElementById('agenda-detail-panel').remove();
+        const st     = this.citaStates[cita.estado || 'pendiente'] || this.citaStates['pendiente'];
+        const fecha  = new Date((cita.fecha || '') + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        const duracion = cita.duracion || 60;
 
-        // ===== TOGGLE SIDEBAR =====
-        const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
-        const sidebar = document.getElementById('agenda-sidebar');
-        if (btnToggleSidebar && sidebar) {
-            btnToggleSidebar.addEventListener('click', () => {
-                this.sidebarVisible = !this.sidebarVisible;
-                if (this.sidebarVisible) {
-                    sidebar.classList.remove('hidden', 'w-0');
-                    sidebar.classList.add('w-64');
-                    btnToggleSidebar.innerHTML = '<i class="fas fa-chevron-right"></i>';
-                } else {
-                    sidebar.classList.add('hidden');
-                    btnToggleSidebar.innerHTML = '<i class="fas fa-chevron-left"></i>';
-                }
-            });
-        }
+        const panel = document.createElement('div');
+        panel.id = 'agenda-detail-panel';
+        panel.style.cssText = 'position:fixed;right:0;top:0;height:100%;width:280px;z-index:40;display:flex;flex-direction:column;background:#0f1e35;border-left:1px solid rgba(43,147,166,0.25);box-shadow:-8px 0 32px rgba(0,0,0,0.45);transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1)';
 
-        // ===== VISTA BUTTONS =====
-        document.querySelectorAll('.agenda-view-btn').forEach(btn => {
+        const estadoBtns = Object.entries(this.citaStates).map(([k, v]) =>
+            '<button class="detail-estado-btn py-1.5 px-2 rounded-lg text-xs font-semibold transition" style="border:1px solid ' + v.border + '66;color:' + (cita.estado === k ? '#fff' : v.text) + ';background:' + (cita.estado === k ? v.bg : 'transparent') + '" data-estado="' + k + '" data-cita-id="' + cita.id + '">' + v.label + '</button>'
+        ).join('');
+
+        panel.innerHTML = '<div class="flex items-center justify-between px-4 py-3 flex-shrink-0" style="border-bottom:1px solid rgba(255,255,255,0.08)">'
+            + '<div class="flex items-center gap-2 min-w-0">'
+            + '<div class="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm text-white flex-shrink-0" style="background:rgba(43,147,166,0.35)">' + (cita.cliente || '?').charAt(0).toUpperCase() + '</div>'
+            + '<div class="min-w-0"><p class="text-sm font-bold text-white truncate">' + (cita.cliente || '---') + '</p><p class="text-xs font-semibold" style="color:' + st.border + '">' + st.label + '</p></div>'
+            + '</div>'
+            + '<button id="detail-close" class="text-slate-500 hover:text-white p-1 transition flex-shrink-0"><i class="fas fa-times text-sm"></i></button>'
+            + '</div>'
+            + '<div class="flex-1 overflow-y-auto p-4 space-y-3">'
+            + '<div class="grid grid-cols-2 gap-2 text-xs">'
+            + '<div class="rounded-lg p-2.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold text-xs mb-1">Fecha</p><p class="text-white font-semibold capitalize leading-tight" style="font-size:11px">' + fecha + '</p></div>'
+            + '<div class="rounded-lg p-2.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold text-xs mb-1">Hora</p><p class="text-white font-black text-base">' + (cita.hora || '---') + '</p></div>'
+            + '<div class="rounded-lg p-2.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold text-xs mb-1">Duracion</p><p class="text-white font-semibold text-xs">' + duracion + ' min</p></div>'
+            + '<div class="rounded-lg p-2.5" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold text-xs mb-1">Importe</p><p class="font-black text-base" style="color:#6EE7B7">€' + parseInt(cita.precio || 0) + '</p></div>'
+            + '</div>'
+            + '<div class="rounded-lg p-2.5 text-xs" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold mb-1">Servicio</p><p class="text-white font-semibold">' + (cita.servicio || '---') + '</p></div>'
+            + (cita.recurso ? '<div class="rounded-lg p-2.5 text-xs" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold mb-1">Empleado</p><p class="text-white font-semibold">' + cita.recurso + '</p></div>' : '')
+            + (cita.notas ? '<div class="rounded-lg p-2.5 text-xs" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07)"><p class="text-slate-500 uppercase font-bold mb-1">Notas</p><p style="color:#cbd5e1">' + cita.notas + '</p></div>' : '')
+            + '<div><p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Cambiar estado</p><div class="grid grid-cols-2 gap-1.5">' + estadoBtns + '</div></div>'
+            + '</div>'
+            + '<div class="p-4 flex-shrink-0 space-y-2" style="border-top:1px solid rgba(255,255,255,0.08)">'
+            + (!cita.cobrado
+                ? '<button id="detail-cobrar" class="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:brightness-125" style="background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4)" data-cita-id="' + cita.id + '"><i class="fas fa-cash-register"></i> Cobrar cita</button>'
+                : '<div class="w-full py-2.5 rounded-xl text-sm font-bold text-center" style="color:#6EE7B7;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3)"><i class="fas fa-check-circle mr-2"></i>Cobrada</div>')
+            + '<div class="flex gap-2">'
+            + '<button id="detail-editar" class="flex-1 py-2 rounded-lg text-xs font-semibold text-white transition hover:brightness-125" style="background:rgba(43,147,166,0.2);border:1px solid rgba(43,147,166,0.35)" data-cita-id="' + cita.id + '"><i class="fas fa-edit mr-1"></i>Editar</button>'
+            + '<button id="detail-eliminar" class="flex-1 py-2 rounded-lg text-xs font-semibold transition hover:brightness-125" style="color:#FCA5A5;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)" data-cita-id="' + cita.id + '"><i class="fas fa-trash mr-1"></i>Eliminar</button>'
+            + '</div></div>';
+
+        document.body.appendChild(panel);
+        requestAnimationFrame(() => { panel.style.transform = 'translateX(0)'; });
+
+        const cerrar = () => { panel.style.transform = 'translateX(100%)'; setTimeout(() => panel.remove(), 220); };
+        panel.querySelector('#detail-close').addEventListener('click', cerrar);
+
+        panel.querySelectorAll('.detail-estado-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.agenda-view-btn').forEach(b => {
-                    b.classList.remove('bg-white', 'text-gray-900');
-                    b.classList.add('text-gray-600');
-                });
-                btn.classList.add('bg-white', 'text-gray-900');
-                btn.classList.remove('text-gray-600');
-                
-                this.agendaView = btn.getAttribute('data-view');
-                const agendaContent = document.getElementById('agenda-content');
-                if (agendaContent) {
-                    agendaContent.innerHTML = this.renderContent();
-                    this.attachCitaListeners();
-                    this.setupClickToAdd();
-                    this.setupDragDrop();
-                }
+                this.navManager.cambiarEstadoCita(btn.dataset.citaId, btn.dataset.estado);
+                cerrar(); setTimeout(() => this.refresh(), 300);
             });
         });
 
-        // ===== BOTONES ANTERIOR/SIGUIENTE =====
-        const prevBtn = document.getElementById('agenda-prev-btn');
-        const nextBtn = document.getElementById('agenda-next-btn');
-        const dateInput = document.getElementById('agenda-date-input');
+        const cobrarBtn = panel.querySelector('#detail-cobrar');
+        if (cobrarBtn) cobrarBtn.addEventListener('click', e => {
+            cerrar(); setTimeout(() => this.navManager.showCobroModal(e.currentTarget.dataset.citaId), 250);
+        });
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                this.selectedDate.setDate(this.selectedDate.getDate() - 1);
-                dateInput.value = this.selectedDate.toISOString().split('T')[0];
-                this.refresh();
-            });
-        }
+        panel.querySelector('#detail-editar').addEventListener('click', e => {
+            const c = this.navManager.citas.find(x => x.id === e.currentTarget.dataset.citaId);
+            cerrar(); if (c) setTimeout(() => this.navManager.showNewCitaModal(Object.assign({}, c)), 250);
+        });
 
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                this.selectedDate.setDate(this.selectedDate.getDate() + 1);
-                dateInput.value = this.selectedDate.toISOString().split('T')[0];
-                this.refresh();
-            });
-        }
+        panel.querySelector('#detail-eliminar').addEventListener('click', e => {
+            if (confirm('Eliminar esta cita?')) {
+                this.navManager.deleteCita(e.currentTarget.dataset.citaId);
+                cerrar(); setTimeout(() => this.refresh(), 300);
+            }
+        });
 
-        if (dateInput) {
-            dateInput.addEventListener('change', (e) => {
-                this.selectedDate = new Date(e.target.value + 'T00:00:00');
-                this.refresh();
-            });
-        }
+        document.addEventListener('keydown', function onEsc(ev) {
+            if (ev.key === 'Escape') { cerrar(); document.removeEventListener('keydown', onEsc); }
+        });
+    }
 
-        // ===== NUEVA CITA =====
-        const btnNueva = document.getElementById('btn-nueva-cita');
-        if (btnNueva) {
-            btnNueva.addEventListener('click', () => {
-                this.navManager.showNewCitaModal({
-                    fecha: this.selectedDate.toISOString().split('T')[0]
+    setupListeners() {
+        window.agendaManagerInstance = this;
+
+        document.querySelectorAll('.agenda-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.agendaView = btn.dataset.view;
+                document.querySelectorAll('.agenda-view-btn').forEach(b => {
+                    const active = b.dataset.view === this.agendaView;
+                    b.classList.toggle('bg-[#2B93A6]', active);
+                    b.classList.toggle('text-white', active);
+                    b.classList.toggle('text-slate-400', !active);
                 });
+                this._reRenderContent();
             });
-        }
+        });
 
-        // ===== CLICK-TO-ADD Y DRAG-DROP =====
+        document.getElementById('agenda-prev-btn') && document.getElementById('agenda-prev-btn').addEventListener('click', () => {
+            if (this.agendaView === 'week')       this.selectedDate.setDate(this.selectedDate.getDate() - 7);
+            else if (this.agendaView === 'month') this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
+            else                                   this.selectedDate.setDate(this.selectedDate.getDate() - 1);
+            this._updateFechaLabel(); this.refresh();
+        });
+
+        document.getElementById('agenda-next-btn') && document.getElementById('agenda-next-btn').addEventListener('click', () => {
+            if (this.agendaView === 'week')       this.selectedDate.setDate(this.selectedDate.getDate() + 7);
+            else if (this.agendaView === 'month') this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
+            else                                   this.selectedDate.setDate(this.selectedDate.getDate() + 1);
+            this._updateFechaLabel(); this.refresh();
+        });
+
+        document.getElementById('agenda-hoy-btn') && document.getElementById('agenda-hoy-btn').addEventListener('click', () => {
+            this.selectedDate = new Date(); this._updateFechaLabel(); this.refresh();
+        });
+
+        document.getElementById('agenda-date-input') && document.getElementById('agenda-date-input').addEventListener('change', e => {
+            this.selectedDate = new Date(e.target.value + 'T00:00:00'); this._updateFechaLabel(); this.refresh();
+        });
+
+        document.getElementById('btn-toggle-sidebar') && document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+            this.sidebarVisible = !this.sidebarVisible;
+            const sb = document.getElementById('agenda-sidebar');
+            if (sb) sb.classList.toggle('hidden', !this.sidebarVisible);
+        });
+
+        document.getElementById('btn-nueva-cita') && document.getElementById('btn-nueva-cita').addEventListener('click', () => {
+            this.navManager.showNewCitaModal({ fecha: this._dateStr(this.selectedDate) });
+        });
+
+        document.getElementById('btn-bloquear') && document.getElementById('btn-bloquear').addEventListener('click', () => {
+            this.mostrarModalBloque({ fecha: this._dateStr(this.selectedDate) });
+        });
+
+        this._loadBloquesFirestore();
+        this._bindMiniCalListeners();
+
+        document.querySelectorAll('.proxima-cita-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const cita = this.navManager.citas.find(c => c.id === item.dataset.citaId);
+                if (cita) this.mostrarDetalleCita(cita);
+            });
+        });
+
+        document.getElementById('agenda-search') && document.getElementById('agenda-search').addEventListener('input', e => {
+            const q = e.target.value.toLowerCase();
+            document.querySelectorAll('.agenda-cita-card').forEach(card => {
+                const cita = this.navManager.citas.find(c => c.id === card.dataset.citaId);
+                card.style.opacity = (!q || (cita && cita.cliente && cita.cliente.toLowerCase().includes(q))) ? '1' : '0.15';
+            });
+        });
+
         this.setupClickToAdd();
         this.setupDragDrop();
         this.attachCitaListeners();
+        this._startTimeIndicator();
+        if (this.agendaView === 'analytics') this._setupStatsListeners();
+    }
+
+    _bindMiniCalListeners() {
+        const prev = document.getElementById('mini-cal-prev');
+        const next = document.getElementById('mini-cal-next');
+        if (prev) prev.addEventListener('click', () => {
+            this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
+            const mc = document.getElementById('calendar-mini');
+            if (mc) { mc.innerHTML = this.renderCalendarMini(); this._bindMiniCalListeners(); }
+        });
+        if (next) next.addEventListener('click', () => {
+            this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
+            const mc = document.getElementById('calendar-mini');
+            if (mc) { mc.innerHTML = this.renderCalendarMini(); this._bindMiniCalListeners(); }
+        });
     }
 
     setupClickToAdd() {
-        // Hacer clickeables las celdas vacías para crear citas rápidamente
         document.querySelectorAll('[data-recurso][data-tiempo][data-fecha]').forEach(celda => {
-            celda.addEventListener('click', (e) => {
-                if (e.target === celda || e.target.closest('[data-recurso]')) {
-                    const recurso = celda.getAttribute('data-recurso');
-                    const tiempo = celda.getAttribute('data-tiempo');
-                    const fecha = celda.getAttribute('data-fecha');
-                    
-                    // Abrir modal con pre-rellenado
-                    this.navManager.showNewCitaModal({
-                        fecha: fecha,
-                        hora: tiempo,
-                        recurso: recurso
-                    });
-                }
+            celda.addEventListener('click', e => {
+                if (e.target !== celda) return;
+                this.navManager.showNewCitaModal({
+                    fecha:   celda.dataset.fecha,
+                    hora:    celda.dataset.tiempo,
+                    recurso: celda.dataset.recurso !== 'auto' ? celda.dataset.recurso : '',
+                });
             });
         });
     }
 
     setupDragDrop() {
-        const citas = document.querySelectorAll('[data-cita-id][draggable="true"]');
-        
-        citas.forEach(cita => {
-            cita.addEventListener('dragstart', (e) => {
+        document.querySelectorAll('.agenda-cita-card[draggable="true"]').forEach(card => {
+            card.addEventListener('dragstart', e => {
+                e.dataTransfer.setData('text/plain', card.dataset.citaId);
                 e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', cita.getAttribute('data-cita-id'));
+                card.style.opacity = '0.5';
             });
+            card.addEventListener('dragend', () => { card.style.opacity = ''; });
         });
-
-        const recursos = document.querySelectorAll('[data-recurso][data-tiempo][data-fecha]');
-        recursos.forEach(recurso => {
-            recurso.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                recurso.classList.add('bg-blue-100');
+        document.querySelectorAll('[data-recurso][data-tiempo][data-fecha]').forEach(celda => {
+            celda.addEventListener('dragover', e => { e.preventDefault(); celda.style.background = 'rgba(43,147,166,0.2)'; });
+            celda.addEventListener('dragleave', () => { celda.style.background = ''; });
+            celda.addEventListener('drop', e => {
+                e.preventDefault(); celda.style.background = '';
+                const id   = e.dataTransfer.getData('text/plain');
+                const cita = this.navManager.citas.find(c => c.id === id);
+                if (!cita) return;
+                cita.hora  = celda.dataset.tiempo;
+                cita.fecha = celda.dataset.fecha;
+                if (celda.dataset.recurso && celda.dataset.recurso !== 'auto') cita.recurso = celda.dataset.recurso;
+                this.navManager.saveCita(cita);
+                this.refresh();
             });
-
-            recurso.addEventListener('dragleave', (e) => {
-                recurso.classList.remove('bg-blue-100');
-            });
-
-            recurso.addEventListener('drop', (e) => {
-                e.preventDefault();
-                recurso.classList.remove('bg-blue-100');
-                
-                const citaId = e.dataTransfer.getData('text/plain');
-                const cita = this.navManager.citas.find(c => c.id === citaId);
-                
-                if (cita) {
-                    const nuevoTiempo = recurso.getAttribute('data-tiempo');
-                    const nuevaFecha = recurso.getAttribute('data-fecha');
-                    
-                    cita.hora = nuevoTiempo;
-                    cita.fecha = nuevaFecha;
-                    
-                    this.navManager.saveCita(cita);
-                    this.refresh();
-                }
-            });
-        });
-    }
-
-    mostrarDetallesCita(cita) {
-        const detalles = `
-            <div class="space-y-3">
-                <div class="flex items-center gap-3 pb-3 border-b border-gray-200">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-bold text-white">
-                        ${cita.cliente.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                        <p class="text-base font-bold text-gray-900">${cita.cliente}</p>
-                        <p class="text-xs text-gray-600">${cita.servicio}</p>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Fecha</p>
-                        <p class="font-semibold text-gray-900">${new Date(cita.fecha + 'T00:00:00').toLocaleDateString('es-ES', {weekday: 'short', month: 'short', day: 'numeric'})}</p>
-                    </div>
-                    <div>
-                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Hora</p>
-                        <p class="font-semibold text-gray-900">${cita.hora}</p>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Servicio</p>
-                    <p class="font-semibold text-gray-900 text-sm">${cita.servicio}</p>
-                </div>
-
-                ${cita.precio ? `
-                    <div>
-                        <p class="uppercase font-bold text-gray-500 mb-1 text-xs">Precio</p>
-                        <p class="text-lg font-bold text-blue-600">€${parseFloat(cita.precio).toFixed(2)}</p>
-                    </div>
-                ` : ''}
-
-                <div class="flex gap-2 pt-3 border-t border-gray-200">
-                    <button onclick="
-                        const modal = document.getElementById('modal-cita');
-                        document.getElementById('cita-id').value = '${cita.id}';
-                        document.getElementById('cita-cliente').value = '${cita.cliente.replace(/'/g, "\\'")}';
-                        document.getElementById('cita-servicio').value = '${cita.servicio.replace(/'/g, "\\'")}';
-                        document.getElementById('cita-fecha').value = '${cita.fecha}';
-                        document.getElementById('cita-hora').value = '${cita.hora}';
-                        document.getElementById('cita-precio').value = '${cita.precio || ''}';
-                        document.getElementById('modal-title').textContent = 'Editar Cita';
-                        modal.classList.remove('hidden');
-                        document.getElementById('modal-detalles-cita').remove();
-                    " class="flex-1 px-3 py-2 bg-blue-600 text-white font-bold rounded text-sm hover:bg-blue-700 transition">
-                        <i class="fas fa-edit mr-1"></i> Editar
-                    </button>
-                    <button onclick="
-                        if (confirm('¿Eliminar esta cita?')) {
-                            window.agendaManagerInstance.navManager.deleteCita('${cita.id}');
-                            document.getElementById('modal-detalles-cita').remove();
-                        }
-                    " class="flex-1 px-3 py-2 border border-red-500 text-red-600 font-bold rounded text-sm hover:bg-red-50 transition">
-                        <i class="fas fa-trash mr-1"></i> Eliminar
-                    </button>
-                </div>
-            </div>
-        `;
-
-        // Mostrar modal con detalles
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-        modal.id = 'modal-detalles-cita';
-        modal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-lg max-w-sm w-full mx-4">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                    <h3 class="text-lg font-bold text-gray-900">Detalles de la cita</h3>
-                    <button onclick="document.getElementById('modal-detalles-cita').remove()" class="text-gray-400 hover:text-gray-600 text-2xl">
-                        ×
-                    </button>
-                </div>
-                <div class="p-4">
-                    ${detalles}
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
         });
     }
 
     attachCitaListeners() {
-        // Edit y delete en las tarjetas de citas (overlay)
-        document.querySelectorAll('[data-cita-id]').forEach(card => {
-            card.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                const id = card.getAttribute('data-cita-id');
-                const cita = this.navManager.citas.find(c => c.id === id);
-                if (cita) {
-                    this.mostrarMenuContextual(cita, e.clientX, e.clientY);
-                }
+        document.querySelectorAll('.quick-estado').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                this.navManager.cambiarEstadoCita(btn.dataset.citaId, btn.dataset.estado);
+                setTimeout(() => this.refresh(), 200);
             });
+        });
 
-            // Click para ver detalles
-            card.addEventListener('click', (e) => {
-                if (e.button === 0 && !card.dragging) { // Click izquierdo
-                    const id = card.getAttribute('data-cita-id');
-                    const cita = this.navManager.citas.find(c => c.id === id);
-                    if (cita) {
-                        this.mostrarDetallesCita(cita);
-                    }
-                }
+        document.querySelectorAll('.open-detail').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const cita = this.navManager.citas.find(c => c.id === btn.dataset.citaId);
+                if (cita) this.mostrarDetalleCita(cita);
+            });
+        });
+
+        document.querySelectorAll('.week-cita-chip').forEach(chip => {
+            chip.addEventListener('click', e => {
+                e.stopPropagation();
+                const cita = this.navManager.citas.find(c => c.id === chip.dataset.citaId);
+                if (cita) this.mostrarDetalleCita(cita);
+            });
+        });
+
+        document.querySelectorAll('.agenda-cita-card').forEach(card => {
+            card.addEventListener('contextmenu', e => {
+                e.preventDefault();
+                const cita = this.navManager.citas.find(c => c.id === card.dataset.citaId);
+                if (cita) this.mostrarMenuContextual(cita, e.clientX, e.clientY);
+            });
+        });
+
+        document.querySelectorAll('.delete-bloque').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                this.bloques = this.bloques.filter(b => b.id !== btn.dataset.bloqueId);
+                this._persistBloques();
+                this.refresh();
             });
         });
     }
 
     mostrarMenuContextual(cita, x, y) {
+        document.querySelectorAll('.agenda-ctx-menu').forEach(m => m.remove());
         const menu = document.createElement('div');
-        menu.className = 'fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1';
-        menu.style.top = y + 'px';
-        menu.style.left = x + 'px';
-        menu.innerHTML = `
-            <button onclick="window.agendaManagerInstance.navManager.openModal(this.closest('[data-cita-id]')); this.closest('[class*=fixed]').remove();" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 block text-gray-900 font-medium">
-                <i class="fas fa-edit mr-2"></i> Editar
-            </button>
-            <button onclick="if (confirm('¿Eliminar cita?')) { window.agendaManagerInstance.navManager.deleteCita('${cita.id}'); } this.closest('[class*=fixed]').remove();" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 block text-red-600 font-medium">
-                <i class="fas fa-trash mr-2"></i> Eliminar
-            </button>
-        `;
-        
+        menu.className = 'agenda-ctx-menu fixed z-50 rounded-xl py-1 shadow-2xl overflow-hidden';
+        menu.style.cssText = 'top:' + y + 'px;left:' + x + 'px;background:#0f1e35;border:1px solid rgba(43,147,166,0.3);min-width:160px';
+        menu.innerHTML = '<button class="ctx-editar w-full text-left px-4 py-2 text-sm hover:bg-[rgba(43,147,166,0.15)] transition flex items-center gap-2 text-slate-200"><i class="fas fa-edit w-4 text-[#38BDF8]"></i>Editar</button>'
+            + '<button class="ctx-cobrar w-full text-left px-4 py-2 text-sm hover:bg-[rgba(16,185,129,0.15)] transition flex items-center gap-2 text-slate-200"><i class="fas fa-cash-register w-4 text-emerald-400"></i>Cobrar</button>'
+            + '<div style="height:1px;background:rgba(255,255,255,0.06);margin:2px 0"></div>'
+            + '<button class="ctx-eliminar w-full text-left px-4 py-2 text-sm hover:bg-red-500/10 transition flex items-center gap-2 text-red-400"><i class="fas fa-trash w-4"></i>Eliminar</button>';
         document.body.appendChild(menu);
-        setTimeout(() => {
-            document.addEventListener('click', (e) => {
-                if (e.target !== menu && !menu.contains(e.target)) {
-                    menu.remove();
-                }
-            }, { once: true });
+        menu.querySelector('.ctx-editar').addEventListener('click', () => { this.navManager.showNewCitaModal(Object.assign({}, cita)); menu.remove(); });
+        menu.querySelector('.ctx-cobrar').addEventListener('click', () => { this.navManager.showCobroModal(cita.id); menu.remove(); });
+        menu.querySelector('.ctx-eliminar').addEventListener('click', () => {
+            if (confirm('Eliminar esta cita?')) { this.navManager.deleteCita(cita.id); this.refresh(); }
+            menu.remove();
         });
+        setTimeout(() => { document.addEventListener('click', () => menu.remove(), { once: true }); }, 50);
+    }
+
+    jumpToDate(dateStr) {
+        this.selectedDate = new Date(dateStr + 'T00:00:00');
+        this.agendaView   = 'day';
+        document.querySelectorAll('.agenda-view-btn').forEach(b => {
+            const active = b.dataset.view === 'day';
+            b.classList.toggle('bg-[#2B93A6]', active);
+            b.classList.toggle('text-white', active);
+            b.classList.toggle('text-slate-400', !active);
+        });
+        this._updateFechaLabel();
+        this.refresh();
+    }
+
+    _buildFechaLabel() {
+        if (this.agendaView === 'week') {
+            const lunes = new Date(this.selectedDate);
+            const dow = lunes.getDay();
+            lunes.setDate(lunes.getDate() - (dow === 0 ? 6 : dow - 1));
+            const domingo = new Date(lunes); domingo.setDate(domingo.getDate() + 6);
+            return lunes.getDate() + ' - ' + domingo.getDate() + ' ' + domingo.toLocaleDateString('es-ES', { month: 'long' });
+        }
+        if (this.agendaView === 'month') {
+            const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            return MESES[this.selectedDate.getMonth()] + ' ' + this.selectedDate.getFullYear();
+        }
+        return this.selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    _updateFechaLabel() {
+        const label = document.getElementById('agenda-fecha-label');
+        if (label) label.textContent = this._buildFechaLabel();
+        const input = document.getElementById('agenda-date-input');
+        if (input) input.value = this._dateStr(this.selectedDate);
+    }
+
+    _reRenderContent() {
+        const el = document.getElementById('agenda-content');
+        if (!el) return;
+        el.innerHTML = this.renderContent();
+        if (this.agendaView === 'analytics') {
+            this._setupStatsListeners();
+        } else {
+            this.setupClickToAdd(); this.setupDragDrop(); this.attachCitaListeners(); this._updateFechaLabel();
+        }
+    }
+
+    _startTimeIndicator() {
+        if (this._timeInterval) clearInterval(this._timeInterval);
+        this._timeInterval = setInterval(() => {
+            const line = document.getElementById('time-indicator-line');
+            if (!line) return;
+            const ahora = new Date();
+            const h = ahora.getHours(), m = ahora.getMinutes();
+            if (h < this.horaInicio || h >= this.horaFin) { line.style.display = 'none'; return; }
+            const topPx = 40 + (h - this.horaInicio) * this.pxPorHora + (m / 60) * this.pxPorHora;
+            line.style.top = topPx + 'px'; line.style.display = '';
+            const labelEl = line.querySelector('.absolute.left-1');
+            if (labelEl) labelEl.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+        }, 60000);
     }
 
     refresh() {
-        const agendaContent = document.getElementById('agenda-content');
-        const calendarMini = document.getElementById('calendar-mini');
-        
-        if (agendaContent) {
-            agendaContent.innerHTML = this.renderContent();
+        this.recursos = this._loadRecursos();
+        const content = document.getElementById('agenda-content');
+        const miniCal = document.getElementById('calendar-mini');
+        if (content) content.innerHTML = this.renderContent();
+        if (miniCal)  miniCal.innerHTML = this.renderCalendarMini();
+        this.setupClickToAdd(); this.setupDragDrop(); this.attachCitaListeners(); this._bindMiniCalListeners();
+    }
+
+    // ── BLOQUES DE TIEMPO ─────────────────────────────────────────
+    _renderBloquesDay(fechaStr, headerH, numR) {
+        const bloquesHoy = this.bloques.filter(b => b.fecha === fechaStr);
+        if (!bloquesHoy.length) return '';
+        const colW  = 'calc((100% - 70px) / ' + numR + ')';
+        const ICONS = { 'Almuerzo': 'fa-utensils', 'Reunion interna': 'fa-users', 'Administracion': 'fa-folder', 'No molestar': 'fa-ban', 'Formacion': 'fa-book', 'Descanso': 'fa-coffee', 'Otro': 'fa-clock' };
+        return bloquesHoy.map(b => {
+            const startMin   = this._toMinutes(b.horaInicio);
+            const endMin     = this._toMinutes(b.horaFin);
+            if (endMin <= startMin) return '';
+            const topPx      = headerH + (startMin - this.horaInicio * 60) / 60 * this.pxPorHora;
+            const heightPx   = Math.max((endMin - startMin) / 60 * this.pxPorHora, 22);
+            const recursoIdx = this.recursos.indexOf(b.recurso);
+            const allCols    = !b.recurso || recursoIdx < 0;
+            const leftCalc   = allCols ? '70px' : 'calc(70px + ' + recursoIdx + ' * ' + colW + ')';
+            const widthCalc  = allCols ? 'calc(100% - 74px)' : 'calc(' + colW + ' - 8px)';
+            const icon       = ICONS[b.tipo] || 'fa-clock';
+            return '<div class="agenda-bloque-card absolute z-[5] rounded-md select-none group/bloque pointer-events-auto"'
+                + ' style="top:' + topPx + 'px;left:' + leftCalc + ';width:' + widthCalc + ';height:' + heightPx + 'px;'
+                + 'background:repeating-linear-gradient(45deg,rgba(100,116,139,0.07) 0,rgba(100,116,139,0.07) 3px,rgba(100,116,139,0.03) 3px,rgba(100,116,139,0.03) 9px);'
+                + 'border:1px dashed rgba(100,116,139,0.3)" data-bloque-id="' + b.id + '">'
+                + '<div class="flex items-center gap-1.5 px-2 h-full overflow-hidden">'
+                + '<i class="fas ' + icon + ' flex-shrink-0" style="font-size:10px;color:#64748b"></i>'
+                + '<span class="text-xs font-semibold truncate" style="color:#64748b">' + b.tipo + (b.notas ? ' \u2014 ' + b.notas : '') + '</span>'
+                + '</div>'
+                + '<button class="delete-bloque absolute top-0.5 right-0.5 w-4 h-4 rounded-full hidden group-hover/bloque:flex items-center justify-center transition" style="background:rgba(239,68,68,0.2);color:#f87171;font-size:8px" data-bloque-id="' + b.id + '">'
+                + '<i class="fas fa-times pointer-events-none"></i></button>'
+                + '</div>';
+        }).join('');
+    }
+
+    mostrarModalBloque(predatos = {}) {
+        document.getElementById('modal-bloque')?.remove();
+        const TIPOS = ['Almuerzo', 'Reunion interna', 'Administracion', 'No molestar', 'Formacion', 'Descanso', 'Otro'];
+        const modalHtml = '<div id="modal-bloque" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">'
+            + '<div class="bg-[#0f1e35] border border-[rgba(43,147,166,0.25)] rounded-xl shadow-2xl w-full max-w-sm">'
+            + '<div class="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.08)]">'
+            + '<div class="flex items-center gap-2"><i class="fas fa-ban text-slate-400 text-sm"></i><h3 class="text-sm font-bold text-white">Bloquear tiempo</h3></div>'
+            + '<button id="modal-bloque-close" class="text-slate-400 hover:text-white p-1 transition"><i class="fas fa-times"></i></button>'
+            + '</div>'
+            + '<form id="form-bloque" class="p-4 space-y-3">'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1.5">Tipo de bloque</label>'
+            + '<div class="grid grid-cols-3 gap-1.5">'
+            + TIPOS.map(t => {
+                const sel = t === (predatos.tipo || 'Almuerzo');
+                return '<label class="bloque-tipo-label flex items-center justify-center px-2 py-1.5 rounded-lg border cursor-pointer text-xs font-semibold transition text-center '
+                    + (sel ? 'border-[#2B93A6] text-[#38BDF8] bg-[rgba(43,147,166,0.12)]' : 'border-[rgba(255,255,255,0.08)] text-slate-400 hover:border-[rgba(43,147,166,0.4)]') + '">'
+                    + '<input type="radio" name="bloque-tipo" value="' + t + '" ' + (sel ? 'checked' : '') + ' class="hidden">' + t + '</label>';
+            }).join('')
+            + '</div></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1">Fecha</label>'
+            + '<input type="date" id="bloque-fecha" value="' + (predatos.fecha || this._dateStr(this.selectedDate)) + '" class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]"></div>'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1">Empleado</label>'
+            + '<select id="bloque-recurso" class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">'
+            + '<option value="" class="bg-[#0f1e35]">Todos</option>'
+            + this.recursos.map(r => '<option value="' + r + '" class="bg-[#0f1e35]" ' + (predatos.recurso === r ? 'selected' : '') + '>' + r + '</option>').join('')
+            + '</select></div></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1">Hora inicio</label>'
+            + '<input type="time" id="bloque-inicio" value="' + (predatos.horaInicio || '14:00') + '" class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]"></div>'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1">Hora fin</label>'
+            + '<input type="time" id="bloque-fin" value="' + (predatos.horaFin || '15:00') + '" class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]"></div></div>'
+            + '<div><label class="block text-xs font-bold text-slate-300 mb-1">Nota (opcional)</label>'
+            + '<input type="text" id="bloque-notas" placeholder="Ej: con todo el equipo" value="' + (predatos.notas || '') + '" class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]"></div>'
+            + '<div class="flex gap-2 pt-2 border-t border-[rgba(255,255,255,0.08)]">'
+            + '<button type="button" id="modal-bloque-cancel" class="flex-1 py-2 rounded-lg text-sm font-semibold text-slate-300 btn-secondary">Cancelar</button>'
+            + '<button type="submit" class="flex-1 py-2 rounded-lg text-sm font-semibold btn-primary">Bloquear</button>'
+            + '</div></form></div></div>';
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        document.querySelectorAll('.bloque-tipo-label').forEach(lbl => {
+            lbl.addEventListener('click', () => {
+                document.querySelectorAll('.bloque-tipo-label').forEach(l => {
+                    l.classList.remove('border-[#2B93A6]', 'text-[#38BDF8]', 'bg-[rgba(43,147,166,0.12)]');
+                    l.classList.add('border-[rgba(255,255,255,0.08)]', 'text-slate-400');
+                });
+                lbl.classList.add('border-[#2B93A6]', 'text-[#38BDF8]', 'bg-[rgba(43,147,166,0.12)]');
+                lbl.classList.remove('border-[rgba(255,255,255,0.08)]', 'text-slate-400');
+            });
+        });
+
+        const cerrar = () => document.getElementById('modal-bloque')?.remove();
+        document.getElementById('modal-bloque-close').addEventListener('click', cerrar);
+        document.getElementById('modal-bloque-cancel').addEventListener('click', cerrar);
+
+        document.getElementById('form-bloque').addEventListener('submit', e => {
+            e.preventDefault();
+            const tipo = document.querySelector('[name="bloque-tipo"]:checked')?.value || 'Otro';
+            const nuevo = {
+                id:         predatos.id || 'b' + Date.now(),
+                tipo,
+                fecha:      document.getElementById('bloque-fecha').value,
+                horaInicio: document.getElementById('bloque-inicio').value,
+                horaFin:    document.getElementById('bloque-fin').value,
+                recurso:    document.getElementById('bloque-recurso').value,
+                notas:      document.getElementById('bloque-notas').value,
+            };
+            const idx = this.bloques.findIndex(b => b.id === nuevo.id);
+            if (idx > -1) this.bloques[idx] = nuevo; else this.bloques.push(nuevo);
+            this._persistBloques();
+            cerrar();
+            this.refresh();
+        });
+    }
+
+    _persistBloques() {
+        try { localStorage.setItem('nodetech_bloques', JSON.stringify(this.bloques)); } catch {}
+        if (window.fs && window.db && window.firebaseUser) {
+            window.fs.setDoc(
+                window.fs.doc(window.db, 'users', window.firebaseUser.uid, 'config', 'bloques'),
+                { bloques: this.bloques }
+            ).catch(() => {});
         }
-        if (calendarMini) {
-            calendarMini.innerHTML = this.renderCalendarMini();
+    }
+
+    _loadBloquesFirestore() {
+        if (window.fs && window.db && window.firebaseUser) {
+            window.fs.getDoc(
+                window.fs.doc(window.db, 'users', window.firebaseUser.uid, 'config', 'bloques')
+            ).then(snap => {
+                if (snap.exists() && snap.data().bloques?.length) {
+                    this.bloques = snap.data().bloques;
+                    this.refresh();
+                }
+            }).catch(() => {});
         }
-        
-        this.setupClickToAdd();
-        this.setupDragDrop();
-        this.attachCitaListeners();
+    }
+
+    // ── ANALÍTICAS (modular) ──────────────────────────────────────
+    _statsWidgets() {
+        return [
+            { id: 'kpis',      label: 'Indicadores clave',    icon: 'fa-tachometer-alt', span: 2 },
+            { id: 'ocupacion', label: 'Ocupaci\u00f3n semanal', icon: 'fa-signal',         span: 1 },
+            { id: 'barras',    label: 'Actividad por d\u00eda', icon: 'fa-chart-bar',      span: 1 },
+            { id: 'heatmap',   label: 'Mapa de calor',         icon: 'fa-th',             span: 2 },
+            { id: 'servicios', label: 'Top servicios',         icon: 'fa-list-ol',        span: 1 },
+            { id: 'clientes',  label: 'Top clientes',          icon: 'fa-users',          span: 1 },
+        ];
+    }
+
+    _getStatsConfig() {
+        const saved = localStorage.getItem('nodetech_stats_config');
+        if (saved) { try { return JSON.parse(saved); } catch (_) {} }
+        return this._statsWidgets().map(w => ({ id: w.id, visible: true }));
+    }
+
+    _saveStatsConfig(config) {
+        localStorage.setItem('nodetech_stats_config', JSON.stringify(config));
+    }
+
+    _renderStatsWidget(id, d) {
+        const span = this._statsWidgets().find(w => w.id === id)?.span === 2 ? 'col-span-2' : 'col-span-1';
+        const card = (content) => '<div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-4 ' + span + '">' + content + '</div>';
+        const hdr  = (label)   => '<p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">' + label + '</p>';
+        switch (id) {
+            case 'kpis':
+                return '<div class="col-span-2 grid grid-cols-2 gap-2">'
+                    + this._kpiCard('fa-calendar-check', 'Total',          d.total + '',                                     '#38BDF8', 'rgba(43,147,166,0.12)')
+                    + this._kpiCard('fa-check-circle',   'Completadas',    d.completadas + ' (' + d.tasaComp + '%)',         '#4ADE80', 'rgba(34,197,94,0.10)')
+                    + this._kpiCard('fa-user-slash',     'No presentados', d.noPresentados + ' (' + d.tasaNP + '%)',        '#F87171', 'rgba(239,68,68,0.08)')
+                    + this._kpiCard('fa-euro-sign',      'Cobrado/Estim.', '\u20ac' + d.cobrado + ' / \u20ac' + d.estimado, '#6EE7B7', 'rgba(16,185,129,0.10)')
+                    + '</div>';
+            case 'ocupacion':
+                return card(
+                    hdr('Ocupaci\u00f3n esta semana')
+                    + '<div class="flex items-center gap-3 mb-1">'
+                    + '<div class="text-3xl font-black" style="color:#38BDF8">' + d.ocupacion + '<span class="text-base">%</span></div>'
+                    + '<div class="flex-1 h-2.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06)">'
+                    + '<div class="h-full rounded-full" style="width:' + d.ocupacion + '%;background:linear-gradient(90deg,#2B93A6,#38BDF8)"></div>'
+                    + '</div></div>'
+                    + '<p class="text-xs text-slate-500">' + d.citasSemana + ' citas esta semana</p>'
+                );
+            case 'barras':
+                return card(
+                    hdr('Actividad por d\u00eda')
+                    + '<div class="flex gap-1 items-end" style="height:60px">'
+                    + d.DIAS_HEAT.map((day, i) => {
+                        const n = d.heatmap[i].reduce((s, v) => s + v, 0);
+                        const maxDia = Math.max(1, ...d.DIAS_HEAT.map((_, j) => d.heatmap[j].reduce((s, v) => s + v, 0)));
+                        const pct = n / maxDia;
+                        return '<div class="flex flex-col items-center gap-0.5 flex-1">'
+                            + '<div class="w-full rounded-sm" style="height:' + Math.max(3, Math.round(pct * 52)) + 'px;background:rgba(43,147,166,' + (0.2 + pct * 0.8).toFixed(2) + ')"></div>'
+                            + '<span style="font-size:9px;color:#475569">' + day + '</span></div>';
+                    }).join('')
+                    + '</div>'
+                );
+            case 'heatmap':
+                return card(
+                    hdr('Mapa de calor \u2014 hora \u00d7 d\u00eda')
+                    + '<div style="overflow-x:auto"><div style="min-width:280px">'
+                    + '<div class="grid mb-1.5" style="grid-template-columns:28px repeat(' + d.HORAS_HEAT.length + ',1fr);gap:2px"><div></div>'
+                    + d.HORAS_HEAT.map(h => '<div class="text-center" style="font-size:9px;color:#475569">' + h + 'h</div>').join('') + '</div>'
+                    + d.DIAS_HEAT.map((day, i) =>
+                        '<div class="grid mb-0.5" style="grid-template-columns:28px repeat(' + d.HORAS_HEAT.length + ',1fr);gap:2px">'
+                        + '<div class="flex items-center" style="font-size:9px;color:#475569">' + day + '</div>'
+                        + d.heatmap[i].map(v => {
+                            const intensity = v / d.maxHeat;
+                            const bg = v === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(43,147,166,' + (0.15 + intensity * 0.85).toFixed(2) + ')';
+                            return '<div class="rounded-sm" title="' + v + ' citas" style="height:16px;background:' + bg + '"></div>';
+                        }).join('') + '</div>'
+                    ).join('')
+                    + '</div></div>'
+                );
+            case 'servicios':
+                return card(
+                    hdr('Top servicios')
+                    + (d.topServicios.length
+                        ? d.topServicios.map(([s, n]) =>
+                            '<div class="mb-2"><div class="flex justify-between mb-0.5">'
+                            + '<span class="text-xs font-semibold text-white truncate">' + s + '</span>'
+                            + '<span class="text-xs text-slate-500 ml-1 flex-shrink-0">' + n + '</span></div>'
+                            + '<div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.06)">'
+                            + '<div class="h-full rounded-full" style="width:' + Math.round(n / d.maxServ * 100) + '%;background:linear-gradient(90deg,#2B93A6,#38BDF8)"></div></div></div>'
+                        ).join('')
+                        : '<p class="text-xs text-slate-600 text-center py-3">Sin datos</p>')
+                );
+            case 'clientes':
+                return card(
+                    hdr('Top clientes')
+                    + (d.topClientes.length
+                        ? d.topClientes.map(([c, n], idx) => {
+                            const colors = ['#38BDF8', '#4ADE80', '#A78BFA', '#FCD34D', '#FB923C'];
+                            return '<div class="flex items-center gap-2 py-1.5 border-b border-[rgba(255,255,255,0.05)] last:border-0">'
+                                + '<span class="text-xs font-black w-4 text-center" style="color:' + colors[idx] + '">' + (idx + 1) + '</span>'
+                                + '<span class="text-xs text-white font-semibold flex-1 truncate">' + c + '</span>'
+                                + '<span class="text-xs font-bold" style="color:' + colors[idx] + '">' + n + '</span></div>';
+                        }).join('')
+                        : '<p class="text-xs text-slate-600 text-center py-3">Sin datos</p>')
+                );
+            default: return '';
+        }
+    }
+
+    _setupStatsListeners() {
+        document.getElementById('btn-stats-config')?.addEventListener('click', () => {
+            this._statsConfigOpen = !this._statsConfigOpen;
+            this._reRenderContent();
+        });
+        document.querySelectorAll('.stats-widget-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const widgetId   = btn.dataset.widgetId;
+                const allWidgets = this._statsWidgets();
+                const saved      = this._getStatsConfig();
+                const config     = allWidgets.map(w => {
+                    const s = saved.find(c => c.id === w.id);
+                    return { id: w.id, visible: s ? s.visible : true };
+                });
+                const entry = config.find(c => c.id === widgetId);
+                if (!entry) return;
+                if (entry.visible && config.filter(w => w.visible).length <= 1) return;
+                entry.visible = !entry.visible;
+                this._saveStatsConfig(config);
+                this._statsConfigOpen = true;
+                this._reRenderContent();
+            });
+        });
+    }
+
+    renderAnalytics() {
+        const citas   = this.navManager.citas;
+        const hoy     = new Date();
+        const hace30  = new Date(); hace30.setDate(hace30.getDate() - 30);
+        const recientes = citas.filter(c => {
+            if (!c.fecha) return false;
+            const d = new Date(c.fecha + 'T00:00:00');
+            return d >= hace30 && d <= hoy;
+        });
+        const total         = recientes.length;
+        const completadas   = recientes.filter(c => c.estado === 'completado').length;
+        const noPresentados = recientes.filter(c => c.estado === 'no-presentado').length;
+        const cobrado       = recientes.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        const estimado      = recientes.reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        const tasaNP        = total > 0 ? Math.round(noPresentados / total * 100) : 0;
+        const tasaComp      = total > 0 ? Math.round(completadas / total * 100) : 0;
+
+        const servicioMap = {};
+        recientes.forEach(c => { if (c.servicio) servicioMap[c.servicio] = (servicioMap[c.servicio] || 0) + 1; });
+        const topServicios = Object.entries(servicioMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const maxServ = topServicios[0]?.[1] || 1;
+
+        const clienteMap = {};
+        recientes.forEach(c => { if (c.cliente) clienteMap[c.cliente] = (clienteMap[c.cliente] || 0) + 1; });
+        const topClientes = Object.entries(clienteMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        const HORAS_HEAT = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+        const DIAS_HEAT  = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+        const heatmap    = Array.from({ length: 7 }, () => Array(HORAS_HEAT.length).fill(0));
+        recientes.forEach(c => {
+            if (!c.fecha || !c.hora) return;
+            const d   = new Date(c.fecha + 'T00:00:00');
+            const dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
+            const h   = parseInt((c.hora || '0').split(':')[0]);
+            const hi  = HORAS_HEAT.indexOf(h);
+            if (hi >= 0) heatmap[dow][hi]++;
+        });
+        const maxHeat = Math.max(1, ...heatmap.flat());
+
+        const lunes = new Date(hoy);
+        lunes.setDate(lunes.getDate() - (lunes.getDay() === 0 ? 6 : lunes.getDay() - 1));
+        const finSemana = new Date(lunes); finSemana.setDate(finSemana.getDate() + 6);
+        const citasSemana = citas.filter(c => {
+            if (!c.fecha) return false;
+            const d = new Date(c.fecha + 'T00:00:00');
+            return d >= lunes && d <= finSemana;
+        }).length;
+        const ocupacion = Math.min(100, Math.round(citasSemana / Math.max(1, 5 * (this.horaFin - this.horaInicio)) * 100));
+
+        const wd = { total, completadas, noPresentados, cobrado, estimado, tasaNP, tasaComp,
+                     topServicios, maxServ, topClientes, heatmap, maxHeat, HORAS_HEAT, DIAS_HEAT, citasSemana, ocupacion };
+
+        const allWidgets   = this._statsWidgets();
+        const savedConfig  = this._getStatsConfig();
+        const mergedConfig = allWidgets.map(w => {
+            const saved = savedConfig.find(c => c.id === w.id);
+            return { id: w.id, visible: saved ? saved.visible : true };
+        });
+        const configOpen    = this._statsConfigOpen || false;
+        const activeClass   = 'border-[#2B93A6] text-[#38BDF8] bg-[rgba(43,147,166,0.12)]';
+        const inactiveClass = 'border-[rgba(255,255,255,0.08)] text-slate-500 hover:text-slate-300';
+        const btnClass      = configOpen ? activeClass : 'border-[rgba(255,255,255,0.1)] text-slate-400 hover:text-white';
+
+        return '<div class="p-4 flex flex-col gap-4 h-full overflow-y-auto">'
+            + '<div class="flex items-center justify-between flex-wrap gap-2">'
+            + '<div class="flex items-center gap-2">'
+            + '<span class="text-xs text-slate-400">\u00daltimos 30 d\u00edas</span>'
+            + '<span class="text-xs px-2 py-0.5 rounded-full font-semibold" style="background:rgba(43,147,166,0.15);color:#38BDF8">' + total + ' citas</span>'
+            + '</div>'
+            + '<button id="btn-stats-config" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border ' + btnClass + '">'
+            + '<i class="fas fa-sliders-h"></i> Personalizar</button>'
+            + '</div>'
+            + '<div id="stats-config-panel" class="' + (configOpen ? '' : 'hidden') + ' glass border border-[rgba(43,147,166,0.25)] rounded-xl p-3">'
+            + '<p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Herramientas activas \u2014 clic para activar / desactivar</p>'
+            + '<div class="flex flex-wrap gap-2">'
+            + allWidgets.map(w => {
+                const isVis = mergedConfig.find(c => c.id === w.id)?.visible !== false;
+                return '<button class="stats-widget-toggle inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border '
+                    + (isVis ? activeClass : inactiveClass)
+                    + '" data-widget-id="' + w.id + '">'
+                    + '<i class="fas ' + w.icon + '"></i> ' + w.label + '</button>';
+            }).join('')
+            + '</div></div>'
+            + '<div class="grid grid-cols-2 gap-3">'
+            + mergedConfig.filter(w => w.visible).map(w => this._renderStatsWidget(w.id, wd)).join('')
+            + '</div>'
+            + '</div>';
+    }
+
+    _kpiCard(icon, label, value, color, bg) {
+        return '<div class="rounded-xl p-3 flex items-center gap-2.5" style="background:' + bg + ';border:1px solid ' + color + '20">'
+            + '<i class="fas ' + icon + '" style="color:' + color + ';font-size:18px;flex-shrink:0"></i>'
+            + '<div><p class="text-xs font-bold uppercase leading-tight" style="color:' + color + '66">' + label + '</p>'
+            + '<p class="text-sm font-black" style="color:' + color + '">' + value + '</p></div></div>';
+    }
+
+    destroy() {
+        if (this._timeInterval) { clearInterval(this._timeInterval); this._timeInterval = null; }
+        const panel = document.getElementById('agenda-detail-panel');
+        if (panel) panel.remove();
     }
 }
-(function () {
-  const STORAGE_KEY = 'crm-appointments';
-
-  const state = {
-    monthCursor: new Date(),
-    selectedDate: toISODate(new Date()),
-    appointments: []
-  };
-
-  const el = {
-    currentMonth: document.getElementById('current-month'),
-    calendarDays: document.getElementById('calendar-days'),
-    selectedDateTitle: document.getElementById('selected-date-title'),
-    appointmentsList: document.getElementById('appointments-list'),
-    form: document.getElementById('appointment-form'),
-    id: document.getElementById('appointment-id'),
-    client: document.getElementById('client-name'),
-    date: document.getElementById('appointment-date'),
-    time: document.getElementById('appointment-time'),
-    description: document.getElementById('appointment-description'),
-    cancelEdit: document.getElementById('cancel-edit'),
-    addBtn: document.getElementById('add-appointment'),
-    prevMonth: document.getElementById('prev-month'),
-    nextMonth: document.getElementById('next-month'),
-    total: document.getElementById('total-appointments'),
-    today: document.getElementById('today-appointments'),
-    upcoming: document.getElementById('upcoming-appointments'),
-    exportBtn: document.getElementById('export-excel'),
-    horaFin: document.getElementById('appointment-hora-fin'),
-    prioridad: document.getElementById('appointment-prioridad'),
-    estado: document.getElementById('appointment-estado'),
-    modal: document.getElementById('event-detail-modal'),
-    modalContent: document.getElementById('modal-content'),
-    modalClose: document.getElementById('modal-close'),
-    modalCloseBtn: document.getElementById('modal-close-btn'),
-    modalEditBtn: document.getElementById('modal-edit-btn'),
-    modalDeleteBtn: document.getElementById('modal-delete-btn'),
-    dayPreview: document.getElementById('day-preview')
-  };
-
-  function toISODate(d) {
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-  }
-
-  function startOfMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-  }
-
-  function loadAppointments() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      state.appointments = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      state.appointments = [];
-    }
-  }
-
-  function saveAppointments() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.appointments));
-  }
-
-  function timeToMinutes(time) {
-    const parts = (time || '00:00').split(':');
-    return parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
-  }
-
-  function getEventClass(a) {
-    const estado = a.estado || 'pendiente';
-    const prioridad = a.prioridad || 'normal';
-    if (estado === 'completada') return 'event-completed';
-    if (prioridad === 'importante') return 'event-important';
-    return 'event-normal';
-  }
-
-  function getDotClass(a) {
-    return getEventClass(a).replace('event-', 'dot-');
-  }
-
-  function assignEventLayout(items) {
-    const events = items.map(function(a) {
-      const start = timeToMinutes(a.hora || '00:00');
-      const end = a.horaFin ? timeToMinutes(a.horaFin) : start + 60;
-      return Object.assign({}, a, { _start: start, _end: Math.max(end, start + 30), _col: 0, _totalCols: 1 });
-    });
-
-    for (let i = 0; i < events.length; i++) {
-      const usedCols = new Set();
-      for (let j = 0; j < i; j++) {
-        if (events[i]._start < events[j]._end && events[i]._end > events[j]._start) {
-          usedCols.add(events[j]._col);
-        }
-      }
-      let col = 0;
-      while (usedCols.has(col)) col++;
-      events[i]._col = col;
-    }
-
-    for (let i = 0; i < events.length; i++) {
-      let maxCol = events[i]._col;
-      for (let j = 0; j < events.length; j++) {
-        if (i !== j && events[i]._start < events[j]._end && events[i]._end > events[j]._start) {
-          maxCol = Math.max(maxCol, events[j]._col);
-        }
-      }
-      events[i]._totalCols = maxCol + 1;
-    }
-
-    return events;
-  }
-
-  function renderMonth() {
-    const year = state.monthCursor.getFullYear();
-    const month = state.monthCursor.getMonth();
-    const first = new Date(year, month, 1);
-    const last = new Date(year, month + 1, 0);
-
-    el.currentMonth.textContent = first.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-
-    const mondayIndex = (first.getDay() + 6) % 7;
-    const totalCells = mondayIndex + last.getDate();
-    const rows = Math.ceil(totalCells / 7);
-    const maxCells = rows * 7;
-
-    let html = '';
-    for (let i = 0; i < maxCells; i += 1) {
-      const dayNum = i - mondayIndex + 1;
-      if (dayNum < 1 || dayNum > last.getDate()) {
-        html += '<div class="h-12 rounded-xl bg-slate-100"></div>';
-        continue;
-      }
-
-      const dayDate = new Date(year, month, dayNum);
-      const iso = toISODate(dayDate);
-      const isSelected = iso === state.selectedDate;
-      const dayApps = state.appointments.filter(function(a) { return a.fecha === iso; });
-      const hasAppointments = dayApps.length > 0;
-      const dotClasses = [...new Set(dayApps.map(function(a) { return getDotClass(a); }))];
-
-      const classes = [
-        'cal-day-cell rounded-xl flex flex-col items-center justify-center cursor-pointer transition border text-sm font-semibold py-1',
-        isSelected ? 'selected-day border-blue-600' : 'bg-white border-slate-200 hover:bg-slate-50',
-        !isSelected && hasAppointments ? 'day-with-appointments' : ''
-      ].join(' ');
-
-      html += '<button type="button" class="' + classes + '" data-date="' + iso + '">';
-      html += '<span>' + dayNum + '</span>';
-      if (dotClasses.length) {
-        html += '<div class="flex gap-0.5 mt-0.5">';
-        dotClasses.slice(0, 3).forEach(function(dc) { html += '<span class="day-dot ' + dc + '"></span>'; });
-        html += '</div>';
-      }
-      html += '</button>';
-    }
-
-    el.calendarDays.innerHTML = html;
-  }
-
-  function getSelectedDayAppointments() {
-    return state.appointments
-      .filter(a => a.fecha === state.selectedDate)
-      .sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-  }
-
-  function updateStats() {
-    const todayIso = toISODate(new Date());
-    const now = new Date();
-
-    const upcoming = state.appointments.filter(a => {
-      if (!a.fecha || !a.hora) return false;
-      const when = new Date(a.fecha + 'T' + a.hora + ':00');
-      return !Number.isNaN(when.getTime()) && when >= now;
-    }).length;
-
-    el.total.textContent = String(state.appointments.length);
-    el.today.textContent = String(state.appointments.filter(a => a.fecha === todayIso).length);
-    el.upcoming.textContent = String(upcoming);
-  }
-
-  function showEventDetail(id) {
-    const a = state.appointments.find(function(item) { return item.id === id; });
-    if (!a) return;
-    const cls = getEventClass(a);
-    const badgeCls = cls.replace('event-', 'badge-');
-    const prioLabels = { normal: 'Normal', importante: 'Importante' };
-    const estadoLabels = { pendiente: 'Pendiente', en_curso: 'En curso', completada: 'Completada' };
-    const prioLabel = prioLabels[a.prioridad || 'normal'] || 'Normal';
-    const estadoLabel = estadoLabels[a.estado || 'pendiente'] || 'Pendiente';
-
-    const rows = [
-      ['Cliente', escapeHtml(a.cliente || '—')],
-      ['Hora inicio', escapeHtml(a.hora || '—')],
-      ['Hora fin', escapeHtml(a.horaFin || '—')],
-      ['Descripción', escapeHtml(a.descripcion || a.servicio || '—')],
-      ['Estado', '<span class="badge ' + badgeCls + '">' + estadoLabel + '</span>'],
-      ['Prioridad', '<span class="badge ' + badgeCls + '">' + prioLabel + '</span>']
-    ];
-
-    el.modalContent.innerHTML = rows.map(function(row) {
-      return '<div class="flex flex-col gap-0.5"><span class="text-xs font-semibold uppercase tracking-wider text-slate-400">' + row[0] + '</span><span class="text-sm text-slate-800">' + row[1] + '</span></div>';
-    }).join('');
-
-    el.modal.dataset.editId = id;
-    el.modal.style.display = 'flex';
-  }
-
-  function renderDayList() {
-    const d = new Date(state.selectedDate + 'T00:00:00');
-    el.selectedDateTitle.textContent = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-
-    const items = getSelectedDayAppointments();
-
-    if (!items.length) {
-      el.appointmentsList.innerHTML = '<p class="text-slate-500 view-fade">No hay citas para este día.</p>';
-      return;
-    }
-
-    const HOUR_START = 7;
-    const HOUR_END = 21;
-    const HOUR_HEIGHT = 60;
-    const gridHeight = (HOUR_END - HOUR_START) * HOUR_HEIGHT;
-
-    const laid = assignEventLayout(items);
-
-    let hoursHtml = '';
-    for (let h = HOUR_START; h <= HOUR_END; h++) {
-      hoursHtml += '<div class="timeline-hour-label">' + String(h).padStart(2, '0') + ':00</div>';
-    }
-
-    let slotsHtml = '';
-    for (let h = HOUR_START; h <= HOUR_END; h++) {
-      slotsHtml += '<div class="timeline-slot"></div>';
-    }
-
-    let eventsHtml = '';
-    laid.forEach(function(a) {
-      const clampedStart = Math.max(a._start, HOUR_START * 60);
-      const topOffset = clampedStart - HOUR_START * 60;
-      const height = Math.max(((a._end - a._start) / 60) * HOUR_HEIGHT, 28);
-      const cls = getEventClass(a);
-      const colWidth = 100 / a._totalCols;
-      const leftPct = a._col * colWidth;
-      const style = 'top:' + topOffset + 'px;height:' + height + 'px;left:calc(' + leftPct + '% + 3px);width:calc(' + colWidth + '% - 6px);';
-      const label = escapeHtml(a.descripcion || a.servicio || 'Cita');
-      const timeLabel = escapeHtml(a.hora || '--:--') + (a.horaFin ? ' – ' + escapeHtml(a.horaFin) : '');
-
-      eventsHtml += '<div class="event-block ' + cls + '" style="' + style + '" data-action="detail" data-id="' + a.id + '">';
-      eventsHtml += '<div class="font-semibold truncate">' + escapeHtml(a.cliente || 'Cliente') + '</div>';
-      eventsHtml += '<div class="truncate" style="opacity:0.75">' + label + '</div>';
-      eventsHtml += '<div style="opacity:0.6;font-size:10px">' + timeLabel + '</div>';
-      eventsHtml += '</div>';
-    });
-
-    el.appointmentsList.innerHTML = [
-      '<div class="timeline-container view-fade">',
-      '<div class="timeline-hours">' + hoursHtml + '</div>',
-      '<div class="timeline-grid" style="min-height:' + gridHeight + 'px;">' + slotsHtml + eventsHtml + '</div>',
-      '</div>'
-    ].join('');
-  }
-
-  function resetForm() {
-    el.id.value = '';
-    el.client.value = '';
-    el.date.value = state.selectedDate;
-    el.time.value = '';
-    el.horaFin.value = '';
-    el.description.value = '';
-    el.prioridad.value = 'normal';
-    el.estado.value = 'pendiente';
-  }
-
-  function upsertAppointment(payload) {
-    const idx = state.appointments.findIndex(a => a.id === payload.id);
-    if (idx >= 0) {
-      state.appointments[idx] = payload;
-    } else {
-      state.appointments.push(payload);
-    }
-    saveAppointments();
-    refresh();
-  }
-
-  function removeAppointment(id) {
-    state.appointments = state.appointments.filter(a => a.id !== id);
-    saveAppointments();
-    refresh();
-  }
-
-  function editAppointment(id) {
-    const a = state.appointments.find(function(item) { return item.id === id; });
-    if (!a) return;
-    el.id.value = a.id;
-    el.client.value = a.cliente || '';
-    el.date.value = a.fecha || state.selectedDate;
-    el.time.value = a.hora || '';
-    el.horaFin.value = a.horaFin || '';
-    el.description.value = a.descripcion || a.servicio || '';
-    el.prioridad.value = a.prioridad || 'normal';
-    el.estado.value = a.estado || 'pendiente';
-    state.selectedDate = a.fecha || state.selectedDate;
-    renderMonth();
-    renderDayList();
-  }
-
-  function exportExcel() {
-    if (typeof XLSX === 'undefined') {
-      alert('No se pudo cargar la librería de exportación.');
-      return;
-    }
-
-    const rows = state.appointments.map(function(a) { return {
-      ID: a.id,
-      Cliente: a.cliente || '',
-      Fecha: a.fecha || '',
-      Hora: a.hora || '',
-      HoraFin: a.horaFin || '',
-      Descripcion: a.descripcion || a.servicio || '',
-      Prioridad: a.prioridad || 'normal',
-      Estado: a.estado || 'pendiente'
-    }; });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, 'Agenda');
-    XLSX.writeFile(wb, 'agenda-node.xlsx');
-  }
-
-  function refresh() {
-    renderMonth();
-    renderDayList();
-    updateStats();
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!el.date) return;
-    state.monthCursor = startOfMonth(new Date());
-    loadAppointments();
-    el.date.value = state.selectedDate;
-
-    el.prevMonth.addEventListener('click', () => {
-      state.monthCursor = new Date(state.monthCursor.getFullYear(), state.monthCursor.getMonth() - 1, 1);
-      renderMonth();
-    });
-
-    el.nextMonth.addEventListener('click', () => {
-      state.monthCursor = new Date(state.monthCursor.getFullYear(), state.monthCursor.getMonth() + 1, 1);
-      renderMonth();
-    });
-
-    el.calendarDays.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-date]');
-      if (!btn) return;
-      state.selectedDate = btn.getAttribute('data-date');
-      el.date.value = state.selectedDate;
-      renderMonth();
-      renderDayList();
-    });
-
-    el.form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const cliente = el.client.value.trim();
-      const fecha = el.date.value;
-      const hora = el.time.value;
-      const descripcion = el.description.value.trim();
-
-      if (!cliente || !fecha || !hora) {
-        alert('Completa cliente, fecha y hora.');
-        return;
-      }
-
-      const horaFin = el.horaFin.value;
-      const prioridad = el.prioridad.value || 'normal';
-      const estado = el.estado.value || 'pendiente';
-      const id = el.id.value || String(Date.now());
-      upsertAppointment({
-        id,
-        cliente,
-        fecha,
-        hora,
-        horaFin,
-        descripcion,
-        prioridad,
-        estado,
-        servicio: descripcion || 'Cita'
-      });
-
-      state.selectedDate = fecha;
-      resetForm();
-    });
-
-    el.cancelEdit.addEventListener('click', () => resetForm());
-
-    el.addBtn.addEventListener('click', () => {
-      resetForm();
-      el.client.focus();
-    });
-
-    el.appointmentsList.addEventListener('click', function(e) {
-      const actionBtn = e.target.closest('[data-action]');
-      if (!actionBtn) return;
-      const id = actionBtn.getAttribute('data-id');
-      const action = actionBtn.getAttribute('data-action');
-      if (action === 'detail') { showEventDetail(id); return; }
-      if (action === 'edit') editAppointment(id);
-      if (action === 'delete' && confirm('\u00bfEliminar cita?')) removeAppointment(id);
-    });
-
-    el.exportBtn.addEventListener('click', exportExcel);
-
-    // Day preview on hover
-    el.calendarDays.addEventListener('mouseover', function(e) {
-      const btn = e.target.closest('[data-date]');
-      if (!btn) { el.dayPreview.style.display = 'none'; return; }
-      const iso = btn.getAttribute('data-date');
-      const apps = state.appointments
-        .filter(function(a) { return a.fecha === iso; })
-        .sort(function(a, b) { return (a.hora || '').localeCompare(b.hora || ''); });
-      if (!apps.length) { el.dayPreview.style.display = 'none'; return; }
-      const rect = btn.getBoundingClientRect();
-      el.dayPreview.style.top = (rect.bottom + 6 + window.scrollY) + 'px';
-      el.dayPreview.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 230) + 'px';
-      el.dayPreview.innerHTML = '<div style="font-weight:600;color:#1e293b;margin-bottom:6px">' + apps.length + ' cita(s)</div>' +
-        apps.slice(0, 3).map(function(a) {
-          const dc = getDotClass(a);
-          return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span class="day-dot ' + dc + '"></span><span style="color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(a.hora || '--') + ' \u00b7 ' + escapeHtml(a.cliente || 'Cliente') + '</span></div>';
-        }).join('') +
-        (apps.length > 3 ? '<div style="color:#94a3b8;font-size:10px;margin-top:2px">+' + (apps.length - 3) + ' m\u00e1s</div>' : '');
-      el.dayPreview.style.display = 'block';
-    });
-
-    el.calendarDays.addEventListener('mouseleave', function() {
-      el.dayPreview.style.display = 'none';
-    });
-
-    // Modal controls
-    el.modalClose.addEventListener('click', function() { el.modal.style.display = 'none'; });
-    el.modalCloseBtn.addEventListener('click', function() { el.modal.style.display = 'none'; });
-    el.modal.addEventListener('click', function(e) {
-      if (e.target === el.modal) el.modal.style.display = 'none';
-    });
-    el.modalEditBtn.addEventListener('click', function() {
-      const id = el.modal.dataset.editId;
-      el.modal.style.display = 'none';
-      if (id) { editAppointment(id); el.client.focus(); }
-    });
-    el.modalDeleteBtn.addEventListener('click', function() {
-      const id = el.modal.dataset.editId;
-      el.modal.style.display = 'none';
-      if (id && confirm('\u00bfEliminar esta cita?')) removeAppointment(id);
-    });
-
-    refresh();
-  });
-})();
