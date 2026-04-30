@@ -293,6 +293,14 @@ class NavigationManager {
                 }
                 return;
 
+            case 'importexport':
+                if (typeof ImportExportManager !== 'undefined') {
+                    this.currentManager = new ImportExportManager(this);
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                }
+                return;
+
             case 'perfil':
                 this.contentArea.innerHTML = this._renderPerfilView();
                 setTimeout(() => this._setupPerfilListeners(), 0);
