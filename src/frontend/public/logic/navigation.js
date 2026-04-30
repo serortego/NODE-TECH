@@ -222,6 +222,11 @@ class NavigationManager {
         this.currentView = viewName;
 
         switch (viewName) {
+            case 'inicio':
+                this.contentArea.innerHTML = this._renderInicioShell('dashboard');
+                setTimeout(() => this._setupInicioListeners(), 0);
+                return;
+
             case 'estadisticas':
                 this.contentArea.innerHTML = this._renderEstadisticasView();
                 setTimeout(() => this._setupEstadisticasListeners(), 0);
@@ -395,6 +400,67 @@ class NavigationManager {
         } else {
             this.showNotification('Email enviado a ' + email, 'info');
         }
+    }
+
+    // ── Vista Inicio con pestañas ─────────────────────────────────
+    _renderInicioShell(activeTab = 'dashboard') {
+        const tabs = [
+            { id: 'dashboard',    label: 'Dashboard',    icon: 'fa-tachometer-alt' },
+            { id: 'estadisticas', label: 'Estadísticas', icon: 'fa-chart-pie' },
+            { id: 'tutorial',     label: 'Tutorial',     icon: 'fa-graduation-cap' },
+        ];
+        return `
+        <div class="flex flex-col h-full gap-4">
+            <!-- Tab bar -->
+            <div class="flex gap-1 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] p-1 rounded-xl flex-shrink-0">
+                ${tabs.map(t => `
+                <button data-tab="${t.id}" class="inicio-tab flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition
+                    ${t.id === activeTab ? 'bg-[rgba(43,147,166,0.2)] text-[#38BDF8]' : 'text-slate-400 hover:text-white'}">
+                    <i class="fas ${t.icon} mr-1.5"></i>${t.label}
+                </button>`).join('')}
+            </div>
+            <!-- Contenido de la pestaña activa -->
+            <div id="inicio-tab-content" class="flex-1 overflow-y-auto min-h-0">
+                ${this._renderInicioTabContent(activeTab)}
+            </div>
+        </div>`;
+    }
+
+    _renderInicioTabContent(tab) {
+        if (tab === 'dashboard')    return this.renderDashboard();
+        if (tab === 'estadisticas') return this._renderEstadisticasView();
+        if (tab === 'tutorial')     return this._renderTutorialView();
+        return '';
+    }
+
+    _setupInicioListeners() {
+        // Listeners del tab activo por defecto (dashboard)
+        this.setupDashboardListeners();
+
+        document.querySelectorAll('.inicio-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+
+                // Limpiar suscripción de estadísticas si se sale de esa tab
+                if (this._estadUnsub) { this._estadUnsub(); this._estadUnsub = null; }
+
+                // Actualizar estilos de pestañas
+                document.querySelectorAll('.inicio-tab').forEach(b => {
+                    b.classList.remove('bg-[rgba(43,147,166,0.2)]', 'text-[#38BDF8]');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-[rgba(43,147,166,0.2)]', 'text-[#38BDF8]');
+                btn.classList.remove('text-slate-400');
+
+                // Cambiar contenido
+                const content = document.getElementById('inicio-tab-content');
+                if (content) content.innerHTML = this._renderInicioTabContent(tab);
+
+                // Re-setup listeners según la tab
+                if (tab === 'dashboard')    this.setupDashboardListeners();
+                if (tab === 'estadisticas') this._setupEstadisticasListeners();
+            });
+        });
     }
 
     // ── Vista Estadísticas / Resumen del negocio ──────────────────
