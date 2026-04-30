@@ -122,10 +122,34 @@ class NavigationManager {
         // Arbol expandible (nav-tree)
         document.querySelectorAll('.nav-tree-parent').forEach(parent => {
             parent.addEventListener('click', () => {
-                parent.classList.toggle('open');
                 const childrenId = parent.id + '-children';
                 const children = document.getElementById(childrenId);
-                if (children) children.classList.toggle('open');
+                const wasOpen = parent.classList.contains('open');
+
+                // Cerrar todos los demás árboles
+                document.querySelectorAll('.nav-tree-parent').forEach(p => {
+                    if (p !== parent) {
+                        p.classList.remove('open');
+                        const c = document.getElementById(p.id + '-children');
+                        if (c) c.classList.remove('open');
+                    }
+                });
+
+                // Abrir/cerrar el actual
+                parent.classList.toggle('open', !wasOpen);
+                if (children) children.classList.toggle('open', !wasOpen);
+
+                // Al abrir, navegar al primer hijo
+                if (!wasOpen) {
+                    const firstChild = children?.querySelector('.nav-tree-child[data-view]');
+                    if (firstChild) {
+                        const view = firstChild.getAttribute('data-view');
+                        if (view) {
+                            this.setActiveNav(firstChild);
+                            this.loadView(view);
+                        }
+                    }
+                }
             });
         });
 
@@ -193,9 +217,20 @@ class NavigationManager {
         if (this.currentManager && this.currentManager.destroy) {
             this.currentManager.destroy();
         }
+        // Limpiar suscripción de estadísticas si se sale de esa vista
+        if (this._estadUnsub) { this._estadUnsub(); this._estadUnsub = null; }
         this.currentView = viewName;
 
         switch (viewName) {
+            case 'estadisticas':
+                this.contentArea.innerHTML = this._renderEstadisticasView();
+                setTimeout(() => this._setupEstadisticasListeners(), 0);
+                return;
+
+            case 'tutorial':
+                this.contentArea.innerHTML = this._renderTutorialView();
+                return;
+
             case 'dashboard':
                 this.contentArea.innerHTML = this.renderDashboard();
                 setTimeout(() => this.setupDashboardListeners(), 0);
@@ -360,6 +395,212 @@ class NavigationManager {
         } else {
             this.showNotification('Email enviado a ' + email, 'info');
         }
+    }
+
+    // ── Vista Estadísticas / Resumen del negocio ──────────────────
+    _renderEstadisticasView() {
+        const cache  = window.dataManager?.cache || {};
+        const citas  = cache.citas   || [];
+        const clientes = cache.clientes || [];
+        const empleados = cache.empleados || [];
+        const tarifas   = cache.tarifas   || [];
+        const caja      = cache.caja      || [];
+
+        const hoy    = this._hoyStr();
+        const mesStr = hoy.substring(0, 7); // YYYY-MM
+        const citasHoy  = citas.filter(c => c.fecha === hoy);
+        const citasMes  = citas.filter(c => (c.fecha || '').startsWith(mesStr));
+        const cobradoMes = citasMes.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        const cobradoHoy = citasHoy.filter(c => c.cobrado).reduce((s, c) => s + parseInt(c.precio || 0), 0);
+        const completadasMes = citasMes.filter(c => c.estado === 'completado').length;
+
+        // Ingresos en caja del mes
+        const ingresosCaja = (caja).filter(t => t.tipo === 'ingreso' && (t.fecha || '').startsWith(mesStr))
+            .reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0);
+        const gastosCaja   = (caja).filter(t => t.tipo === 'gasto' && (t.fecha || '').startsWith(mesStr))
+            .reduce((s, t) => s + parseFloat(t.importe || t.cantidad || 0), 0);
+
+        // Top servicios del mes
+        const contadorServs = {};
+        citasMes.forEach(c => { if (c.servicio) contadorServs[c.servicio] = (contadorServs[c.servicio] || 0) + 1; });
+        const topServs = Object.entries(contadorServs).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        const mesLabel = new Date(mesStr + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+        return `
+        <div class="space-y-5 max-w-4xl">
+            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <h1 class="text-2xl font-bold text-white"><i class="fas fa-chart-pie text-[#2B93A6] mr-2"></i>Estadísticas</h1>
+                <span class="text-xs text-slate-500 capitalize">${mesLabel}</span>
+            </div>
+
+            <!-- KPIs principales -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
+                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado hoy</p>
+                    <p class="text-2xl font-black text-white">€${cobradoHoy}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">${citasHoy.filter(c=>c.cobrado).length} pagos</p>
+                </div>
+                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
+                    <p class="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1">Cobrado este mes</p>
+                    <p class="text-2xl font-black text-white">€${cobradoMes}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">${completadasMes} citas</p>
+                </div>
+                <div class="glass border border-[rgba(43,147,166,0.25)] rounded-xl p-4">
+                    <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-1">Ingresos caja</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(ingresosCaja)}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">este mes</p>
+                </div>
+                <div class="glass border border-[rgba(255,200,100,0.2)] rounded-xl p-4">
+                    <p class="text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-1">Gastos</p>
+                    <p class="text-2xl font-black text-white">€${Math.round(gastosCaja)}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">este mes</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Totales BD -->
+                <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-[rgba(255,255,255,0.07)]">
+                        <p class="text-sm font-bold text-white">Base de datos</p>
+                    </div>
+                    <div class="divide-y divide-[rgba(255,255,255,0.06)]">
+                        ${[
+                            ['fas fa-users text-teal-400',   'Clientes',   clientes.length],
+                            ['fas fa-user-tie text-blue-400','Empleados',  empleados.length],
+                            ['fas fa-tags text-amber-400',   'Servicios',  tarifas.length],
+                            ['fas fa-calendar-day text-purple-400','Citas totales', citas.length],
+                        ].map(([icon, label, val]) => `
+                        <div class="flex items-center justify-between px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${icon.replace('fas ', '')} w-4 text-center text-sm"></i>
+                                <span class="text-sm text-slate-300">${label}</span>
+                            </div>
+                            <span class="text-sm font-bold text-white">${val}</span>
+                        </div>`).join('')}
+                    </div>
+                </div>
+
+                <!-- Top servicios -->
+                <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                    <div class="px-4 py-3 border-b border-[rgba(255,255,255,0.07)]">
+                        <p class="text-sm font-bold text-white">Servicios más solicitados <span class="text-xs text-slate-500 font-normal">este mes</span></p>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        ${topServs.length ? topServs.map(([serv, cnt], i) => {
+                            const max = topServs[0][1];
+                            const pct = Math.round((cnt / max) * 100);
+                            return `
+                            <div>
+                                <div class="flex justify-between text-xs mb-0.5">
+                                    <span class="text-slate-300 truncate">${serv}</span>
+                                    <span class="text-white font-bold ml-2 flex-shrink-0">${cnt}</span>
+                                </div>
+                                <div class="w-full bg-[rgba(255,255,255,0.06)] rounded-full h-1.5">
+                                    <div class="h-1.5 rounded-full bg-[#2B93A6]" style="width:${pct}%"></div>
+                                </div>
+                            </div>`;
+                        }).join('') : '<p class="text-xs text-slate-500 text-center py-4">Sin citas este mes todavía</p>'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Balance del mes -->
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Balance del mes</p>
+                    <p class="text-3xl font-black ${(ingresosCaja - gastosCaja) >= 0 ? 'text-emerald-400' : 'text-red-400'} mt-1">
+                        ${(ingresosCaja - gastosCaja) >= 0 ? '+' : ''}€${Math.round(ingresosCaja - gastosCaja)}
+                    </p>
+                </div>
+                <div class="text-right text-xs text-slate-500">
+                    <p>Ingresos: <span class="text-emerald-400 font-bold">€${Math.round(ingresosCaja)}</span></p>
+                    <p>Gastos: <span class="text-red-400 font-bold">€${Math.round(gastosCaja)}</span></p>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    _setupEstadisticasListeners() {
+        // Refrescar si DataManager actualiza datos mientras la vista está activa
+        if (window.dataManager) {
+            const unsub = window.dataManager.suscribirse('caja', () => {
+                if (this.currentView === 'estadisticas') this.loadView('estadisticas');
+            });
+            // Guardar unsub para limpiar al salir
+            this._estadUnsub = unsub;
+        }
+    }
+
+    // ── Vista Tutorial ────────────────────────────────────────────
+    _renderTutorialView() {
+        const pasos = [
+            {
+                n: '1', icon: 'fa-store', color: 'text-[#38BDF8]', border: 'border-[rgba(43,147,166,0.3)]',
+                titulo: 'Configura tu negocio',
+                desc: 'Ve a <strong>Configuración</strong> (icono engranaje abajo) y rellena el nombre, CIF y datos de tu empresa. Estos datos aparecerán en tus facturas.',
+            },
+            {
+                n: '2', icon: 'fa-tags', color: 'text-amber-400', border: 'border-amber-500/20',
+                titulo: 'Añade tus servicios y tarifas',
+                desc: 'En <strong>Mis Datos → Tarifas</strong> crea tus servicios con precio. Luego aparecerán automáticamente al crear citas y facturas.',
+            },
+            {
+                n: '3', icon: 'fa-user-tie', color: 'text-blue-400', border: 'border-blue-500/20',
+                titulo: 'Da de alta a tu equipo',
+                desc: 'En <strong>Mis Datos → Equipo</strong> añade empleados. Luego podrás asignarles citas y filtrar la agenda por persona.',
+            },
+            {
+                n: '4', icon: 'fa-users', color: 'text-teal-400', border: 'border-teal-500/20',
+                titulo: 'Importa tus clientes',
+                desc: 'Si tienes clientes en Excel, ve a <strong>Mis Datos → Importar / Exportar</strong>. Descarga la plantilla, rellénala y súbela. Listo en segundos.',
+            },
+            {
+                n: '5', icon: 'fa-calendar-day', color: 'text-purple-400', border: 'border-purple-500/20',
+                titulo: 'Crea tu primera cita',
+                desc: 'En el <strong>Dashboard</strong> pulsa el botón <em>Cita express</em>: cliente + servicio + hora. O ve a <strong>Planificación → Agenda</strong> para una vista completa del día.',
+            },
+            {
+                n: '6', icon: 'fa-cash-register', color: 'text-emerald-400', border: 'border-emerald-500/20',
+                titulo: 'Registra cobros y gastos',
+                desc: 'Cuando un cliente paga, pulsa el botón <i class="fas fa-euro-sign"></i> en la cita o ve a <strong>Contabilidad → Caja y gastos</strong>. Eso alimenta las estadísticas automáticamente.',
+            },
+            {
+                n: '7', icon: 'fa-robot', color: 'text-[#38BDF8]', border: 'border-[rgba(43,147,166,0.3)]',
+                titulo: 'Usa el Asistente IA',
+                desc: 'Pulsa <strong>Ctrl+Espacio</strong> o ve a <strong>Asistente IA</strong> para crear citas con voz, consultar tu agenda o pedir resúmenes del día con lenguaje natural.',
+            },
+        ];
+
+        return `
+        <div class="space-y-5 max-w-2xl">
+            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <h1 class="text-2xl font-bold text-white"><i class="fas fa-graduation-cap text-[#2B93A6] mr-2"></i>Bienvenido a NodeTech</h1>
+            </div>
+            <p class="text-sm text-slate-400">Sigue estos pasos para tener tu negocio funcionando en menos de 10 minutos.</p>
+
+            <div class="space-y-3">
+                ${pasos.map(p => `
+                <div class="glass border ${p.border} rounded-xl p-4 flex gap-4 hover:bg-[rgba(255,255,255,0.02)] transition">
+                    <div class="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.05)] flex items-center justify-center flex-shrink-0">
+                        <i class="fas ${p.icon} ${p.color} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-white mb-0.5">
+                            <span class="text-xs text-slate-500 mr-1.5 font-normal">Paso ${p.n}</span>${p.titulo}
+                        </p>
+                        <p class="text-xs text-slate-400 leading-relaxed">${p.desc}</p>
+                    </div>
+                </div>`).join('')}
+            </div>
+
+            <div class="glass border border-[rgba(43,147,166,0.3)] rounded-xl p-4 flex items-start gap-3">
+                <i class="fas fa-lightbulb text-amber-400 mt-0.5 flex-shrink-0"></i>
+                <p class="text-xs text-slate-400">
+                    <strong class="text-white">Consejo:</strong> NodeTech guarda todo automáticamente en la nube. Puedes abrirlo desde cualquier dispositivo con tu cuenta.
+                </p>
+            </div>
+        </div>`;
     }
 
     // ── Vista Perfil de cuenta ─────────────────────────────────────

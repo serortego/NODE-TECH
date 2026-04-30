@@ -314,9 +314,25 @@
         <!-- Navigation -->
         <nav class="mt-2 flex-1 overflow-y-auto space-y-0.5 px-2 pb-2">
 
-            <div class="nav-item active flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="dashboard">
+            <!-- Árbol: Inicio -->
+            <div class="nav-tree-parent open" id="nav-tree-inicio">
                 <i class="fas fa-home w-5 text-center"></i>
                 <span>Inicio</span>
+                <i class="fas fa-chevron-right tree-arrow"></i>
+            </div>
+            <div class="nav-tree-children open" id="nav-tree-inicio-children">
+                <div class="nav-tree-child active" data-view="dashboard">
+                    <i class="fas fa-tachometer-alt w-4 text-center"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-tree-child" data-view="estadisticas">
+                    <i class="fas fa-chart-pie w-4 text-center"></i>
+                    <span>Estadísticas</span>
+                </div>
+                <div class="nav-tree-child" data-view="tutorial">
+                    <i class="fas fa-graduation-cap w-4 text-center"></i>
+                    <span>Tutorial</span>
+                </div>
             </div>
 
             <div class="nav-item flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="asistente">
@@ -326,19 +342,15 @@
             </div>
 
             <!-- Árbol: Planificación -->
-            <div class="nav-tree-parent open" id="nav-tree-planificacion">
+            <div class="nav-tree-parent" id="nav-tree-planificacion">
                 <i class="fas fa-calendar-alt w-5 text-center"></i>
                 <span>Planificación</span>
                 <i class="fas fa-chevron-right tree-arrow"></i>
             </div>
-            <div class="nav-tree-children open" id="nav-tree-planificacion-children">
-                <div class="nav-tree-child active" data-view="agenda">
+            <div class="nav-tree-children" id="nav-tree-planificacion-children">
+                <div class="nav-tree-child" data-view="agenda">
                     <i class="fas fa-calendar-day w-4 text-center"></i>
                     <span>Agenda</span>
-                </div>
-                <div class="nav-tree-child" data-view="agenda-stats">
-                    <i class="fas fa-chart-bar w-4 text-center"></i>
-                    <span>Estadísticas</span>
                 </div>
             </div>
 
