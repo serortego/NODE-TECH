@@ -208,8 +208,11 @@ class NavigationManager {
 
             case 'pacientes':
             case 'clientes':
-                this.contentArea.innerHTML = this.renderPacientes();
-                setTimeout(() => this._setupPacientesListeners(), 0);
+                if (typeof ClientesManager !== 'undefined') {
+                    this.currentManager = new ClientesManager(this);
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                }
                 return;
 
             case 'odontograma':
@@ -246,54 +249,32 @@ class NavigationManager {
                 if (typeof ContabilidadManager !== 'undefined') {
                     this.currentManager = new ContabilidadManager(this);
                     this.contentArea.innerHTML = this.currentManager.render();
-                    setTimeout(() => {
-                        this.currentManager.setupListeners();
-                        // Contabilidad = solo Caja y gastos (sin facturas, sin tarifas)
-                        document.getElementById('cont-tab-btn-facturas')?.remove();
-                        document.getElementById('cont-tab-facturas')?.remove();
-                        document.getElementById('caja-tab-btn-tarifa')?.closest('button')?.remove();
-                        document.getElementById('caja-tab-btn-tarifa')?.remove();
-                        document.getElementById('caja-subtab-tarifa')?.remove();
-                        // Activar directamente la pestaña de transacciones
-                        const btnT = document.getElementById('cont-tab-btn-transacciones');
-                        const tabT = document.getElementById('cont-tab-transacciones');
-                        if (btnT) { btnT.click(); }
-                        // Actualizar cabecera y botón
-                        const h1 = document.querySelector('#cont-root h1');
-                        if (h1) h1.textContent = 'Contabilidad';
-                        const sub = document.querySelector('#cont-root p.text-slate-400');
-                        if (sub) sub.textContent = 'Caja, ingresos y gastos fijos';
-                    }, 0);
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
                 }
                 return;
 
             case 'facturacion':
-                if (typeof ContabilidadManager !== 'undefined') {
-                    this.currentManager = new ContabilidadManager(this);
+                if (typeof FacturacionManager !== 'undefined') {
+                    this.currentManager = new FacturacionManager(this);
                     this.contentArea.innerHTML = this.currentManager.render();
-                    setTimeout(() => {
-                        this.currentManager.setupListeners();
-                        // Facturación = solo Facturas (sin caja/gastos)
-                        document.getElementById('cont-tab-btn-transacciones')?.remove();
-                        document.getElementById('cont-tab-transacciones')?.remove();
-                        // Actualizar cabecera
-                        const h1 = document.querySelector('#cont-root h1');
-                        if (h1) h1.textContent = 'Facturación';
-                        const sub = document.querySelector('#cont-root p.text-slate-400');
-                        if (sub) sub.textContent = 'Gestión de facturas y cobros';
-                        const btnNueva = document.getElementById('cont-btn-nueva-label');
-                        if (btnNueva) btnNueva.textContent = 'Nueva factura';
-                    }, 0);
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
                 }
                 return;
 
             case 'tarifas':
-                this.contentArea.innerHTML = this.renderTarifas();
-                setTimeout(() => this._setupTarifasListeners(), 0);
+                if (typeof TarifasManager !== 'undefined') {
+                    this.currentManager = new TarifasManager(this);
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                }
                 return;
 
             case 'impuestos':
-                this.contentArea.innerHTML = this._renderImpuestos();
+                if (typeof ImpuestosManager !== 'undefined') {
+                    this.currentManager = new ImpuestosManager(this);
+                    this.contentArea.innerHTML = this.currentManager.render();
+                    setTimeout(() => this.currentManager.setupListeners(), 0);
+                }
                 return;
 
             default:
@@ -943,283 +924,6 @@ class NavigationManager {
                     if (this.currentView === 'dashboard') this.loadView('dashboard');
                 });
             }
-        });
-    }
-
-    // ── Vista impuestos (placeholder) ─────────────────────────────
-    _renderImpuestos() {
-        return `
-        <div class="space-y-4">
-            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
-                <i class="fas fa-percentage text-[#2B93A6] text-xl"></i>
-                <div>
-                    <h1 class="text-2xl font-bold text-white">Impuestos</h1>
-                    <p class="text-sm text-slate-400 mt-0.5">IVA, IRPF y modelos trimestrales</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
-                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">IVA repercutido</p>
-                    <p class="text-2xl font-black text-white">—</p>
-                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
-                </div>
-                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
-                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">IVA soportado</p>
-                    <p class="text-2xl font-black text-white">—</p>
-                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
-                </div>
-                <div class="glass rounded-xl p-4 border border-[rgba(255,255,255,0.08)]">
-                    <p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-1">Resultado IVA</p>
-                    <p class="text-2xl font-black text-white">—</p>
-                    <p class="text-xs text-slate-600 mt-1">Pendiente de datos</p>
-                </div>
-            </div>
-            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-8 text-center">
-                <i class="fas fa-tools text-3xl text-slate-700 mb-3 block"></i>
-                <p class="text-slate-400 font-semibold">Módulo de impuestos en construcción</p>
-                <p class="text-slate-600 text-sm mt-1">Próximamente: Modelo 303, 130, resumen trimestral automático</p>
-            </div>
-        </div>`;
-    }
-
-    // ── Vista de clientes ─────────────────────────────────────────────────────────
-    renderTarifas() {
-        const cfg = window.BCONFIG || {};
-        const label = cfg.servicioPlural || 'Servicios';
-        const sing  = cfg.servicioSingular || 'Servicio';
-        return `
-        <div class="space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-white"><i class="fas fa-tags text-[#2B93A6] mr-2"></i>${label} y tarifas</h1>
-                    <p class="text-sm text-slate-400 mt-0.5">Precios base de cada servicio</p>
-                </div>
-                <button id="tarifa-btn-nuevo" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                    <i class="fas fa-plus"></i> Nuevo ${sing.toLowerCase()}
-                </button>
-            </div>
-
-            <!-- Formulario añadir / editar -->
-            <div id="tarifa-form-wrapper" class="hidden glass border border-[rgba(43,147,166,0.3)] rounded-xl p-5">
-                <h2 class="text-base font-bold text-white mb-3" id="tarifa-form-titulo">Nuevo ${sing.toLowerCase()}</h2>
-                <form id="tarifa-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="hidden" id="tarifa-edit-id">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-300 mb-1">${sing} *</label>
-                        <input type="text" id="tarifa-nombre" required placeholder="Ej: Corte y lavado"
-                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1">Precio (€) *</label>
-                        <input type="number" id="tarifa-precio" required placeholder="0.00" min="0" step="0.50"
-                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
-                    </div>
-                    <div class="sm:col-span-3 flex gap-2">
-                        <button type="submit" class="btn-primary flex-1 px-4 py-2 rounded-lg text-sm">Guardar</button>
-                        <button type="button" id="tarifa-btn-cancelar" class="btn-secondary px-4 py-2 rounded-lg text-sm">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Lista -->
-            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
-                <div id="tarifa-lista">
-                    <p class="text-slate-500 text-sm p-6 text-center"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</p>
-                </div>
-            </div>
-        </div>`;
-    }
-
-    async _setupTarifasListeners() {
-        const db  = window.db;
-        const uid = window.firebaseUser?.uid;
-        const fs  = window.fs;
-        if (!db || !uid || !fs) {
-            const el = document.getElementById('tarifa-lista');
-            if (el) el.innerHTML = '<p class="text-red-400 text-sm p-6 text-center">Sin conexión a Firebase</p>';
-            return;
-        }
-        const { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } = fs;
-        const col = () => collection(db, 'users', uid, 'tarifas');
-        let tarifas = [];
-        let editingId = null;
-
-        const renderLista = () => {
-            const lista = document.getElementById('tarifa-lista');
-            if (!lista) return;
-            if (!tarifas.length) {
-                lista.innerHTML = '<p class="text-slate-600 text-sm p-8 text-center">Sin tarifas aún — pulsa «+» para añadir</p>';
-                return;
-            }
-            lista.innerHTML = tarifas.map(t => `
-                <div class="flex items-center justify-between px-4 py-3 border-b border-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.03)] transition group" data-id="${t.id}">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(43,147,166,0.15)">
-                            <i class="fas fa-tag text-[#38BDF8] text-xs"></i>
-                        </div>
-                        <span class="text-sm font-semibold text-white">${t.nombre}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-base font-black text-[#38BDF8]">€${parseFloat(t.precio || 0).toFixed(2)}</span>
-                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                            <button class="tarifa-edit p-1.5 text-slate-400 hover:text-white hover:bg-[rgba(255,255,255,0.08)] rounded transition text-xs" data-id="${t.id}" title="Editar"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
-                            <button class="tarifa-del p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition text-xs" data-id="${t.id}" title="Eliminar"><i class="fas fa-trash pointer-events-none"></i></button>
-                        </div>
-                    </div>
-                </div>`).join('');
-
-            lista.querySelectorAll('.tarifa-edit').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const t = tarifas.find(x => x.id === btn.dataset.id);
-                    if (!t) return;
-                    editingId = t.id;
-                    document.getElementById('tarifa-edit-id').value = t.id;
-                    document.getElementById('tarifa-nombre').value  = t.nombre;
-                    document.getElementById('tarifa-precio').value  = t.precio;
-                    document.getElementById('tarifa-form-titulo').textContent = 'Editar servicio';
-                    document.getElementById('tarifa-form-wrapper').classList.remove('hidden');
-                    document.getElementById('tarifa-nombre').focus();
-                });
-            });
-
-            lista.querySelectorAll('.tarifa-del').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    if (!confirm('Eliminar esta tarifa?')) return;
-                    try {
-                        await deleteDoc(doc(db, 'users', uid, 'tarifas', btn.dataset.id));
-                        tarifas = tarifas.filter(t => t.id !== btn.dataset.id);
-                        renderLista();
-                        this.showNotification('Tarifa eliminada', 'success');
-                    } catch { this.showNotification('Error al eliminar', 'error'); }
-                });
-            });
-        };
-
-        const loadTarifas = async () => {
-            try {
-                const snap = await getDocs(col());
-                tarifas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            } catch { tarifas = []; }
-            renderLista();
-        };
-
-        await loadTarifas();
-
-        document.getElementById('tarifa-btn-nuevo')?.addEventListener('click', () => {
-            editingId = null;
-            document.getElementById('tarifa-edit-id').value  = '';
-            document.getElementById('tarifa-nombre').value   = '';
-            document.getElementById('tarifa-precio').value   = '';
-            document.getElementById('tarifa-form-titulo').textContent = 'Nuevo servicio';
-            document.getElementById('tarifa-form-wrapper').classList.remove('hidden');
-            document.getElementById('tarifa-nombre').focus();
-        });
-
-        document.getElementById('tarifa-btn-cancelar')?.addEventListener('click', () => {
-            document.getElementById('tarifa-form-wrapper').classList.add('hidden');
-            editingId = null;
-        });
-
-        document.getElementById('tarifa-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nombre = document.getElementById('tarifa-nombre').value.trim();
-            const precio = parseFloat(document.getElementById('tarifa-precio').value) || 0;
-            if (!nombre) return;
-            try {
-                if (editingId) {
-                    await updateDoc(doc(db, 'users', uid, 'tarifas', editingId), { nombre, precio });
-                    this.showNotification('Tarifa actualizada', 'success');
-                } else {
-                    await addDoc(col(), { nombre, precio, createdAt: serverTimestamp() });
-                    this.showNotification('Tarifa añadida', 'success');
-                }
-                editingId = null;
-                document.getElementById('tarifa-form-wrapper').classList.add('hidden');
-                await loadTarifas();
-            } catch { this.showNotification('Error al guardar', 'error'); }
-        });
-    }
-
-    // ── Vista de clientes ─────────────────────────────────────────
-    renderPacientes() {
-        const mapa = {};
-        this.citas.forEach(c => {
-            if (!mapa[c.cliente]) {
-                mapa[c.cliente] = { nombre: c.cliente, ultimaVisita: c.fecha, ultimoTratamiento: c.servicio, totalVisitas: 0, totalFacturado: 0 };
-            }
-            if (c.fecha > mapa[c.cliente].ultimaVisita) {
-                mapa[c.cliente].ultimaVisita      = c.fecha;
-                mapa[c.cliente].ultimoTratamiento = c.servicio;
-            }
-            mapa[c.cliente].totalVisitas++;
-            mapa[c.cliente].totalFacturado += parseInt(c.precio || 0);
-        });
-        const pacientes = Object.values(mapa).sort((a, b) => b.ultimaVisita.localeCompare(a.ultimaVisita));
-
-        return `
-            <div class="space-y-4">
-                <div class="flex items-center justify-between pb-2 border-b border-[rgba(255,255,255,0.08)]">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-users text-[#2B93A6] text-lg"></i>
-                        <h2 class="text-xl font-bold text-white">${window.BCONFIG?.clientePlural || 'Clientes'}</h2>
-                        <span class="text-xs text-slate-500">(${pacientes.length} registrados)</span>
-                    </div>
-                    <button id="btn-nuevo-paciente" class="btn-primary rounded-lg px-3 py-1.5 text-xs inline-flex items-center gap-1">
-                        <i class="fas fa-user-plus"></i> ${window.BCONFIG?.nuevaCita || 'Nueva cita'}
-                    </button>
-                </div>
-                <input type="text" id="pacientes-search" placeholder="Buscar por nombre o ${window.BCONFIG?.servicioSingular?.toLowerCase() || 'servicio'}..."
-                    class="w-full px-4 py-2.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B93A6] text-sm">
-                <div class="glass rounded-xl border border-[rgba(255,255,255,0.08)] overflow-hidden" id="pacientes-list">
-                    ${pacientes.length > 0 ? pacientes.map(p => `
-                        <div class="paciente-row p-3 flex items-center justify-between hover:bg-[rgba(43,147,166,0.08)] border-b border-[rgba(255,255,255,0.06)] transition">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-[rgba(43,147,166,0.2)] flex items-center justify-center text-[#38BDF8] font-bold text-sm flex-shrink-0">
-                                    ${p.nombre.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-white text-sm">${p.nombre}</p>
-                                    <p class="text-xs text-slate-400">${p.ultimoTratamiento} · ${new Date(p.ultimaVisita + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="text-right hidden sm:block">
-                                    <p class="text-xs text-slate-400">${p.totalVisitas} visita${p.totalVisitas !== 1 ? 's' : ''}</p>
-                                    <p class="text-xs text-emerald-400 font-semibold">€${p.totalFacturado}</p>
-                                </div>
-                                <button class="btn-cita-paciente px-2 py-1 text-xs bg-[rgba(43,147,166,0.15)] text-[#38BDF8] rounded hover:bg-[rgba(43,147,166,0.3)] transition" data-nombre="${p.nombre}" title="Nueva cita">
-                                    <i class="fas fa-calendar-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('') : `
-                        <div class="p-8 text-center">
-                            <i class="fas fa-users text-3xl text-slate-600 mb-3"></i>
-                            <p class="text-slate-500 text-sm">No hay clientes registrados aún</p>
-                        </div>
-                    `}
-                </div>
-            </div>
-        `;
-    }
-
-    _setupPacientesListeners() {
-        const search = document.getElementById('pacientes-search');
-        if (search) {
-            search.addEventListener('input', () => {
-                const q = search.value.toLowerCase();
-                document.querySelectorAll('.paciente-row').forEach(row => {
-                    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-                });
-            });
-        }
-        document.querySelectorAll('.btn-cita-paciente').forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.showNewCitaModal({ cliente: btn.dataset.nombre, fecha: new Date().toISOString().split('T')[0] });
-            });
-        });
-        document.getElementById('btn-nuevo-paciente')?.addEventListener('click', () => {
-            this.showNewCitaModal({ fecha: new Date().toISOString().split('T')[0] });
         });
     }
 
