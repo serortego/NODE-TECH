@@ -314,8 +314,6 @@
         <!-- Navigation -->
         <nav class="mt-2 flex-1 overflow-y-auto space-y-0.5 px-2 pb-2">
 
-            <div class="nav-section-label">Principal</div>
-
             <div class="nav-item active flex items-center gap-3 py-2.5 px-4 rounded-md" data-view="dashboard">
                 <i class="fas fa-home w-5 text-center"></i>
                 <span>Inicio</span>
@@ -326,8 +324,6 @@
                 <span>Asistente IA</span>
                 <span class="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full" style="background:rgba(56,189,248,0.15);color:#38BDF8">IA</span>
             </div>
-
-            <div class="nav-section-label mt-2">Gestión</div>
 
             <!-- Árbol: Planificación -->
             <div class="nav-tree-parent open" id="nav-tree-planificacion">
@@ -345,29 +341,6 @@
                     <span>Estadísticas</span>
                 </div>
             </div>
-
-            <!-- Árbol: Mis Datos -->
-            <div class="nav-tree-parent" id="nav-tree-misdatos">
-                <i class="fas fa-database w-5 text-center"></i>
-                <span>Mis Datos</span>
-                <i class="fas fa-chevron-right tree-arrow"></i>
-            </div>
-            <div class="nav-tree-children" id="nav-tree-misdatos-children">
-                <div class="nav-tree-child" data-view="clientes">
-                    <i class="fas fa-users w-4 text-center"></i>
-                    <span>Clientes</span>
-                </div>
-                <div class="nav-tree-child" data-view="empleados">
-                    <i class="fas fa-user-tie w-4 text-center"></i>
-                    <span>Equipo</span>
-                </div>
-                <div class="nav-tree-child" data-view="tarifas">
-                    <i class="fas fa-tags w-4 text-center"></i>
-                    <span>Tarifas</span>
-                </div>
-            </div>
-
-            <div class="nav-section-label mt-2">Finanzas</div>
 
             <!-- Árbol: Contabilidad -->
             <div class="nav-tree-parent" id="nav-tree-contabilidad">
@@ -399,26 +372,48 @@
                 </div>
             </div>
 
-        </nav>
-
-        <!-- Footer: Perfil + botones -->
-        <div class="p-4 border-t border-[rgba(255,255,255,0.08)] space-y-3">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-[rgba(43,147,166,0.2)] flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-user text-[#38BDF8] text-sm"></i>
+            <!-- Árbol: Mis Datos -->
+            <div class="nav-tree-parent" id="nav-tree-misdatos">
+                <i class="fas fa-database w-5 text-center"></i>
+                <span>Mis Datos</span>
+                <i class="fas fa-chevron-right tree-arrow"></i>
+            </div>
+            <div class="nav-tree-children" id="nav-tree-misdatos-children">
+                <div class="nav-tree-child" data-view="clientes">
+                    <i class="fas fa-users w-4 text-center"></i>
+                    <span>Clientes</span>
                 </div>
-                <div class="min-w-0">
-                    <p class="text-sm font-semibold text-white truncate sidebar-user-name">Usuario</p>
-                    <p class="text-xs text-[#38BDF8] sidebar-user-role">Propietario</p>
+                <div class="nav-tree-child" data-view="empleados">
+                    <i class="fas fa-user-tie w-4 text-center"></i>
+                    <span>Equipo</span>
+                </div>
+                <div class="nav-tree-child" data-view="tarifas">
+                    <i class="fas fa-tags w-4 text-center"></i>
+                    <span>Tarifas</span>
                 </div>
             </div>
 
-            <button class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-white hover:text-white hover:bg-white/10 transition">
+        </nav>
+
+        <!-- Footer: Perfil + botones -->
+        <div class="p-3 border-t border-[rgba(255,255,255,0.08)] space-y-1">
+            <button id="sidebar-perfil-btn" class="w-full flex items-center gap-3 py-2.5 px-3 rounded-md text-left hover:bg-[rgba(43,147,166,0.12)] transition group">
+                <div class="w-9 h-9 rounded-full bg-[rgba(43,147,166,0.2)] flex items-center justify-center flex-shrink-0 group-hover:bg-[rgba(43,147,166,0.35)] transition">
+                    <i class="fas fa-user text-[#38BDF8] text-sm"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-white truncate sidebar-user-name">Usuario</p>
+                    <p class="text-xs text-[#38BDF8] sidebar-user-role">Propietario</p>
+                </div>
+                <i class="fas fa-chevron-right text-slate-600 text-xs group-hover:text-[#38BDF8] transition"></i>
+            </button>
+
+            <button id="sidebar-config-btn" class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition">
                 <i class="fas fa-cog w-5 text-center"></i>
                 <span class="text-sm">Configuración</span>
             </button>
 
-            <button onclick="window.navManager?.logout()" class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-white/80 hover:text-white hover:bg-red-500/30 transition">
+            <button onclick="window.navManager?.logout()" class="w-full flex items-center gap-3 py-2 px-3 rounded-md text-white/60 hover:text-white hover:bg-red-500/20 transition">
                 <i class="fas fa-sign-out-alt w-5 text-center"></i>
                 <span class="text-sm">Cerrar sesión</span>
             </button>

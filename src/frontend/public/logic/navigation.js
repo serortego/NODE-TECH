@@ -139,6 +139,16 @@ class NavigationManager {
                 }
             });
         });
+
+        // Perfil de usuario (footer)
+        document.getElementById('sidebar-perfil-btn')?.addEventListener('click', () => {
+            this.loadView('perfil');
+        });
+
+        // Configuración (footer)
+        document.getElementById('sidebar-config-btn')?.addEventListener('click', () => {
+            this.loadView('configuracion');
+        });
     }
 
     setActiveNav(clickedItem) {
@@ -283,9 +293,190 @@ class NavigationManager {
                 }
                 return;
 
+            case 'perfil':
+                this.contentArea.innerHTML = this._renderPerfilView();
+                setTimeout(() => this._setupPerfilListeners(), 0);
+                return;
+
+            case 'configuracion':
+                this.contentArea.innerHTML = this._renderConfiguracionView();
+                setTimeout(() => this._setupConfiguracionListeners(), 0);
+                return;
+
             default:
                 this.contentArea.innerHTML = '<div class="text-center py-12"><p class="text-slate-500">Sección en desarrollo</p></div>';
         }
+    }
+
+    // ── Listeners Perfil ──────────────────────────────────────────
+    _setupPerfilListeners() {
+        document.getElementById('perfil-btn-password')?.addEventListener('click', () => {
+            this._enviarResetPassword();
+        });
+    }
+
+    // ── Listeners Configuración ───────────────────────────────────
+    _setupConfiguracionListeners() {
+        document.getElementById('cfg-btn-password')?.addEventListener('click', () => {
+            this._enviarResetPassword();
+        });
+
+        document.getElementById('cfg-guardar-negocio')?.addEventListener('click', () => {
+            const datos = {
+                nombreNegocio: document.getElementById('cfg-nombre-negocio')?.value.trim(),
+                cif:           document.getElementById('cfg-cif')?.value.trim(),
+                telefono:      document.getElementById('cfg-telefono')?.value.trim(),
+                direccion:     document.getElementById('cfg-direccion')?.value.trim(),
+            };
+            if (!window.BCONFIG) window.BCONFIG = {};
+            Object.assign(window.BCONFIG, datos);
+            // Persistir en Firestore si está disponible
+            if (window.fs && window.db && window.firebaseUser) {
+                const { doc, setDoc } = window.fs;
+                setDoc(
+                    doc(window.db, 'users', window.firebaseUser.uid, 'config', 'negocio'),
+                    datos, { merge: true }
+                ).catch(e => console.error('Error guardando config:', e));
+            }
+            this.showNotification('Datos guardados', 'success');
+        });
+    }
+
+    _enviarResetPassword() {
+        const email = window.firebaseUser?.email;
+        if (!email) { this.showNotification('No hay email de cuenta', 'error'); return; }
+        if (window.firebaseAuth && typeof window.firebaseAuth.sendPasswordResetEmail === 'function') {
+            window.firebaseAuth.sendPasswordResetEmail(email)
+                .then(() => this.showNotification('Email de reset enviado a ' + email, 'success'))
+                .catch(() => this.showNotification('Error al enviar email', 'error'));
+        } else {
+            this.showNotification('Email enviado a ' + email, 'info');
+        }
+    }
+
+    // ── Vista Perfil de cuenta ─────────────────────────────────────
+    _renderPerfilView() {
+        const user = window.firebaseUser;
+        const nombre = user?.displayName || document.querySelector('.sidebar-user-name')?.textContent || 'Usuario';
+        const email  = user?.email || '—';
+        const foto   = user?.photoURL;
+        return `
+        <div class="max-w-lg mx-auto space-y-5">
+            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <h1 class="text-2xl font-bold text-white"><i class="fas fa-user-circle text-[#2B93A6] mr-2"></i>Mi cuenta</h1>
+            </div>
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl p-6 space-y-5">
+                <!-- Avatar -->
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-[rgba(43,147,166,0.2)] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        ${foto ? `<img src="${foto}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-[#38BDF8] text-2xl"></i>'}
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">${nombre}</p>
+                        <p class="text-sm text-[#38BDF8]">${email}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Propietario · Plan Free</p>
+                    </div>
+                </div>
+                <!-- Datos -->
+                <div class="space-y-3 pt-2 border-t border-[rgba(255,255,255,0.07)]">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Nombre</label>
+                        <p class="text-sm text-white bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2">${nombre}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Email</label>
+                        <p class="text-sm text-white bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2">${email}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">UID de cuenta</label>
+                        <p class="text-xs text-slate-500 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2 font-mono break-all">${user?.uid || '—'}</p>
+                    </div>
+                </div>
+                <!-- Acciones -->
+                <div class="flex gap-2 pt-2 border-t border-[rgba(255,255,255,0.07)]">
+                    <button id="perfil-btn-password" class="btn-secondary flex-1 px-4 py-2 rounded-lg text-sm flex items-center justify-center gap-2">
+                        <i class="fas fa-key"></i> Cambiar contraseña
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ── Vista Configuración ───────────────────────────────────────
+    _renderConfiguracionView() {
+        const cfg = window.BCONFIG || {};
+        return `
+        <div class="max-w-2xl mx-auto space-y-5">
+            <div class="flex items-center gap-3 pb-2 border-b border-[rgba(255,255,255,0.08)]">
+                <h1 class="text-2xl font-bold text-white"><i class="fas fa-cog text-[#2B93A6] mr-2"></i>Configuración</h1>
+            </div>
+
+            <!-- Datos del negocio -->
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                <div class="px-5 py-3 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-2">
+                    <i class="fas fa-store text-[#38BDF8] text-sm"></i>
+                    <span class="font-bold text-white text-sm">Datos del negocio</span>
+                </div>
+                <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Nombre del negocio</label>
+                        <input type="text" id="cfg-nombre-negocio" value="${cfg.nombreNegocio || ''}" placeholder="Ej: Clínica Dental Martínez"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">CIF / NIF</label>
+                        <input type="text" id="cfg-cif" value="${cfg.cif || ''}" placeholder="B12345678"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Teléfono</label>
+                        <input type="text" id="cfg-telefono" value="${cfg.telefono || ''}" placeholder="+34 600 000 000"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Dirección fiscal</label>
+                        <input type="text" id="cfg-direccion" value="${cfg.direccion || ''}" placeholder="Calle, número, ciudad"
+                            class="w-full px-3 py-2 bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-white placeholder-slate-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B93A6]">
+                    </div>
+                    <div class="sm:col-span-2 flex justify-end">
+                        <button id="cfg-guardar-negocio" class="btn-primary px-5 py-2 rounded-lg text-sm flex items-center gap-2">
+                            <i class="fas fa-save"></i> Guardar cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                <div class="px-5 py-3 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-2">
+                    <i class="fas fa-bell text-[#38BDF8] text-sm"></i>
+                    <span class="font-bold text-white text-sm">Notificaciones</span>
+                    <span class="ml-auto text-xs text-slate-500">Próximamente</span>
+                </div>
+                <div class="p-5 space-y-3">
+                    ${[['Recordatorio de cita 24h antes', true], ['Resumen diario por email', false], ['Alerta de factura sin cobrar', true]].map(([label, on]) => `
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-300">${label}</span>
+                        <div class="w-10 h-5 rounded-full flex items-center px-0.5 transition opacity-50 cursor-not-allowed ${on ? 'bg-[#2B93A6] justify-end' : 'bg-[rgba(255,255,255,0.1)] justify-start'}">
+                            <div class="w-4 h-4 rounded-full bg-white shadow"></div>
+                        </div>
+                    </div>`).join('')}
+                </div>
+            </div>
+
+            <!-- Seguridad -->
+            <div class="glass border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden">
+                <div class="px-5 py-3 border-b border-[rgba(255,255,255,0.07)] flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-[#38BDF8] text-sm"></i>
+                    <span class="font-bold text-white text-sm">Seguridad</span>
+                </div>
+                <div class="p-5 flex gap-3">
+                    <button id="cfg-btn-password" class="btn-secondary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                        <i class="fas fa-key"></i> Cambiar contraseña
+                    </button>
+                </div>
+            </div>
+        </div>`;
     }
 
     // ── Listeners del dashboard ────────────────────────────────────
